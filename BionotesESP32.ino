@@ -68,15 +68,24 @@ void initEcosystem() {
     
     // Inject DNA
     if (has_spore) {
-      bool saltation = (random(100) < 5); // 5% saltation (less destructive to proven genetics)
+      int cloneType = random(100); 
       for(int w = 0; w < 26; w++) {
-        if (saltation) {
+        if (cloneType < 10) { 
+            // 10% Saltation (Completely new species to test against the reigning champ)
             creatures[i].w[w] = randomFloat(-2.0, 2.0);
-            creatures[i].hue = random(0, 360); // Entirely new species color!
-        } else {
-          creatures[i].w[w] = spore_dna[w];
-          creatures[i].hue = spore_hue + randomFloat(-15, 15); // Slight color drift for micro-mutation
-          if (random(100) < 15) creatures[i].w[w] += randomFloat(-0.2, 0.2); // Gentle mutation to preserve learning
+            creatures[i].hue = random(0, 360);
+        } else if (cloneType < 30) { 
+            // 20% Heavy Mutation (Large drift)
+            creatures[i].w[w] = spore_dna[w] + randomFloat(-0.8, 0.8);
+            creatures[i].hue = spore_hue + randomFloat(-45, 45);
+        } else if (cloneType < 70) { 
+            // 40% Gentle Mutation (Fine-tuning)
+            creatures[i].w[w] = spore_dna[w] + randomFloat(-0.2, 0.2);
+            creatures[i].hue = spore_hue + randomFloat(-15, 15);
+        } else { 
+            // 30% Perfect Clones (Preserve the exact champion)
+            creatures[i].w[w] = spore_dna[w];
+            creatures[i].hue = spore_hue;
         }
       }
     } else {
@@ -211,6 +220,11 @@ void tickPhysics() {
     float sumSpeed = (1.0 * creatures[i].w[16]) + (h[0]*creatures[i].w[17]) + (h[1]*creatures[i].w[18]) + (h[2]*creatures[i].w[19]) + (h[3]*creatures[i].w[20]);
     float sumTurn  = (1.0 * creatures[i].w[21]) + (h[0]*creatures[i].w[22]) + (h[1]*creatures[i].w[23]) + (h[2]*creatures[i].w[24]) + (h[3]*creatures[i].w[25]);
     
+    // WANDER MECHANIC: If nothing is in vision, inject random turn noise so they sweep the arena
+    if (closestDist >= currentVision - 0.1) {
+        sumTurn += randomFloat(-0.8, 0.8);
+    }
+    
     // RADIATION FRENZY: Scaled back. Slightly faster movement up to 2x speed max.
     float radMult = 1.0 + (envRadiation * 0.02); 
     if (radMult > 2.0) radMult = 2.0;
@@ -280,8 +294,8 @@ void tickPhysics() {
     if (creatures[i].y < 0) { creatures[i].y = 0; creatures[i].angle += PI; }
     if (creatures[i].y > ARENA_SIZE) { creatures[i].y = ARENA_SIZE; creatures[i].angle += PI; }
     
-    // Continuous Metabolism (Reduced base so they don't starve constantly)
-    float metabolism = (0.1 + abs(speed) * 0.1) * (1.0 + (envRadiation * 0.03)); 
+    // Continuous Metabolism (Increased base so they can't camp forever)
+    float metabolism = (0.35 + abs(speed) * 0.05) * (1.0 + (envRadiation * 0.03)); 
     creatures[i].energy -= metabolism;
     
     if (creatures[i].energy <= 0) {
@@ -317,8 +331,8 @@ void tickPhysics() {
            if (!creatures[j].alive) { emptySlot = j; break; }
        }
        if (emptySlot != -1) {
-          creatures[emptySlot].x = creatures[i].x + randomFloat(-5, 5);
-          creatures[emptySlot].y = creatures[i].y + randomFloat(-5, 5);
+          creatures[emptySlot].x = creatures[i].x + randomFloat(-30, 30);
+          creatures[emptySlot].y = creatures[i].y + randomFloat(-30, 30);
           creatures[emptySlot].angle = randomFloat(0, 2*PI);
           creatures[emptySlot].energy = 80.0;
           creatures[i].energy = 80.0; 
