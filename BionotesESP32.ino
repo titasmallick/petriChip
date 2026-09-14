@@ -40,6 +40,12 @@ unsigned long epochStartMillis = 0;
 float spore_dna[26];
 float spore_hue = 0; // Preserve species color across extinctions
 bool has_spore = false;
+
+// The Alpha Vault (Elitism)
+float alpha_dna[26];
+float alpha_hue = 0;
+bool alpha_found = false;
+
 int envRadiation = 0; // Tracks nearby WiFi hotspots as "Radiation"
 
 float randomFloat(float min, float max) {
@@ -49,6 +55,7 @@ float randomFloat(float min, float max) {
 void initEcosystem() {
   aliveCount = 0;
   epochStartMillis = millis();
+  alpha_found = false; // Reset Alpha tracking for the new epoch
   
   // Scatter initial items (mostly food, some poison)
   for(int i = 0; i < NUM_ITEMS; i++) {
@@ -190,12 +197,12 @@ void tickPhysics() {
       }
       
       // Eating logic
-      if (d < 5.0) {
+      if (d < 10.0) { // Increased eat radius so they don't miss it at high speeds
         items[f].active = false;
         if (items[f].type == 1) {
            creatures[i].energy += 60.0; // Food provides more energy to help establish populations
         } else {
-           creatures[i].energy -= 40.0; // Poison is less instantly fatal to allow learning
+           creatures[i].energy -= 80.0; // Poison is DEADLY (-80.0) to quickly weed out bad genetics
         }
       }
     }
@@ -302,10 +309,17 @@ void tickPhysics() {
       creatures[i].alive = false;
       aliveCount--;
       
-      // LAST SURVIVOR RULE: If this is the last creature to die, save its DNA to the spores!
+      // LAST SURVIVOR RULE / ALPHA ELITISM
       if (aliveCount == 0) {
-        for(int w = 0; w < 26; w++) spore_dna[w] = creatures[i].w[w];
-        spore_hue = creatures[i].hue; // Save the champion's species color!
+        if (alpha_found) {
+           // We had successful hunters this epoch. Save the BEST one.
+           for(int w = 0; w < 26; w++) spore_dna[w] = alpha_dna[w];
+           spore_hue = alpha_hue;
+        } else {
+           // Entire generation starved before reproducing. Save the last one as a fallback.
+           for(int w = 0; w < 26; w++) spore_dna[w] = creatures[i].w[w];
+           spore_hue = creatures[i].hue; 
+        }
         has_spore = true;
       }
       
@@ -339,6 +353,11 @@ void tickPhysics() {
           creatures[emptySlot].alive = true;
           aliveCount++;
           totalBirths++;
+          
+          // ALPHA VAULT: This organism proved it can hunt and survive! Save its DNA.
+          for (int w = 0; w < 26; w++) alpha_dna[w] = creatures[i].w[w];
+          alpha_hue = creatures[i].hue;
+          alpha_found = true;
           
           // WiFi Radiation (Signal Strength) drives mutation rate!
           int saltationChance = 5 + envRadiation; // Base 5% + Radiation Score
