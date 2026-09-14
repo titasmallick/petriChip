@@ -24,7 +24,7 @@ struct Creature {
   float energy;
   bool alive;
   float hue; // Color-coding for Speciation!
-  float w[26]; // 4 inputs * 4 hidden + 5 * 2 outputs = 26 weights
+  float w[40]; // 4 inputs * 4 hidden + 5 * 2 outputs = 40 weights
 };
 
 Creature creatures[MAX_CREATURES];
@@ -37,12 +37,12 @@ unsigned long lastTick = 0;
 unsigned long epochStartMillis = 0;
 
 // Spore Bank for carrying genes across mass extinctions
-float spore_dna[26];
+float spore_dna[40];
 float spore_hue = 0; // Preserve species color across extinctions
 bool has_spore = false;
 
 // The Alpha Vault (Elitism)
-float alpha_dna[26];
+float alpha_dna[40];
 float alpha_hue = 0;
 bool alpha_found = false;
 
@@ -76,7 +76,7 @@ void initEcosystem() {
     // Inject DNA
     if (has_spore) {
       int cloneType = random(100); 
-      for(int w = 0; w < 26; w++) {
+      for(int w = 0; w < 40; w++) {
         if (cloneType < 10) { 
             // 10% Saltation (Completely new species to test against the reigning champ)
             creatures[i].w[w] = randomFloat(-2.0, 2.0);
@@ -97,7 +97,7 @@ void initEcosystem() {
       }
     } else {
       // Very first genesis (pure random)
-      for(int w = 0; w < 26; w++) {
+      for(int w = 0; w < 40; w++) {
         creatures[i].w[w] = randomFloat(-2.0, 2.0);
       }
       creatures[i].hue = random(0, 360);
@@ -176,7 +176,7 @@ void tickPhysics() {
     if (!creatures[i].alive) continue;
     aliveCount++;
     
-    // 1. Calculate inputs for Neural Net
+    // 1. Calculate inputs for Neural Net (Sight!)
     float closestDist = currentVision;
     float closestAngle = 0;
     float closestType = 0; // 1.0 for Food, -1.0 for Poison
@@ -190,7 +190,6 @@ void tickPhysics() {
       if (d < closestDist) {
         closestDist = d;
         closestAngle = atan2(dy, dx) - creatures[i].angle;
-        // Normalize angle to -PI to PI
         while (closestAngle > PI) closestAngle -= 2*PI;
         while (closestAngle < -PI) closestAngle += 2*PI;
         closestType = (items[f].type == 1) ? 1.0 : -1.0;
@@ -206,29 +205,58 @@ void tickPhysics() {
         }
       }
     }
+
+    // 2. SOCIAL SIGHT: Find the closest other organism!
+    float closestCreatDist = currentVision;
+    float closestCreatAngle = 0;
+    float closestCreatSim = 0; // 1.0 = Same Species (Kin), -1.0 = Different Species (Alien)
+
+    for (int j = 0; j < MAX_CREATURES; j++) {
+      if (i == j || !creatures[j].alive) continue;
+      float dx = creatures[j].x - creatures[i].x;
+      float dy = creatures[j].y - creatures[i].y;
+      float d = sqrt(dx*dx + dy*dy);
+      
+      if (d < closestCreatDist) {
+        closestCreatDist = d;
+        closestCreatAngle = atan2(dy, dx) - creatures[i].angle;
+        while (closestCreatAngle > PI) closestCreatAngle -= 2*PI;
+        while (closestCreatAngle < -PI) closestCreatAngle += 2*PI;
+        
+        float hueDiff = abs(creatures[i].hue - creatures[j].hue);
+        if (hueDiff > 180.0) hueDiff = 360.0 - hueDiff;
+        closestCreatSim = 1.0 - (hueDiff / 90.0); // Map 0-180 diff to 1.0 to -1.0
+      }
+    }
     
     // Normalize inputs
     float in_bias = 1.0;
-    float in_dist = closestDist / currentVision;
-    float in_angle = closestAngle / PI; 
-    float in_type = closestType;
+    float in_item_dist = closestDist / currentVision;
+    float in_item_angle = closestAngle / PI; 
+    float in_item_type = closestType;
+    float in_creat_dist = closestCreatDist / currentVision;
+    float in_creat_angle = closestCreatAngle / PI;
+    float in_creat_sim = closestCreatSim;
     
-    // Hidden Layer (4 neurons)
+    // Hidden Layer (4 neurons) with 7 inputs each = 28 weights (w[0] to w[27])
     float h[4];
     for (int n = 0; n < 4; n++) {
-      float sum = (in_bias * creatures[i].w[n*4]) + 
-                  (in_dist * creatures[i].w[n*4+1]) + 
-                  (in_angle * creatures[i].w[n*4+2]) + 
-                  (in_type * creatures[i].w[n*4+3]);
+      float sum = (in_bias        * creatures[i].w[n*7]) + 
+                  (in_item_dist   * creatures[i].w[n*7+1]) + 
+                  (in_item_angle  * creatures[i].w[n*7+2]) + 
+                  (in_item_type   * creatures[i].w[n*7+3]) +
+                  (in_creat_dist  * creatures[i].w[n*7+4]) +
+                  (in_creat_angle * creatures[i].w[n*7+5]) +
+                  (in_creat_sim   * creatures[i].w[n*7+6]);
       h[n] = tanh(sum);
     }
     
-    // Output Layer (2 neurons: Speed, Turn)
-    float sumSpeed = (1.0 * creatures[i].w[16]) + (h[0]*creatures[i].w[17]) + (h[1]*creatures[i].w[18]) + (h[2]*creatures[i].w[19]) + (h[3]*creatures[i].w[20]);
-    float sumTurn  = (1.0 * creatures[i].w[21]) + (h[0]*creatures[i].w[22]) + (h[1]*creatures[i].w[23]) + (h[2]*creatures[i].w[24]) + (h[3]*creatures[i].w[25]);
+    // Output Layer (2 neurons: Speed, Turn) = 10 weights (w[28] to w[37])
+    float sumSpeed = (1.0 * creatures[i].w[28]) + (h[0]*creatures[i].w[29]) + (h[1]*creatures[i].w[30]) + (h[2]*creatures[i].w[31]) + (h[3]*creatures[i].w[32]);
+    float sumTurn  = (1.0 * creatures[i].w[33]) + (h[0]*creatures[i].w[34]) + (h[1]*creatures[i].w[35]) + (h[2]*creatures[i].w[36]) + (h[3]*creatures[i].w[37]);
     
-    // WANDER MECHANIC: If nothing is in vision, inject random turn noise so they sweep the arena
-    if (closestDist >= currentVision - 0.1) {
+    // WANDER MECHANIC: If absolutely nothing is in vision, inject random turn noise so they sweep the arena
+    if (closestDist >= currentVision - 0.1 && closestCreatDist >= currentVision - 0.1) {
         sumTurn += randomFloat(-0.8, 0.8);
     }
     
@@ -264,7 +292,7 @@ void tickPhysics() {
          
          // 1. Horizontal Gene Transfer (Conjugation - 5% chance)
          if (random(100) < 5) { 
-            int gene = random(26);
+            int gene = random(40);
             float temp = creatures[i].w[gene];
             creatures[i].w[gene] = creatures[j].w[gene];
             creatures[j].w[gene] = temp;
@@ -313,11 +341,11 @@ void tickPhysics() {
       if (aliveCount == 0) {
         if (alpha_found) {
            // We had successful hunters this epoch. Save the BEST one.
-           for(int w = 0; w < 26; w++) spore_dna[w] = alpha_dna[w];
+           for(int w = 0; w < 40; w++) spore_dna[w] = alpha_dna[w];
            spore_hue = alpha_hue;
         } else {
            // Entire generation starved before reproducing. Save the last one as a fallback.
-           for(int w = 0; w < 26; w++) spore_dna[w] = creatures[i].w[w];
+           for(int w = 0; w < 40; w++) spore_dna[w] = creatures[i].w[w];
            spore_hue = creatures[i].hue; 
         }
         has_spore = true;
@@ -355,7 +383,7 @@ void tickPhysics() {
           totalBirths++;
           
           // ALPHA VAULT: This organism proved it can hunt and survive! Save its DNA.
-          for (int w = 0; w < 26; w++) alpha_dna[w] = creatures[i].w[w];
+          for (int w = 0; w < 40; w++) alpha_dna[w] = creatures[i].w[w];
           alpha_hue = creatures[i].hue;
           alpha_found = true;
           
@@ -373,7 +401,7 @@ void tickPhysics() {
           if (creatures[emptySlot].hue < 0) creatures[emptySlot].hue += 360;
           if (creatures[emptySlot].hue > 360) creatures[emptySlot].hue -= 360;
           
-          for (int w = 0; w < 26; w++) {
+          for (int w = 0; w < 40; w++) {
             creatures[emptySlot].w[w] = creatures[i].w[w];
             if (random(100) < saltationChance) { 
               creatures[emptySlot].w[w] = randomFloat(-2.0, 2.0); // Saltation (scrambled)
