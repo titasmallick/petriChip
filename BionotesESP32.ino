@@ -369,6 +369,7 @@ void tickPhysics() {
     if (creatures[i].energy <= 0) {
       creatures[i].alive = false;
       aliveCount--;
+      totalDeaths++;
       
       // TRUE EXTINCTION / GENESIS RESTART
       // Without the Alpha Vault, total extinction triggers a hard reset of the ecosystem
@@ -509,7 +510,14 @@ const char index_html[] PROGMEM = R"rawliteral(
     <div>Pop: <span id="alive" class="val">0</span> / 50</div>
     <div>Generation: <span id="exts" class="val">0</span></div>
     <div>Epoch Age: <span id="age" class="val">0s</span></div>
+    <div>Births: <span id="births" class="val" style="color: #00ffcc;">0</span></div>
+    <div>Deaths: <span id="deaths" class="val" style="color: #ff0033;">0</span></div>
     <div>Radiation: <span id="rad" class="val" style="color: #00ffcc;">0</span></div>
+    <div style="width: 100%; display: flex; justify-content: center; gap: 20px; font-size: 0.9em; background: rgba(31,40,51,0.5); padding: 5px; border-radius: 4px;">
+       <span>Avg Size: <span id="avg-size" class="val">0.00</span></span>
+       <span>Avg Speed: <span id="avg-spd" class="val">0.00</span></span>
+       <span>Avg Vision: <span id="avg-vis" class="val">0.0</span></span>
+    </div>
     <div class="dom-tracker">Dominant Species: <span id="dominant" class="val">Analyzing...</span> <span id="trend" style="font-size: 0.8em; color: #a0a4a8;"></span></div>
   </div>
   
@@ -715,12 +723,13 @@ const char index_html[] PROGMEM = R"rawliteral(
         .then(data => {
           document.getElementById('alive').innerText = data.a;
           document.getElementById('exts').innerText = data.e;
-          document.getElementById('rad').innerText = data.rad;
           document.getElementById('age').innerText = data.age + "s";
-          
-          currentRad = data.rad;
-          alphaIndex = data.alpha;
-          currentDay = data.day;
+          document.getElementById('births').innerText = data.b || 0;
+          document.getElementById('deaths').innerText = data.d || 0;
+          document.getElementById('avg-size').innerText = (data.asz || 0).toFixed(2);
+          document.getElementById('avg-spd').innerText = (data.asp || 0).toFixed(2);
+          document.getElementById('avg-vis').innerText = (data.avi || 0).toFixed(1);
+          document.getElementById('rad').innerText = data.rad;
           
           currentRad = data.rad;
           alphaIndex = data.alpha;
@@ -938,19 +947,34 @@ void handleRoot() {
 void handleState() {
   int alphaIndex = -1;
   float maxEnergy = -1.0;
+  
+  float sumSize = 0, sumSpeed = 0, sumVision = 0;
+  int count = 0;
+
   for(int i = 0; i < MAX_CREATURES; i++) {
-     if(creatures[i].alive && creatures[i].energy > maxEnergy) {
-        maxEnergy = creatures[i].energy;
-        alphaIndex = i;
+     if(creatures[i].alive) {
+        sumSize += creatures[i].gene_size;
+        sumSpeed += creatures[i].gene_speed;
+        sumVision += creatures[i].gene_vision;
+        count++;
+        
+        if (creatures[i].energy > maxEnergy) {
+           maxEnergy = creatures[i].energy;
+           alphaIndex = i;
+        }
      }
   }
+
+  float avgSize = (count > 0) ? (sumSize / count) : 0;
+  float avgSpeed = (count > 0) ? (sumSpeed / count) : 0;
+  float avgVision = (count > 0) ? (sumVision / count) : 0;
 
   float dayCycle = (sin(millis() * 2.0 * PI / 60000.0) + 1.0) / 2.0;
   unsigned long epochAge = (millis() - epochStartMillis) / 1000;
 
   String json;
-  json.reserve(6000); // Pre-allocate to prevent heap fragmentation crashes
-  json = "{\"e\":" + String(extinctions) + ",\"a\":" + String(aliveCount) + ",\"b\":" + String(totalBirths) + ",\"rad\":" + String(envRadiation) + ",\"alpha\":" + String(alphaIndex) + ",\"day\":" + String(dayCycle, 2) + ",\"shas\":0,\"shue\":0,\"age\":" + String(epochAge) + ",\"c\":[";
+  json.reserve(6000);
+  json = "{\"e\":" + String(extinctions) + ",\"a\":" + String(aliveCount) + ",\"b\":" + String(totalBirths) + ",\"d\":" + String(totalDeaths) + ",\"asz\":" + String(avgSize, 2) + ",\"asp\":" + String(avgSpeed, 2) + ",\"avi\":" + String(avgVision, 1) + ",\"rad\":" + String(envRadiation) + ",\"alpha\":" + String(alphaIndex) + ",\"day\":" + String(dayCycle, 2) + ",\"age\":" + String(epochAge) + ",\"c\":[";
   for(int i = 0; i < MAX_CREATURES; i++) {
     json += "[" + String(creatures[i].x, 1) + "," + String(creatures[i].y, 1) + "," + String(creatures[i].angle, 2) + "," + String(creatures[i].alive ? 1 : 0) + "," + String(creatures[i].hue, 0) + "]";
     if(i < MAX_CREATURES - 1) json += ",";
