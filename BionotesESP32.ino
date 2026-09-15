@@ -25,6 +25,7 @@ struct Creature {
   bool alive;
   float hue; // Color-coding for Speciation!
   int age; // Senescence (Aging)
+  int lineage; // Tracks how many generations deep this organism is from the Genesis batch
   
   // Morphology (Body Plan Genes)
   float gene_speed;  // Base speed multiplier (costs energy)
@@ -70,6 +71,7 @@ void initEcosystem() {
     creatures[i].angle = randomFloat(0, 2*PI);
     creatures[i].energy = 100.0;
     creatures[i].age = 0; 
+    creatures[i].lineage = 0; 
     creatures[i].alive = true;
     
     for(int w = 0; w < 100; w++) {
@@ -284,6 +286,7 @@ void tickPhysics() {
                      creatures[emptySlot].y = creatures[i].y;
                      creatures[emptySlot].angle = randomFloat(0, 2*PI);
                      creatures[emptySlot].age = 0;
+                     creatures[emptySlot].lineage = max(creatures[i].lineage, creatures[j].lineage) + 1;
                      creatures[emptySlot].alive = true;
                      aliveCount++;
                      totalBirths++;
@@ -394,6 +397,7 @@ void tickPhysics() {
           creatures[emptySlot].angle = randomFloat(0, 2*PI);
           creatures[emptySlot].energy = 80.0;
           creatures[emptySlot].age = 0; // Child starts at age 0
+          creatures[emptySlot].lineage = creatures[i].lineage + 1; // Generation depth increases!
           
           // Mitosis is brutally expensive (cost: 120 energy) compared to sex (cost: 40 energy)
           creatures[i].energy -= 120.0; 
@@ -507,6 +511,7 @@ const char index_html[] PROGMEM = R"rawliteral(
        <span>Poison: <span id="poison-cnt" class="val" style="color: #ff0033;">0</span></span>
        <span>Alpha Energy: <span id="max-energy" class="val" style="color: gold;">0</span></span>
        <span>Oldest: <span id="max-age" class="val">0</span>t</span>
+       <span>Max Lineage: <span id="max-lineage" class="val" style="color: #ff007f;">0</span></span>
     </div>
     <div style="width: 100%; display: flex; justify-content: center; gap: 20px; font-size: 0.9em; background: rgba(31,40,51,0.5); padding: 5px; border-radius: 4px; margin-top: -10px;">
        <span>Avg Size: <span id="avg-size" class="val">0.00</span></span>
@@ -729,6 +734,7 @@ const char index_html[] PROGMEM = R"rawliteral(
           document.getElementById('poison-cnt').innerText = data.pC || 0;
           document.getElementById('max-energy').innerText = (data.mE || 0).toFixed(0);
           document.getElementById('max-age').innerText = data.mA || 0;
+          document.getElementById('max-lineage').innerText = data.mL || 0;
           
           currentRad = data.rad;
           alphaIndex = data.alpha;
@@ -947,6 +953,7 @@ void handleState() {
   int alphaIndex = -1;
   float maxEnergy = -1.0;
   int maxAge = 0;
+  int maxLineage = 0;
   
   float sumSize = 0, sumSpeed = 0, sumVision = 0;
   int count = 0;
@@ -960,6 +967,10 @@ void handleState() {
         
         if (creatures[i].age > maxAge) {
             maxAge = creatures[i].age;
+        }
+        
+        if (creatures[i].lineage > maxLineage) {
+            maxLineage = creatures[i].lineage;
         }
         
         if (creatures[i].energy > maxEnergy) {
@@ -987,7 +998,7 @@ void handleState() {
 
   String json;
   json.reserve(6000);
-  json = "{\"e\":" + String(extinctions) + ",\"a\":" + String(aliveCount) + ",\"b\":" + String(totalBirths) + ",\"d\":" + String(totalDeaths) + ",\"asz\":" + String(avgSize, 2) + ",\"asp\":" + String(avgSpeed, 2) + ",\"avi\":" + String(avgVision, 1) + ",\"rad\":" + String(envRadiation) + ",\"alpha\":" + String(alphaIndex) + ",\"day\":" + String(dayCycle, 2) + ",\"age\":" + String(epochAge) + ",\"mE\":" + String(maxEnergy, 1) + ",\"mA\":" + String(maxAge) + ",\"fC\":" + String(foodCount) + ",\"pC\":" + String(poisonCount) + ",\"c\":[";
+  json = "{\"e\":" + String(extinctions) + ",\"a\":" + String(aliveCount) + ",\"b\":" + String(totalBirths) + ",\"d\":" + String(totalDeaths) + ",\"asz\":" + String(avgSize, 2) + ",\"asp\":" + String(avgSpeed, 2) + ",\"avi\":" + String(avgVision, 1) + ",\"rad\":" + String(envRadiation) + ",\"alpha\":" + String(alphaIndex) + ",\"day\":" + String(dayCycle, 2) + ",\"age\":" + String(epochAge) + ",\"mE\":" + String(maxEnergy, 1) + ",\"mA\":" + String(maxAge) + ",\"mL\":" + String(maxLineage) + ",\"fC\":" + String(foodCount) + ",\"pC\":" + String(poisonCount) + ",\"c\":[";
   for(int i = 0; i < MAX_CREATURES; i++) {
     json += "[" + String(creatures[i].x, 1) + "," + String(creatures[i].y, 1) + "," + String(creatures[i].angle, 2) + "," + String(creatures[i].alive ? 1 : 0) + "," + String(creatures[i].hue, 0) + "]";
     if(i < MAX_CREATURES - 1) json += ",";
