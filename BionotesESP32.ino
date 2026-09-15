@@ -38,6 +38,7 @@ Creature creatures[MAX_CREATURES];
 Item items[NUM_ITEMS];
 
 int totalBirths = 0;
+int totalDeaths = 0;
 int extinctions = 0;
 int aliveCount = 0;
 unsigned long lastTick = 0;
