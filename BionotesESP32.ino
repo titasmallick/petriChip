@@ -22,9 +22,10 @@ struct Item {
 struct Creature {
   float x, y, angle;
   float energy;
+  float fitness; // Explicit evolutionary reward score
   bool alive;
   float hue; // Color-coding for Speciation!
-  float w[40]; // 4 inputs * 4 hidden + 5 * 2 outputs = 40 weights
+  float w[100]; // 8 inputs * 8 hidden + 9 * 2 outputs = 82 weights (padded to 100)
 };
 
 Creature creatures[MAX_CREATURES];
@@ -37,13 +38,14 @@ unsigned long lastTick = 0;
 unsigned long epochStartMillis = 0;
 
 // Spore Bank for carrying genes across mass extinctions
-float spore_dna[40];
+float spore_dna[100];
 float spore_hue = 0; // Preserve species color across extinctions
 bool has_spore = false;
 
 // The Alpha Vault (Elitism)
-float alpha_dna[40];
+float alpha_dna[100];
 float alpha_hue = 0;
+float max_epoch_fitness = 0;
 bool alpha_found = false;
 
 int envRadiation = 0; // Tracks nearby WiFi hotspots as "Radiation"
@@ -56,6 +58,7 @@ void initEcosystem() {
   aliveCount = 0;
   epochStartMillis = millis();
   alpha_found = false; // Reset Alpha tracking for the new epoch
+  max_epoch_fitness = 0; // Reset fitness high score
   
   // Scatter initial items (mostly food, some poison)
   for(int i = 0; i < NUM_ITEMS; i++) {
@@ -71,15 +74,16 @@ void initEcosystem() {
     creatures[i].y = randomFloat(20, ARENA_SIZE - 20);
     creatures[i].angle = randomFloat(0, 2*PI);
     creatures[i].energy = 100.0;
+    creatures[i].fitness = 0; // Start at 0 fitness
     creatures[i].alive = true;
     
     // Inject DNA
     if (has_spore) {
       int cloneType = random(100); 
-      for(int w = 0; w < 40; w++) {
+      for(int w = 0; w < 100; w++) {
         if (cloneType < 10) { 
             // 10% Saltation (Completely new species to test against the reigning champ)
-            creatures[i].w[w] = randomFloat(-2.0, 2.0);
+            creatures[i].w[w] = randomFloat(-1.0, 1.0); // Tamed to 1.0 to avoid neural saturation!
             creatures[i].hue = random(0, 360);
         } else if (cloneType < 30) { 
             // 20% Heavy Mutation (Large drift)
@@ -97,8 +101,8 @@ void initEcosystem() {
       }
     } else {
       // Very first genesis (pure random)
-      for(int w = 0; w < 40; w++) {
-        creatures[i].w[w] = randomFloat(-2.0, 2.0);
+      for(int w = 0; w < 100; w++) {
+        creatures[i].w[w] = randomFloat(-1.0, 1.0);
       }
       creatures[i].hue = random(0, 360);
     }
@@ -199,9 +203,11 @@ void tickPhysics() {
       if (d < 10.0) { // Increased eat radius so they don't miss it at high speeds
         items[f].active = false;
         if (items[f].type == 1) {
-           creatures[i].energy += 60.0; // Food provides more energy to help establish populations
+           creatures[i].energy += 60.0; // Food provides energy
+           creatures[i].fitness += 50.0; // Evolutionary reward for successfully hunting!
         } else {
-           creatures[i].energy -= 80.0; // Poison is DEADLY (-80.0) to quickly weed out bad genetics
+           creatures[i].energy -= 80.0; // Poison is DEADLY
+           creatures[i].fitness -= 50.0; // Evolutionary penalty for eating poison!
         }
       }
     }
@@ -229,7 +235,7 @@ void tickPhysics() {
       }
     }
     
-    // Normalize inputs
+    // Normalize inputs (8 Inputs now!)
     float in_bias = 1.0;
     float in_item_dist = closestDist / currentVision;
     float in_item_angle = closestAngle / PI; 
@@ -237,23 +243,25 @@ void tickPhysics() {
     float in_creat_dist = closestCreatDist / currentVision;
     float in_creat_angle = closestCreatAngle / PI;
     float in_creat_sim = closestCreatSim;
+    float in_self_energy = creatures[i].energy / 160.0; // Niche Selection! Know when to hunt vs hide.
     
-    // Hidden Layer (4 neurons) with 7 inputs each = 28 weights (w[0] to w[27])
-    float h[4];
-    for (int n = 0; n < 4; n++) {
-      float sum = (in_bias        * creatures[i].w[n*7]) + 
-                  (in_item_dist   * creatures[i].w[n*7+1]) + 
-                  (in_item_angle  * creatures[i].w[n*7+2]) + 
-                  (in_item_type   * creatures[i].w[n*7+3]) +
-                  (in_creat_dist  * creatures[i].w[n*7+4]) +
-                  (in_creat_angle * creatures[i].w[n*7+5]) +
-                  (in_creat_sim   * creatures[i].w[n*7+6]);
+    // Hidden Layer (8 neurons) with 8 inputs each = 64 weights (w[0] to w[63])
+    float h[8];
+    for (int n = 0; n < 8; n++) {
+      float sum = (in_bias        * creatures[i].w[n*8]) + 
+                  (in_item_dist   * creatures[i].w[n*8+1]) + 
+                  (in_item_angle  * creatures[i].w[n*8+2]) + 
+                  (in_item_type   * creatures[i].w[n*8+3]) +
+                  (in_creat_dist  * creatures[i].w[n*8+4]) +
+                  (in_creat_angle * creatures[i].w[n*8+5]) +
+                  (in_creat_sim   * creatures[i].w[n*8+6]) +
+                  (in_self_energy * creatures[i].w[n*8+7]);
       h[n] = tanh(sum);
     }
     
-    // Output Layer (2 neurons: Speed, Turn) = 10 weights (w[28] to w[37])
-    float sumSpeed = (1.0 * creatures[i].w[28]) + (h[0]*creatures[i].w[29]) + (h[1]*creatures[i].w[30]) + (h[2]*creatures[i].w[31]) + (h[3]*creatures[i].w[32]);
-    float sumTurn  = (1.0 * creatures[i].w[33]) + (h[0]*creatures[i].w[34]) + (h[1]*creatures[i].w[35]) + (h[2]*creatures[i].w[36]) + (h[3]*creatures[i].w[37]);
+    // Output Layer (2 neurons: Speed, Turn) = 18 weights (w[64] to w[81])
+    float sumSpeed = (1.0 * creatures[i].w[64]) + (h[0]*creatures[i].w[65]) + (h[1]*creatures[i].w[66]) + (h[2]*creatures[i].w[67]) + (h[3]*creatures[i].w[68]) + (h[4]*creatures[i].w[69]) + (h[5]*creatures[i].w[70]) + (h[6]*creatures[i].w[71]) + (h[7]*creatures[i].w[72]);
+    float sumTurn  = (1.0 * creatures[i].w[73]) + (h[0]*creatures[i].w[74]) + (h[1]*creatures[i].w[75]) + (h[2]*creatures[i].w[76]) + (h[3]*creatures[i].w[77]) + (h[4]*creatures[i].w[78]) + (h[5]*creatures[i].w[79]) + (h[6]*creatures[i].w[80]) + (h[7]*creatures[i].w[81]);
     
     // WANDER MECHANIC: If absolutely nothing is in vision, inject random turn noise so they sweep the arena
     if (closestDist >= currentVision - 0.1 && closestCreatDist >= currentVision - 0.1) {
@@ -292,7 +300,7 @@ void tickPhysics() {
          
          // 1. Horizontal Gene Transfer (Conjugation - 5% chance)
          if (random(100) < 5) { 
-            int gene = random(40);
+            int gene = random(100);
             float temp = creatures[i].w[gene];
             creatures[i].w[gene] = creatures[j].w[gene];
             creatures[j].w[gene] = temp;
@@ -305,19 +313,19 @@ void tickPhysics() {
          // 2. SYMBIOSIS vs COMPETITION (Based on Speciation)
          if (hueDiff < 20.0) {
              // MUTUALISM / KIN SELECTION (Same Species)
-             // They exhibit altruism by pooling and sharing their energy to prevent starvation.
              float totalEn = creatures[i].energy + creatures[j].energy;
              creatures[i].energy = totalEn / 2.0;
              creatures[j].energy = totalEn / 2.0;
          } else {
              // COMPETITIVE EXCLUSION / PREDATION (Different Species)
-             // The physically stronger species attacks and steals energy from the weaker one!
              if (creatures[i].energy > creatures[j].energy) {
                  creatures[i].energy += 15.0;  // Steal energy
                  creatures[j].energy -= 15.0;  // Take damage
+                 creatures[i].fitness += 20.0; // Reward hunting behavior!
              } else {
                  creatures[j].energy += 15.0;
                  creatures[i].energy -= 15.0;
+                 creatures[j].fitness += 20.0; // Reward hunting behavior!
              }
          }
       }
@@ -329,9 +337,18 @@ void tickPhysics() {
     if (creatures[i].y < 0) { creatures[i].y = 0; creatures[i].angle += PI; }
     if (creatures[i].y > ARENA_SIZE) { creatures[i].y = ARENA_SIZE; creatures[i].angle += PI; }
     
-    // Continuous Metabolism (Increased base so they can't camp forever)
+    // Continuous Metabolism & Fitness Score Tracking
     float metabolism = (0.35 + abs(speed) * 0.05) * (1.0 + (envRadiation * 0.03)); 
     creatures[i].energy -= metabolism;
+    creatures[i].fitness += 0.1; // Reward for simply staying alive!
+    
+    // Global Alpha Vault Tracking (Track the smartest organism regardless of Mitosis)
+    if (creatures[i].fitness > max_epoch_fitness) {
+        max_epoch_fitness = creatures[i].fitness;
+        for (int w = 0; w < 100; w++) alpha_dna[w] = creatures[i].w[w];
+        alpha_hue = creatures[i].hue;
+        alpha_found = true;
+    }
     
     if (creatures[i].energy <= 0) {
       creatures[i].alive = false;
@@ -340,19 +357,18 @@ void tickPhysics() {
       // LAST SURVIVOR RULE / ALPHA ELITISM
       if (aliveCount == 0) {
         if (alpha_found) {
-           // We had successful hunters this epoch. Save the BEST one.
-           for(int w = 0; w < 40; w++) spore_dna[w] = alpha_dna[w];
+           // We had an organism score > 0 fitness this epoch. Save the BEST one.
+           for(int w = 0; w < 100; w++) spore_dna[w] = alpha_dna[w];
            spore_hue = alpha_hue;
         } else {
-           // Entire generation starved before reproducing. Save the last one as a fallback.
-           for(int w = 0; w < 40; w++) spore_dna[w] = creatures[i].w[w];
+           // Entire generation literally did zero things. Save the last one as a fallback.
+           for(int w = 0; w < 100; w++) spore_dna[w] = creatures[i].w[w];
            spore_hue = creatures[i].hue; 
         }
         has_spore = true;
       }
       
       // BACTERIAL TOXICITY: Dead organisms lyse and release toxic waste.
-      // Spawn a Poison dot (Red) at the exact location of death!
       for (int f = 0; f < NUM_ITEMS; f++) {
          if (!items[f].active) {
             items[f].x = creatures[i].x;
@@ -377,15 +393,11 @@ void tickPhysics() {
           creatures[emptySlot].y = creatures[i].y + randomFloat(-30, 30);
           creatures[emptySlot].angle = randomFloat(0, 2*PI);
           creatures[emptySlot].energy = 80.0;
+          creatures[emptySlot].fitness = 0; // Child starts at 0 fitness
           creatures[i].energy = 80.0; 
           creatures[emptySlot].alive = true;
           aliveCount++;
           totalBirths++;
-          
-          // ALPHA VAULT: This organism proved it can hunt and survive! Save its DNA.
-          for (int w = 0; w < 40; w++) alpha_dna[w] = creatures[i].w[w];
-          alpha_hue = creatures[i].hue;
-          alpha_found = true;
           
           // WiFi Radiation (Signal Strength) drives mutation rate!
           int saltationChance = 5 + envRadiation; // Base 5% + Radiation Score
@@ -401,12 +413,15 @@ void tickPhysics() {
           if (creatures[emptySlot].hue < 0) creatures[emptySlot].hue += 360;
           if (creatures[emptySlot].hue > 360) creatures[emptySlot].hue -= 360;
           
-          for (int w = 0; w < 40; w++) {
+          for (int w = 0; w < 100; w++) {
             creatures[emptySlot].w[w] = creatures[i].w[w];
             if (random(100) < saltationChance) { 
-              creatures[emptySlot].w[w] = randomFloat(-2.0, 2.0); // Saltation (scrambled)
+              creatures[emptySlot].w[w] = randomFloat(-1.0, 1.0); // Saltation (scrambled)
             } else {
               creatures[emptySlot].w[w] += randomFloat(-mutSeverity, mutSeverity); // Micro-mutation
+              // Keep bounds reasonable to avoid saturation
+              if (creatures[emptySlot].w[w] > 2.0) creatures[emptySlot].w[w] = 2.0;
+              if (creatures[emptySlot].w[w] < -2.0) creatures[emptySlot].w[w] = -2.0;
             }
           }
        } else {
