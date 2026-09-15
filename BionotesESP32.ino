@@ -22,7 +22,6 @@ struct Item {
 struct Creature {
   float x, y, angle;
   float energy;
-  float fitness; // Explicit evolutionary reward score
   bool alive;
   float hue; // Color-coding for Speciation!
   int age; // Senescence (Aging)
@@ -30,6 +29,7 @@ struct Creature {
   // Morphology (Body Plan Genes)
   float gene_speed;  // Base speed multiplier (costs energy)
   float gene_vision; // Base vision radius (costs energy)
+  float gene_size;   // 0.5 (tiny/fast/cheap) to 2.5 (huge/slow/expensive) - Drives r/K Selection!
 
   float w[100]; // 8 inputs * 8 hidden + 9 * 2 outputs = 82 weights (padded to 100)
 };
@@ -43,21 +43,6 @@ int aliveCount = 0;
 unsigned long lastTick = 0;
 unsigned long epochStartMillis = 0;
 
-// Spore Bank for carrying genes across mass extinctions
-float spore_dna[100];
-float spore_hue = 0; // Preserve species color across extinctions
-float spore_speed = 1.5;
-float spore_vision = 50.0;
-bool has_spore = false;
-
-// The Alpha Vault (Elitism)
-float alpha_dna[100];
-float alpha_hue = 0;
-float alpha_speed = 1.5;
-float alpha_vision = 50.0;
-float max_epoch_fitness = 0;
-bool alpha_found = false;
-
 int envRadiation = 0; // Tracks nearby WiFi hotspots as "Radiation"
 
 float randomFloat(float min, float max) {
@@ -67,8 +52,6 @@ float randomFloat(float min, float max) {
 void initEcosystem() {
   aliveCount = 0;
   epochStartMillis = millis();
-  alpha_found = false; // Reset Alpha tracking for the new epoch
-  max_epoch_fitness = 0; // Reset fitness high score
   
   // Scatter initial items (mostly food, some poison)
   for(int i = 0; i < NUM_ITEMS; i++) {
@@ -78,69 +61,28 @@ void initEcosystem() {
     items[i].active = true;
   }
   
-  // Spawn Adam & Eve (Initial random population)
-  for(int i = 0; i < 15; i++) {
+  // Genesis Event (Pure Random)
+  // Extinction is now a true bottleneck. No backups. No Alpha Vault.
+  for(int i = 0; i < 20; i++) {
     creatures[i].x = randomFloat(20, ARENA_SIZE - 20); 
     creatures[i].y = randomFloat(20, ARENA_SIZE - 20);
     creatures[i].angle = randomFloat(0, 2*PI);
     creatures[i].energy = 100.0;
-    creatures[i].fitness = 0; // Start at 0 fitness
-    creatures[i].age = 0; // Start at age 0
+    creatures[i].age = 0; 
     creatures[i].alive = true;
     
-    // Inject DNA
-    if (has_spore) {
-      int cloneType = random(100); 
-      for(int w = 0; w < 100; w++) {
-        if (cloneType < 10) { 
-            // 10% Saltation (Completely new species)
-            creatures[i].w[w] = randomFloat(-1.0, 1.0); 
-            creatures[i].hue = random(0, 360);
-            creatures[i].gene_speed = randomFloat(0.5, 3.0);
-            creatures[i].gene_vision = randomFloat(30.0, 150.0);
-        } else if (cloneType < 30) { 
-            // 20% Heavy Mutation (Large drift)
-            creatures[i].w[w] = spore_dna[w] + randomFloat(-0.8, 0.8);
-            creatures[i].hue = spore_hue + randomFloat(-45, 45);
-            creatures[i].gene_speed = spore_speed + randomFloat(-0.5, 0.5);
-            creatures[i].gene_vision = spore_vision + randomFloat(-20.0, 20.0);
-        } else if (cloneType < 70) { 
-            // 40% Gentle Mutation (Fine-tuning)
-            creatures[i].w[w] = spore_dna[w] + randomFloat(-0.2, 0.2);
-            creatures[i].hue = spore_hue + randomFloat(-15, 15);
-            creatures[i].gene_speed = spore_speed + randomFloat(-0.1, 0.1);
-            creatures[i].gene_vision = spore_vision + randomFloat(-5.0, 5.0);
-        } else { 
-            // 30% Perfect Clones (Preserve the exact champion)
-            creatures[i].w[w] = spore_dna[w];
-            creatures[i].hue = spore_hue;
-            creatures[i].gene_speed = spore_speed;
-            creatures[i].gene_vision = spore_vision;
-        }
-      }
-    } else {
-      // Very first genesis (pure random)
-      for(int w = 0; w < 100; w++) {
-        creatures[i].w[w] = randomFloat(-1.0, 1.0);
-      }
-      creatures[i].hue = random(0, 360);
-      creatures[i].gene_speed = randomFloat(0.5, 3.0);
-      creatures[i].gene_vision = randomFloat(30.0, 150.0);
+    for(int w = 0; w < 100; w++) {
+      creatures[i].w[w] = randomFloat(-1.0, 1.0);
     }
     
-    // Bounds checking for morphology
-    if (creatures[i].gene_speed < 0.5) creatures[i].gene_speed = 0.5;
-    if (creatures[i].gene_speed > 4.0) creatures[i].gene_speed = 4.0;
-    if (creatures[i].gene_vision < 20.0) creatures[i].gene_vision = 20.0;
-    if (creatures[i].gene_vision > 200.0) creatures[i].gene_vision = 200.0;
-    
-    // Normalize hue
-    if (creatures[i].hue < 0) creatures[i].hue += 360;
-    if (creatures[i].hue > 360) creatures[i].hue -= 360;
+    creatures[i].hue = random(0, 360);
+    creatures[i].gene_speed = randomFloat(0.5, 3.0);
+    creatures[i].gene_vision = randomFloat(30.0, 150.0);
+    creatures[i].gene_size = randomFloat(0.5, 2.5); // Morphological Size!
     
     aliveCount++;
   }
-  
+}  
   // Clear the rest (Empty graves for future children)
   for(int i = 15; i < MAX_CREATURES; i++) {
     creatures[i].alive = false;
@@ -234,10 +176,8 @@ void tickPhysics() {
         items[f].active = false;
         if (items[f].type == 1) {
            creatures[i].energy += 60.0; // Food provides energy
-           creatures[i].fitness += 50.0; // Evolutionary reward for successfully hunting!
         } else {
            creatures[i].energy -= 80.0; // Poison is DEADLY
-           creatures[i].fitness -= 50.0; // Evolutionary penalty for eating poison!
         }
       }
     }
@@ -273,7 +213,7 @@ void tickPhysics() {
     float in_creat_dist = closestCreatDist / myVision;
     float in_creat_angle = closestCreatAngle / PI;
     float in_creat_sim = closestCreatSim;
-    float in_self_energy = creatures[i].energy / 160.0; // Niche Selection! Know when to hunt vs hide.
+    float in_self_energy = creatures[i].energy / (160.0 * creatures[i].gene_size); // Normalize by body size
     
     // Hidden Layer (8 neurons) with 8 inputs each = 64 weights (w[0] to w[63])
     float h[8];
@@ -298,11 +238,11 @@ void tickPhysics() {
         sumTurn += randomFloat(-0.8, 0.8);
     }
     
-    // Morphology: Evolved Speed & Turn Rate
+    // Morphology: Evolved Speed & Turn Rate. Larger bodies (gene_size) move slower!
     float radMult = 1.0 + (envRadiation * 0.02); 
     if (radMult > 2.0) radMult = 2.0;
-    float speed = (tanh(sumSpeed) + 1.0) * creatures[i].gene_speed * radMult; 
-    float turn = tanh(sumTurn) * (creatures[i].gene_speed * 0.25) * radMult; 
+    float speed = (tanh(sumSpeed) + 1.0) * (creatures[i].gene_speed / creatures[i].gene_size) * radMult; 
+    float turn = tanh(sumTurn) * (creatures[i].gene_speed * 0.25 / creatures[i].gene_size) * radMult; 
     
     creatures[i].angle += turn;
     creatures[i].x += cos(creatures[i].angle) * speed;
@@ -320,9 +260,12 @@ void tickPhysics() {
       float ddx = creatures[i].x - creatures[j].x;
       float ddy = creatures[i].y - creatures[j].y;
       
-      if (ddx*ddx + ddy*ddy < 100.0) { // Distance < 10 (physically colliding)
+      // Collision radius scales with body size!
+      float collideDist = 100.0 * ((creatures[i].gene_size + creatures[j].gene_size) / 2.0);
+      
+      if (ddx*ddx + ddy*ddy < collideDist) { 
          
-         // Anti-clumping physical pushback (prevents getting stuck in a ball)
+         // Anti-clumping physical pushback
          creatures[i].x += ddx * 0.05;
          creatures[i].y += ddy * 0.05;
          creatures[j].x -= ddx * 0.05;
@@ -335,10 +278,12 @@ void tickPhysics() {
          // 2. SYMBIOSIS, MATING, vs PREDATION
          if (hueDiff < 20.0) {
              // KIN SELECTION & MATE CHOICE (Sexual Selection)
-             // Organisms now discriminate based on fitness! They refuse to mate with "losers".
-             if (creatures[i].energy > 100.0 && creatures[j].energy > 100.0 &&
-                 creatures[j].fitness >= (creatures[i].fitness * 0.5) && 
-                 creatures[i].fitness >= (creatures[j].fitness * 0.5)) {
+             // Organisms now discriminate based on Energy & Body Size! They refuse to mate with starving/tiny runts.
+             float mateThresholdI = 100.0 * creatures[i].gene_size;
+             float mateThresholdJ = 100.0 * creatures[j].gene_size;
+             
+             if (creatures[i].energy > mateThresholdI && creatures[j].energy > mateThresholdJ &&
+                 abs(creatures[i].gene_size - creatures[j].gene_size) < 0.5) { // Must be similar size
                  
                  int emptySlot = -1;
                  for(int s=0; s<MAX_CREATURES; s++) {
@@ -353,12 +298,11 @@ void tickPhysics() {
                      creatures[emptySlot].y = creatures[i].y;
                      creatures[emptySlot].angle = randomFloat(0, 2*PI);
                      creatures[emptySlot].age = 0;
-                     creatures[emptySlot].fitness = 0;
                      creatures[emptySlot].alive = true;
                      aliveCount++;
                      totalBirths++;
                      
-                     // Crossover DNA
+                     // Crossover DNA & Morphology
                      for (int w = 0; w < 100; w++) {
                          creatures[emptySlot].w[w] = (random(100) < 50) ? creatures[i].w[w] : creatures[j].w[w];
                          if (random(100) < 5) creatures[emptySlot].w[w] += randomFloat(-0.5, 0.5); // Micro-mutation
@@ -366,6 +310,7 @@ void tickPhysics() {
                      creatures[emptySlot].hue = (creatures[i].hue + creatures[j].hue) / 2.0 + randomFloat(-10, 10);
                      creatures[emptySlot].gene_speed = (creatures[i].gene_speed + creatures[j].gene_speed) / 2.0 + randomFloat(-0.1, 0.1);
                      creatures[emptySlot].gene_vision = (creatures[i].gene_vision + creatures[j].gene_vision) / 2.0 + randomFloat(-5.0, 5.0);
+                     creatures[emptySlot].gene_size = (creatures[i].gene_size + creatures[j].gene_size) / 2.0 + randomFloat(-0.1, 0.1);
                  }
              } else {
                  // Mutualism: If not mating (rejected or low energy), they pool and share energy
@@ -375,18 +320,16 @@ void tickPhysics() {
              }
          } else {
              // PREDATION (Different Species)
-             // Predation is now asymmetric based on Morphology (Speed/Size)! Faster/Bigger organism wins.
-             float powerI = creatures[i].energy * creatures[i].gene_speed;
-             float powerJ = creatures[j].energy * creatures[j].gene_speed;
+             // Predation is now asymmetric based on Morphology (Speed * Size)! Bigger, faster organism wins.
+             float powerI = creatures[i].energy * creatures[i].gene_speed * creatures[i].gene_size;
+             float powerJ = creatures[j].energy * creatures[j].gene_speed * creatures[j].gene_size;
              
              if (powerI > powerJ) {
                  creatures[i].energy += 15.0;  
                  creatures[j].energy -= 15.0;  
-                 creatures[i].fitness += 20.0; 
              } else {
                  creatures[j].energy += 15.0;
                  creatures[i].energy -= 15.0;
-                 creatures[j].fitness += 20.0; 
              }
          }
       }
@@ -399,43 +342,29 @@ void tickPhysics() {
     if (creatures[i].y > ARENA_SIZE) { creatures[i].y = ARENA_SIZE; creatures[i].angle += PI; }
     
     // Continuous Metabolism, Morphology Tax, and Senescence (Aging)
-    float baseline = 0.10;
-    float movementTax = abs(speed) * 0.03;
+    float baseline = 0.10 * creatures[i].gene_size; // Larger bodies burn more resting energy
+    float movementTax = abs(speed) * 0.03 * creatures[i].gene_size; // Larger bodies take more energy to move
     float visionTax = creatures[i].gene_vision * 0.0005; // Having huge vision burns energy
     float ageTax = creatures[i].age * 0.0002; // Getting older burns more energy (Forces R/K selection!)
     
     float metabolism = (baseline + movementTax + visionTax + ageTax) * (1.0 + (envRadiation * 0.03)); 
     creatures[i].energy -= metabolism;
-    creatures[i].fitness += 0.1; // Reward for simply staying alive!
     
-    // Global Alpha Vault Tracking (Track the smartest organism regardless of Mitosis)
-    if (creatures[i].fitness > max_epoch_fitness) {
-        max_epoch_fitness = creatures[i].fitness;
-        for (int w = 0; w < 100; w++) alpha_dna[w] = creatures[i].w[w];
-        alpha_hue = creatures[i].hue;
-        alpha_speed = creatures[i].gene_speed;
-        alpha_vision = creatures[i].gene_vision;
-        alpha_found = true;
+    // STOCHASTIC MORTALITY (Random Death)
+    // 0.05% chance per tick to die from disease, parasite, or random accident
+    if (random(10000) < 5) {
+        creatures[i].energy = -1.0;
     }
     
     if (creatures[i].energy <= 0) {
       creatures[i].alive = false;
       aliveCount--;
       
-      // LAST SURVIVOR RULE / ALPHA ELITISM
+      // TRUE EXTINCTION / GENESIS RESTART
+      // Without the Alpha Vault, total extinction triggers a hard reset of the ecosystem
       if (aliveCount == 0) {
-        if (alpha_found) {
-           for(int w = 0; w < 100; w++) spore_dna[w] = alpha_dna[w];
-           spore_hue = alpha_hue;
-           spore_speed = alpha_speed;
-           spore_vision = alpha_vision;
-        } else {
-           for(int w = 0; w < 100; w++) spore_dna[w] = creatures[i].w[w];
-           spore_hue = creatures[i].hue; 
-           spore_speed = creatures[i].gene_speed;
-           spore_vision = creatures[i].gene_vision;
-        }
-        has_spore = true;
+         initEcosystem();
+         return; // Break out of physics loop to let init take over
       }
       
       // BACTERIAL TOXICITY: Dead organisms lyse and release toxic waste.
@@ -452,9 +381,8 @@ void tickPhysics() {
     }
     
     // Mitosis (Asexual Reproduction / Cloning)
-    // Fitness directly gates asexual reproduction! High fitness lowers the energy barrier.
-    float mitosis_barrier = 200.0 - (creatures[i].fitness * 0.2); 
-    if (mitosis_barrier < 150.0) mitosis_barrier = 150.0; // Hard minimum barrier
+    // Asexual reproduction barrier scales with Body Size! Large organisms must hoard massive energy.
+    float mitosis_barrier = 160.0 * creatures[i].gene_size; 
     
     if (creatures[i].energy > mitosis_barrier) {
        // Find an empty grave slot to spawn the child
@@ -467,7 +395,6 @@ void tickPhysics() {
           creatures[emptySlot].y = creatures[i].y + randomFloat(-30, 30);
           creatures[emptySlot].angle = randomFloat(0, 2*PI);
           creatures[emptySlot].energy = 80.0;
-          creatures[emptySlot].fitness = 0; // Child starts at 0 fitness
           creatures[emptySlot].age = 0; // Child starts at age 0
           
           // Mitosis is brutally expensive (cost: 120 energy) compared to sex (cost: 40 energy)
