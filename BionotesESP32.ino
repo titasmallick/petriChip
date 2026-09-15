@@ -311,6 +311,16 @@ void tickPhysics() {
                      creatures[emptySlot].gene_speed = (creatures[i].gene_speed + creatures[j].gene_speed) / 2.0 + randomFloat(-0.1, 0.1);
                      creatures[emptySlot].gene_vision = (creatures[i].gene_vision + creatures[j].gene_vision) / 2.0 + randomFloat(-5.0, 5.0);
                      creatures[emptySlot].gene_size = (creatures[i].gene_size + creatures[j].gene_size) / 2.0 + randomFloat(-0.1, 0.1);
+                     
+                     if (creatures[emptySlot].hue < 0) creatures[emptySlot].hue += 360;
+                     if (creatures[emptySlot].hue > 360) creatures[emptySlot].hue -= 360;
+                     
+                     if (creatures[emptySlot].gene_speed < 0.5) creatures[emptySlot].gene_speed = 0.5;
+                     if (creatures[emptySlot].gene_speed > 4.0) creatures[emptySlot].gene_speed = 4.0;
+                     if (creatures[emptySlot].gene_vision < 20.0) creatures[emptySlot].gene_vision = 20.0;
+                     if (creatures[emptySlot].gene_vision > 200.0) creatures[emptySlot].gene_vision = 200.0;
+                     if (creatures[emptySlot].gene_size < 0.5) creatures[emptySlot].gene_size = 0.5;
+                     if (creatures[emptySlot].gene_size > 2.5) creatures[emptySlot].gene_size = 2.5;
                  }
              } else {
                  // Mutualism: If not mating (rejected or low energy), they pool and share energy
@@ -420,10 +430,15 @@ void tickPhysics() {
           // Morphological drift
           creatures[emptySlot].gene_speed = creatures[i].gene_speed + randomFloat(-0.1, 0.1);
           creatures[emptySlot].gene_vision = creatures[i].gene_vision + randomFloat(-5.0, 5.0);
+          creatures[emptySlot].gene_size = creatures[i].gene_size + randomFloat(-0.1, 0.1);
+          
+          // Constrain genes
           if (creatures[emptySlot].gene_speed < 0.5) creatures[emptySlot].gene_speed = 0.5;
           if (creatures[emptySlot].gene_speed > 4.0) creatures[emptySlot].gene_speed = 4.0;
           if (creatures[emptySlot].gene_vision < 20.0) creatures[emptySlot].gene_vision = 20.0;
           if (creatures[emptySlot].gene_vision > 200.0) creatures[emptySlot].gene_vision = 200.0;
+          if (creatures[emptySlot].gene_size < 0.5) creatures[emptySlot].gene_size = 0.5;
+          if (creatures[emptySlot].gene_size > 2.5) creatures[emptySlot].gene_size = 2.5;
 
           for (int w = 0; w < 100; w++) {
             creatures[emptySlot].w[w] = creatures[i].w[w];
