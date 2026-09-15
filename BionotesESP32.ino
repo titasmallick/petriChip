@@ -98,23 +98,8 @@ void tickPhysics() {
   
   aliveCount = 0;
   
-  // ECOLOGICAL PHENOMENON: Random Immigration 
-  // Alien organisms occasionally wander in from outside the petri dish
-  if (random(1000) < 5) { // 0.5% chance per tick
-      int emptySlot = -1;
-      for(int j=0; j<MAX_CREATURES; j++) {
-          if(!creatures[j].alive) { emptySlot = j; break; }
-      }
-      if(emptySlot != -1) {
-          creatures[emptySlot].x = (random(100) < 50) ? 10 : ARENA_SIZE - 10; // Spawn at left or right edge
-          creatures[emptySlot].y = randomFloat(10, ARENA_SIZE - 10);
-          creatures[emptySlot].angle = randomFloat(0, 2*PI);
-          creatures[emptySlot].energy = 100.0;
-          creatures[emptySlot].alive = true;
-          for(int w=0; w<26; w++) creatures[emptySlot].w[w] = randomFloat(-2.0, 2.0); // Completely alien DNA
-      }
-  }
-  
+  // Immigration removed to enforce a closed-system True Darwinian ecosystem.
+
   // Rare renewable resources (Food & Poison bloom)
   if (random(100) < 5) { // 5% chance per tick
     for (int f = 0; f < NUM_ITEMS; f++) {
