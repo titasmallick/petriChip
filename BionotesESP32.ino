@@ -338,7 +338,8 @@ void tickPhysics() {
     if (creatures[i].y > ARENA_SIZE) { creatures[i].y = ARENA_SIZE; creatures[i].angle += PI; }
     
     // Continuous Metabolism & Fitness Score Tracking
-    float metabolism = (0.35 + abs(speed) * 0.05) * (1.0 + (envRadiation * 0.03)); 
+    // Lowered base metabolism to give new generations a fair chance to find food (~35 second lifespan)
+    float metabolism = (0.10 + abs(speed) * 0.03) * (1.0 + (envRadiation * 0.03)); 
     creatures[i].energy -= metabolism;
     creatures[i].fitness += 0.1; // Reward for simply staying alive!
     
