@@ -54,7 +54,7 @@ function initEcosystem() {
             x: alive ? randomFloat(50, ARENA_SIZE - 50) : 0,
             y: alive ? randomFloat(50, ARENA_SIZE - 50) : 0,
             angle: randomFloat(0, Math.PI * 2),
-            energy: 100.0,
+            energy: 200.0,
             alive: alive,
             hue: Math.floor(Math.random() * 360),
             age: 0,
@@ -78,9 +78,10 @@ function buildBrain() {
     // Start with 1 to 5 random rudimentary instinct wires
     let startConns = Math.floor(randomFloat(1, 6));
     for(let i=0; i<startConns; i++) {
+        let isFirst = (i === 0);
         brain.conns.push({
             in: Math.floor(Math.random() * 16),
-            out: Math.floor(Math.random() * 10) + 16,
+            out: isFirst ? (Math.floor(Math.random() * 2) + 16) : (Math.floor(Math.random() * 10) + 16),
             w: randomFloat(-1.0, 1.0)
         });
     }
@@ -257,15 +258,15 @@ function tickPhysics() {
         if (c.y > ARENA_SIZE) { c.y = ARENA_SIZE; c.angle += Math.PI; }
         
         // Metabolism
-        let baselineCost = 0.05 * c.gene_size;
-        let movementCost = (Math.abs(leftMotor) + Math.abs(rightMotor)) * 0.02 * c.gene_size;
-        let visionCost = (c.gene_vision * c.gene_vision) * 0.000005;
-        let ageTax = c.age * 0.0002;
-        let brainTax = c.brain.conns.length * 0.0001; // Massive brains cost energy!
+        let baselineCost = 0.015 * c.gene_size; // Reduced for 200fps
+        let movementCost = (Math.abs(leftMotor) + Math.abs(rightMotor)) * 0.005 * c.gene_size;
+        let visionCost = (c.gene_vision * c.gene_vision) * 0.000001;
+        let ageTax = c.age * 0.00001; // Scaled down for 200 ticks/sec
+        let brainTax = c.brain.conns.length * 0.0001; 
         c.energy -= (baselineCost + movementCost + visionCost + ageTax + brainTax);
 
         // Eating
-        let mouthSize = 10.0 * c.gene_size;
+        let mouthSize = 15.0 * c.gene_size;
         for (let f = 0; f < NUM_ITEMS; f++) {
             if (items[f].active) {
                 let dx = items[f].x - c.x;
@@ -296,8 +297,8 @@ function tickPhysics() {
                 
                 if (hueDiff < 20) {
                     // Mating
-                    let mateI = 100.0 * c.gene_size;
-                    let mateJ = 100.0 * c2.gene_size;
+                    let mateI = 150.0 * c.gene_size; // Increased threshold
+                    let mateJ = 150.0 * c2.gene_size;
                     if (c.energy > mateI && c2.energy > mateJ && Math.abs(c.gene_size - c2.gene_size) < 0.5) {
                         let empty = creatures.findIndex(x => !x.alive);
                         if (empty !== -1) {
@@ -342,8 +343,8 @@ function tickPhysics() {
             }
         }
         
-        // Random disease/death
-        if (Math.random() < 0.0005) c.energy = -1;
+        // Random disease/death (scaled for 200fps to mean 1 death per 1000 seconds on avg per unit)
+        if (Math.random() < 0.00001) c.energy = -1;
         
         if (c.energy <= 0) {
             c.alive = false;
@@ -363,7 +364,7 @@ function tickPhysics() {
         }
 
         // Mitosis
-        let mitosis_barrier = 160.0 * c.gene_size;
+        let mitosis_barrier = 220.0 * c.gene_size;
         if (c.energy > mitosis_barrier) {
             let empty = creatures.findIndex(x => !x.alive);
             if (empty !== -1) {
