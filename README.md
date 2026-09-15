@@ -6,16 +6,16 @@ This project is a biologically-inspired artificial life simulation. The ESP32 ho
 
 ## 🧬 Biological Phenomena Implemented
 
-The entities in this simulation are not hard-coded to survive. They are equipped with **40-gene neural networks** (7 sensory inputs, 4 hidden neurons, 2 motor outputs). They must mathematically learn to hunt food, avoid poison, and interact with other species.
+The entities in this simulation are not hard-coded to survive. They are equipped with **100-gene neural networks** (8 sensory inputs, 8 hidden neurons, 2 motor outputs). They must mathematically learn to hunt food, avoid poison, and interact with other species through explicit evolutionary fitness scoring.
 
-* **Social Sight:** Organisms do not just see food; they can see the distance, angle, and *genetic similarity* of the nearest living organism, allowing them to evolve complex emergent behaviors like pack hunting, swarming, and predator evasion.
+* **Social Sight & Niche Selection:** Organisms do not just see food; they can see the distance, angle, and *genetic similarity* of the nearest living organism. They also possess an internal sensory input for their own **Self Energy**, allowing them to dynamically switch between aggressive pack hunting when starving and predator evasion/hiding when full.
 * **Speciation (Genetics):** An organism's color represents its genetic code. Children inherit their parent's color. As mutations occur, the ecosystem visually splinters into different color strains.
 * **Mutualism & Kin Selection:** When two organisms of a similar genetic color bump into each other, they recognize kin and pool their energy to prevent starvation. (Visualized as a **Green Energy Beam**).
 * **Competitive Exclusion (Predation):** When organisms of different species collide, the stronger species attacks and steals energy from the weaker one. (Visualized as a **Red Lightning Bolt**).
 * **Mitosis:** Organisms that successfully hunt enough food (reaching 160% energy) instantly reproduce by splitting in half, dropping a mutated child up to 30 pixels away.
 * **Bacterial Toxicity:** In a closed environment, dead organisms lyse and release toxic metabolic waste. Starving organisms pollute the arena with deadly poison upon death.
 * **Horizontal Gene Transfer:** Organisms that bump into each other have a 5% chance of randomly conjugating and swapping a piece of their neural DNA.
-* **Alpha Vault (Elitism):** The ecosystem tracks the DNA of the absolute best hunter in a given epoch. If a mass extinction wipes out the entire board, the Alpha's DNA is germinated from endospores to seed the next epoch, guaranteeing that successful hunting traits are never lost.
+* **Alpha Vault (Elitism):** The ecosystem assigns explicit **Evolutionary Fitness Scores** based on an organism's lifespan, food consumed, and prey hunted. If a mass extinction wipes out the entire board, the exact DNA of the organism with the absolute highest fitness score is germinated from endospores to seed the next epoch, guaranteeing continuous, step-by-step evolution.
 
 ## 📡 Interactive EMF Radiation
 
