@@ -518,26 +518,25 @@ const char index_html[] PROGMEM = R"rawliteral(
   
   <div class="explainer">
     <h2>What am I looking at?</h2>
-    <p>This is a live ecosystem running mathematically on the microcontroller. These organisms possess tiny neural networks that dictate their movement based on their vision. They must learn to hunt <span class="tag-food">Cyan Food</span> and avoid <span class="tag-poison">Red Poison</span> to survive. This is a continuous, unbounded ecosystem with no safe respawns—only raw survival.</p>
+    <p>This is a live ecosystem running mathematically on the microcontroller. These organisms possess <strong>100-gene neural networks</strong> that dictate their movement based on their vision and internal energy states. There is no central artificial objective—they must mathematically learn to hunt <span class="tag-food">Cyan Food</span>, avoid <span class="tag-poison">Red Poison</span>, and navigate social mechanics to gather enough energy to reproduce. Survival and replication are their only intrinsic metrics.</p>
     
     <div style="margin: 15px 0; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
       <button id="audioBtn" class="btn">[ Enable Geiger Audio ]</button>
       <button onclick="fetch('/api/asteroid')" class="btn btn-red">[ TRIGGER ASTEROID ]</button>
-      <div class="spore-vault">Spore Vault: <span id="spore-color" style="font-weight: bold; text-shadow: 0 0 5px rgba(255,255,255,0.5);">Empty</span></div>
     </div>
     <p style="font-size: 0.8em; color: #a0a4a8; text-align: center; margin-top: -5px;">(Tap the arena above to trigger "God Mode" and drop resources)</p>
 
     <h3>What to Observe (Biological Phenomena):</h3>
     <ul>
       <li><strong>Evolutionary Timeline (Graph):</strong> The chart above tracks live population data. You can watch as one genetic species overtakes the others, or watch mass extinctions wipe the slate clean.</li>
-      <li><strong>Circadian Rhythms (Day/Night):</strong> The environment cycles between Day and Night every 60 seconds. At night, organisms' vision is severely reduced, forcing them to adapt their hunting strategies.</li>
-      <li><strong>Speciation (Colors):</strong> An organism's color represents its genetic code. Children inherit their parent's color. If a specific color takes over the screen, that species has successfully evolved to dominate the ecosystem!</li>
-      <li><strong>Interaction Beams (Visualizing Math):</strong> When organisms physically bump, they interact mathematically. You will see a <span style="color:#00ffcc;">Green Beam</span> if they are sharing energy (Mutualism/Kin Selection), or a <span style="color:#ff0033;">Red Lightning Bolt</span> if the stronger species is attacking and stealing energy (Predation).</li>
-      <li><strong>Classification (Poison):</strong> The organisms' neural networks process sensory input to tell them the "Type" of the nearest dot. They must mathematically evolve the ability to classify the colors—chasing the cyan while fleeing the red.</li>
-      <li><strong>Mitosis (Continuous Reproduction):</strong> If an agent successfully eats enough food to reach 160% energy, it instantly splits in half (Mitosis), dropping a genetically mutated child next to it.</li>
-      <li><strong>Bacterial Toxicity (Death Phase):</strong> In closed cultures, dead organisms lyse and release toxic metabolic waste. When an organism dies here, its corpse releases a Red Poison dot. A high death rate will rapidly pollute the arena!</li>
-      <li><strong>Horizontal Gene Transfer (Conjugation):</strong> If organisms bump into each other, they occasionally undergo Conjugation, randomly swapping a piece of their neural DNA.</li>
-      <li><strong>Endospore Germination (The Last Survivor):</strong> If a mass extinction occurs (or you trigger an Asteroid), the exact DNA and Color of the absolute last organism to starve is encoded into the Spore Vault. When the arena stabilizes, the new population inherits the ultimate champion's traits.</li>
+      <li><strong>Social Sight & Niche Selection:</strong> Organisms see the distance, angle, and genetic similarity of the nearest organism. They also sense their own Internal Energy, allowing them to dynamically switch between aggressive pack-hunting and predator evasion.</li>
+      <li><strong>Evolvable Morphology (r/K Strategy):</strong> Organisms evolve bodies, not just brains. They have genes for Speed, Vision, and Body Size. Size dictates life strategy: massive organisms have high predation power but move slower, burn massive resting calories, and require enormous food reserves to reproduce. Tiny organisms are weak but breed rapidly on scraps.</li>
+      <li><strong>Senescence (Aging) & Mortality:</strong> Organisms are not immortal. As they age, their metabolic efficiency decays. Additionally, there is a constant stochastic mortality rate (random death via disease/accidents). They must hunt and breed before time runs out.</li>
+      <li><strong>True Sexual Reproduction (Mate Choice):</strong> When two organisms of a similar genetic color (Kin) bump into each other, and both have sufficient energy, they expend energy to mate, spawning a child that inherits a 50/50 genetic crossover of their neural weights and morphology. They practice <em>Mate Choice</em>, refusing to mate with starving runts or massively differently sized organisms.</li>
+      <li><strong>Mitosis (Asexual):</strong> An organism can reproduce asexually if it hoards massive amounts of food, but it is brutally expensive compared to sexual reproduction.</li>
+      <li><strong>Asymmetric Predation:</strong> When different species collide, the stronger organism—calculated by multiplying its current energy reserves by its evolved Speed and Body Size—overpowers the weaker species and steals its energy.</li>
+      <li><strong>Bacterial Toxicity:</strong> Dead organisms lyse and release toxic metabolic waste. When an organism dies, its corpse leaves a Red Poison dot, polluting the environment.</li>
+      <li><strong>True Extinction (Genesis Event):</strong> There are no genetic backups or "Alpha Vaults". If a lineage goes extinct, it is gone forever. A total mass extinction results in a "Genesis Event", seeding the board with primitive ancestors to start evolution entirely from scratch.</li>
     </ul>
 
     <h3>Interactive Radiation Demo:</h3>
@@ -723,15 +722,10 @@ const char index_html[] PROGMEM = R"rawliteral(
           alphaIndex = data.alpha;
           currentDay = data.day;
           
-          let sporeEl = document.getElementById('spore-color');
-          if (data.shas) {
-              sporeEl.innerText = getSpeciesName(data.shue) + " DNA";
-              sporeEl.style.color = `hsl(${data.shue}, 100%, 60%)`;
-          } else {
-              sporeEl.innerText = "Empty";
-              sporeEl.style.color = "#a0a4a8";
-          }
-          
+          currentRad = data.rad;
+          alphaIndex = data.alpha;
+          currentDay = data.day;
+
           let radEl = document.getElementById('rad');
           if (data.rad > 15) {
               radEl.style.color = "#ff0055";
