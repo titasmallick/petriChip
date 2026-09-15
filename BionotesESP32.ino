@@ -82,9 +82,9 @@ void initEcosystem() {
     
     aliveCount++;
   }
-}  
+  
   // Clear the rest (Empty graves for future children)
-  for(int i = 15; i < MAX_CREATURES; i++) {
+  for(int i = 20; i < MAX_CREATURES; i++) {
     creatures[i].alive = false;
   }
 }
@@ -939,7 +939,7 @@ void handleState() {
   float dayCycle = (sin(millis() * 2.0 * PI / 60000.0) + 1.0) / 2.0;
   unsigned long epochAge = (millis() - epochStartMillis) / 1000;
 
-  String json = "{\"e\":" + String(extinctions) + ",\"a\":" + String(aliveCount) + ",\"b\":" + String(totalBirths) + ",\"rad\":" + String(envRadiation) + ",\"alpha\":" + String(alphaIndex) + ",\"day\":" + String(dayCycle, 2) + ",\"shas\":" + String(has_spore ? 1 : 0) + ",\"shue\":" + String(spore_hue, 0) + ",\"age\":" + String(epochAge) + ",\"c\":[";
+  String json = "{\"e\":" + String(extinctions) + ",\"a\":" + String(aliveCount) + ",\"b\":" + String(totalBirths) + ",\"rad\":" + String(envRadiation) + ",\"alpha\":" + String(alphaIndex) + ",\"day\":" + String(dayCycle, 2) + ",\"shas\":0,\"shue\":0,\"age\":" + String(epochAge) + ",\"c\":[";
   for(int i = 0; i < MAX_CREATURES; i++) {
     json += "[" + String(creatures[i].x, 1) + "," + String(creatures[i].y, 1) + "," + String(creatures[i].angle, 2) + "," + String(creatures[i].alive ? 1 : 0) + "," + String(creatures[i].hue, 0) + "]";
     if(i < MAX_CREATURES - 1) json += ",";
