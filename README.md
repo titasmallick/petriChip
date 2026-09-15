@@ -55,3 +55,7 @@ The dashboard is served directly from the ESP32 `PROGMEM` to your browser.
 
 ---
 *Created as a demonstration of artificial life, edge computing, and biological data visualization.*
+
+## Big Brother Version (Node.js)
+
+This repository now also includes the **Node.js Big Brother** version of the simulation (/petriChipNode). This version runs on a scalable backend, featuring a massive 3000x3000 arena, support for 600 simultaneous organisms, and a full NEAT (NeuroEvolution of Augmenting Topologies) implementation where neural networks structurally grow over time. It includes a beautiful WebSocket dashboard with a live Muller graph and Evolutionary Observer terminal.

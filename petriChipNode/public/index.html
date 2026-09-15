@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Silicon Petri Dish: Node.js Cloud Edition</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+    body { background-color: #0b0c10; color: #c5c6c7; font-family: 'Share Tech Mono', monospace; padding: 10px; text-align: center; margin: 0; }
+    h1 { color: #fdf800; font-size: 1.8rem; text-shadow: 0 0 10px rgba(253,248,0,0.5); margin: 15px 0 5px 0;}
+    h3 { color: #ff007f; margin-top: 0; font-size: 1rem; font-weight: normal; margin-bottom: 20px; }
+    .stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; font-size: 1.1rem; margin-bottom: 15px; max-width: 1000px; margin: 0 auto 15px auto; }
+    .val { color: #fff; font-weight: bold; }
+    
+    canvas { 
+        background: #1f2833; 
+        border: 2px solid #fdf800; 
+        border-radius: 8px; 
+        width: 100%; 
+        max-width: 900px; 
+        height: auto;
+        aspect-ratio: 1 / 1;
+        display: block;
+        margin: 0 auto;
+        box-shadow: 0 0 25px rgba(253,248,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>// THE SILICON PETRI DISH (CLOUD SCALE)</h1>
+  <h3>Massive Population Node.js Edition (1000x Speed)</h3>
+  
+  <div class="stats">
+    <div style="width: 100%; display: flex; justify-content: center; gap: 15px; font-size: 0.9em; flex-wrap: wrap;">
+        <div>Pop: <span id="alive" class="val">0</span> / 600</div>
+        <div>Gen: <span id="exts" class="val">0</span></div>
+        <div>Age: <span id="age" class="val">0s</span></div>
+        <div>Births: <span id="births" class="val" style="color: #00ffcc;">0</span></div>
+        <div>Deaths: <span id="deaths" class="val" style="color: #ff0033;">0</span></div>
+    </div>
+    <div style="width: 100%; display: flex; justify-content: center; gap: 15px; font-size: 0.9em; flex-wrap: wrap; background: rgba(31,40,51,0.5); padding: 5px; border-radius: 4px;">
+       <span>Food: <span id="food-cnt" class="val" style="color: #00ffcc;">0</span></span>
+       <span>Poison: <span id="poison-cnt" class="val" style="color: #ff0033;">0</span></span>
+       <span>Alpha Energy: <span id="max-energy" class="val" style="color: gold;">0</span></span>
+       <span>Oldest: <span id="max-age" class="val">0</span>t</span>
+       <span>Max Lineage: <span id="max-lineage" class="val" style="color: #ff007f;">0</span></span>
+    </div>
+    <div style="width: 100%; display: flex; justify-content: center; gap: 20px; font-size: 0.9em; background: rgba(31,40,51,0.5); padding: 5px; border-radius: 4px; margin-top: -10px;">
+       <span>Avg Size: <span id="avg-size" class="val">0.00</span></span>
+       <span>Avg Speed: <span id="avg-spd" class="val">0.00</span></span>
+       <span>Avg Connects: <span id="avg-vis" class="val" style="color: #ff00ff;">0</span></span>
+    </div>
+  </div>
+  
+  <canvas id="arena" width="3000" height="3000"></canvas>
+  <canvas id="graph" width="900" height="150" style="width: 100%; max-width: 900px; height: auto; aspect-ratio: 6 / 1; display: block; margin: 15px auto; border: 2px solid #333; border-radius: 8px; background: #0b0c10;"></canvas>
+  
+  <div id="log-box" style="width: 100%; max-width: 900px; height: 120px; margin: 10px auto; background: #0b0c10; border: 1px solid #45a29e; border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.9rem; text-align: left; overflow-y: scroll; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px;"></div>
+  
+  <script>
+    const socket = io();
+    const canvas = document.getElementById('arena');
+    const ctx = canvas.getContext('2d');
+    
+    const gCanvas = document.getElementById('graph');
+    const gCtx = gCanvas.getContext('2d');
+    
+    // Fill with empty bucket objects so mapping p.total doesn't return NaN
+    let popHistory = new Array(1200).fill(null).map(() => ({ total: 0, r: 0, y: 0, g: 0, c: 0, b: 0, m: 0 }));
+    
+    // Smooth rendering interpolation mapping
+    let creatures = [];
+    let items = [];
+    
+    socket.on('state', (data) => {
+        document.getElementById('alive').innerText = data.a;
+        document.getElementById('exts').innerText = data.e;
+        document.getElementById('age').innerText = data.age + "s";
+        document.getElementById('births').innerText = data.b;
+        document.getElementById('deaths').innerText = data.d;
+        document.getElementById('avg-size').innerText = (data.asz || 0).toFixed(2);
+        document.getElementById('avg-spd').innerText = (data.asp || 0).toFixed(2);
+        document.getElementById('avg-vis').innerText = Math.floor(data.aconn || 0);
+        
+        document.getElementById('food-cnt').innerText = data.fC;
+        document.getElementById('poison-cnt').innerText = data.pC;
+        document.getElementById('max-energy').innerText = data.mE.toFixed(0);
+        document.getElementById('max-age').innerText = data.mA;
+        document.getElementById('max-lineage').innerText = data.mL;
+        
+        // Update Graph with Color Buckets (Muller Plot)
+        let buckets = { r: 0, y: 0, g: 0, c: 0, b: 0, m: 0 };
+        creatures = data.c;
+        items = data.f;
+        
+        creatures.forEach(c => {
+            let h = c[4]; // Hue
+            if (h >= 330 || h < 30) buckets.r++;
+            else if (h >= 30 && h < 90) buckets.y++;
+            else if (h >= 90 && h < 150) buckets.g++;
+            else if (h >= 150 && h < 210) buckets.c++;
+            else if (h >= 210 && h < 270) buckets.b++;
+            else buckets.m++;
+        });
+        
+        popHistory.push({ total: data.a, ...buckets });
+        if(popHistory.length > 1200) popHistory.shift();
+        
+        gCtx.clearRect(0, 0, 900, 150);
+        
+        let maxPop = Math.max(...popHistory.map(p => p.total), 50);
+        let barWidth = 900 / 1200;
+        
+        // Draw Stacked Area Columns
+        for(let i=0; i<popHistory.length; i++) {
+            let p = popHistory[i];
+            let x = i * barWidth;
+            let currentY = 150; // Start drawing from the bottom
+            
+            let colorStacks = [
+                { count: p.r, fill: '#ff3333' }, // Red
+                { count: p.y, fill: '#ffff33' }, // Yellow
+                { count: p.g, fill: '#33ff33' }, // Green
+                { count: p.c, fill: '#33ffff' }, // Cyan
+                { count: p.b, fill: '#3333ff' }, // Blue
+                { count: p.m, fill: '#ff33ff' }  // Magenta
+            ];
+            
+            colorStacks.forEach(col => {
+                if (col.count > 0) {
+                    let h = (col.count / maxPop) * 130;
+                    gCtx.fillStyle = col.fill;
+                    gCtx.fillRect(x, currentY - h, Math.ceil(barWidth), h);
+                    currentY -= h; // Stack the next color on top
+                }
+            });
+        }
+        
+        gCtx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        gCtx.font = "12px monospace";
+        gCtx.fillText("Species Evolution History (Live) - Peak: " + maxPop, 10, 20);
+        
+        // --- Evolutionary Observer Logic ---
+        if (typeof window.lastGen === 'undefined') {
+            window.lastGen = data.e;
+            window.lastDom = "";
+            window.lastLineage = 0;
+            window.lastConn = 4;
+            window.logEvent = function(msg, color="#fff") {
+                let box = document.getElementById('log-box');
+                if (!box) return;
+                let time = new Date().toLocaleTimeString();
+                let entry = document.createElement('div');
+                entry.innerHTML = `<span style="color:#555">[${time}]</span> <span style="color:${color}">${msg}</span>`;
+                box.appendChild(entry);
+                box.scrollTop = box.scrollHeight;
+                if(box.childNodes.length > 50) box.removeChild(box.firstChild);
+            };
+            window.logEvent("Observer Drone online. Monitoring primordial soup...", "#00ffcc");
+        }
+        
+        if (data.e > window.lastGen) {
+            window.logEvent(`MASS EXTINCTION EVENT #${data.e}. All life perished. Seeding new primitive ancestors.`, "#ff3333");
+            window.lastGen = data.e;
+            window.lastLineage = 0;
+            window.lastConn = 4;
+        }
+        
+        if (data.mL > window.lastLineage + 10) {
+            window.logEvent(`Life is persisting! A lineage has survived ${data.mL} generations deep.`, "#33ff33");
+            window.lastLineage = data.mL;
+        }
+        
+        if (data.aconn >= window.lastConn + 2) {
+            window.logEvent(`EVOLUTIONARY LEAP: Average brain complexity grew to ${Math.floor(data.aconn)} connections.`, "#ff00ff");
+            window.lastConn += 2;
+        }
+        
+        // Find current dominant color
+        let currentDom = "None";
+        let maxCount = 0;
+        for (let col in buckets) {
+            if (buckets[col] > maxCount) {
+                maxCount = buckets[col];
+                currentDom = col;
+            }
+        }
+        
+        if (maxCount > 15 && currentDom !== window.lastDom) {
+            let colorNames = { r: "Red", y: "Yellow", g: "Green", c: "Cyan", b: "Blue", m: "Magenta" };
+            let colorHex = { r: "#ff3333", y: "#ffff33", g: "#33ff33", c: "#33ffff", b: "#3333ff", m: "#ff33ff" };
+            if (window.lastDom !== "") {
+                window.logEvent(`SPECIES SHIFT: The ${colorNames[currentDom]} strain is aggressively taking over the ecosystem!`, colorHex[currentDom]);
+            }
+            window.lastDom = currentDom;
+        }
+        
+        // Draw frame directly
+        ctx.clearRect(0, 0, 3000, 3000);
+        
+        // Items
+        items.forEach(i => {
+           ctx.beginPath();
+           ctx.arc(i[0], i[1], 8, 0, Math.PI*2);
+           ctx.fillStyle = (i[2] === 1) ? '#00ffcc' : '#ff0033';
+           ctx.fill();
+        });
+        
+        // Creatures
+        creatures.forEach((c, index) => {
+            let x = c[0], y = c[1], angle = c[2], hue = c[4];
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            
+            ctx.beginPath();
+            ctx.moveTo(15, 0);
+            ctx.lineTo(-10, 10);
+            ctx.lineTo(-10, -10);
+            ctx.closePath();
+            
+            ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+            
+            if (index === data.alpha) { // Alpha halo
+                ctx.beginPath();
+                ctx.arc(0, 0, 30, 0, Math.PI*2);
+                ctx.strokeStyle = 'gold';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        });
+    });
+  </script>
+</body>
+</html>
