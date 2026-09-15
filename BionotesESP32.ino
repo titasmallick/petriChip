@@ -492,13 +492,21 @@ const char index_html[] PROGMEM = R"rawliteral(
   <h3>Native ESP32 Evolutionary Simulation</h3>
   
   <div class="stats">
-    <div>Pop: <span id="alive" class="val">0</span> / 50</div>
-    <div>Generation: <span id="exts" class="val">0</span></div>
-    <div>Epoch Age: <span id="age" class="val">0s</span></div>
-    <div>Births: <span id="births" class="val" style="color: #00ffcc;">0</span></div>
-    <div>Deaths: <span id="deaths" class="val" style="color: #ff0033;">0</span></div>
-    <div>Radiation: <span id="rad" class="val" style="color: #00ffcc;">0</span></div>
-    <div style="width: 100%; display: flex; justify-content: center; gap: 20px; font-size: 0.9em; background: rgba(31,40,51,0.5); padding: 5px; border-radius: 4px;">
+    <div style="width: 100%; display: flex; justify-content: center; gap: 15px; font-size: 0.9em; flex-wrap: wrap;">
+        <div>Pop: <span id="alive" class="val">0</span> / 50</div>
+        <div>Gen: <span id="exts" class="val">0</span></div>
+        <div>Age: <span id="age" class="val">0s</span></div>
+        <div>Births: <span id="births" class="val" style="color: #00ffcc;">0</span></div>
+        <div>Deaths: <span id="deaths" class="val" style="color: #ff0033;">0</span></div>
+        <div>Rad: <span id="rad" class="val" style="color: #00ffcc;">0</span></div>
+    </div>
+    <div style="width: 100%; display: flex; justify-content: center; gap: 15px; font-size: 0.9em; flex-wrap: wrap; background: rgba(31,40,51,0.5); padding: 5px; border-radius: 4px;">
+       <span>Food: <span id="food-cnt" class="val" style="color: #00ffcc;">0</span></span>
+       <span>Poison: <span id="poison-cnt" class="val" style="color: #ff0033;">0</span></span>
+       <span>Alpha Energy: <span id="max-energy" class="val" style="color: gold;">0</span></span>
+       <span>Oldest: <span id="max-age" class="val">0</span>t</span>
+    </div>
+    <div style="width: 100%; display: flex; justify-content: center; gap: 20px; font-size: 0.9em; background: rgba(31,40,51,0.5); padding: 5px; border-radius: 4px; margin-top: -10px;">
        <span>Avg Size: <span id="avg-size" class="val">0.00</span></span>
        <span>Avg Speed: <span id="avg-spd" class="val">0.00</span></span>
        <span>Avg Vision: <span id="avg-vis" class="val">0.0</span></span>
@@ -715,6 +723,10 @@ const char index_html[] PROGMEM = R"rawliteral(
           document.getElementById('avg-spd').innerText = (data.asp || 0).toFixed(2);
           document.getElementById('avg-vis').innerText = (data.avi || 0).toFixed(1);
           document.getElementById('rad').innerText = data.rad;
+          document.getElementById('food-cnt').innerText = data.fC || 0;
+          document.getElementById('poison-cnt').innerText = data.pC || 0;
+          document.getElementById('max-energy').innerText = (data.mE || 0).toFixed(0);
+          document.getElementById('max-age').innerText = data.mA || 0;
           
           currentRad = data.rad;
           alphaIndex = data.alpha;
@@ -932,6 +944,7 @@ void handleRoot() {
 void handleState() {
   int alphaIndex = -1;
   float maxEnergy = -1.0;
+  int maxAge = 0;
   
   float sumSize = 0, sumSpeed = 0, sumVision = 0;
   int count = 0;
@@ -943,11 +956,24 @@ void handleState() {
         sumVision += creatures[i].gene_vision;
         count++;
         
+        if (creatures[i].age > maxAge) {
+            maxAge = creatures[i].age;
+        }
+        
         if (creatures[i].energy > maxEnergy) {
            maxEnergy = creatures[i].energy;
            alphaIndex = i;
         }
      }
+  }
+  
+  int foodCount = 0;
+  int poisonCount = 0;
+  for(int i = 0; i < NUM_ITEMS; i++) {
+      if (items[i].active) {
+          if (items[i].type == 1) foodCount++;
+          else poisonCount++;
+      }
   }
 
   float avgSize = (count > 0) ? (sumSize / count) : 0;
@@ -959,7 +985,7 @@ void handleState() {
 
   String json;
   json.reserve(6000);
-  json = "{\"e\":" + String(extinctions) + ",\"a\":" + String(aliveCount) + ",\"b\":" + String(totalBirths) + ",\"d\":" + String(totalDeaths) + ",\"asz\":" + String(avgSize, 2) + ",\"asp\":" + String(avgSpeed, 2) + ",\"avi\":" + String(avgVision, 1) + ",\"rad\":" + String(envRadiation) + ",\"alpha\":" + String(alphaIndex) + ",\"day\":" + String(dayCycle, 2) + ",\"age\":" + String(epochAge) + ",\"c\":[";
+  json = "{\"e\":" + String(extinctions) + ",\"a\":" + String(aliveCount) + ",\"b\":" + String(totalBirths) + ",\"d\":" + String(totalDeaths) + ",\"asz\":" + String(avgSize, 2) + ",\"asp\":" + String(avgSpeed, 2) + ",\"avi\":" + String(avgVision, 1) + ",\"rad\":" + String(envRadiation) + ",\"alpha\":" + String(alphaIndex) + ",\"day\":" + String(dayCycle, 2) + ",\"age\":" + String(epochAge) + ",\"mE\":" + String(maxEnergy, 1) + ",\"mA\":" + String(maxAge) + ",\"fC\":" + String(foodCount) + ",\"pC\":" + String(poisonCount) + ",\"c\":[";
   for(int i = 0; i < MAX_CREATURES; i++) {
     json += "[" + String(creatures[i].x, 1) + "," + String(creatures[i].y, 1) + "," + String(creatures[i].angle, 2) + "," + String(creatures[i].alive ? 1 : 0) + "," + String(creatures[i].hue, 0) + "]";
     if(i < MAX_CREATURES - 1) json += ",";
