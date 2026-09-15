@@ -360,6 +360,7 @@ void tickPhysics() {
       // TRUE EXTINCTION / GENESIS RESTART
       // Without the Alpha Vault, total extinction triggers a hard reset of the ecosystem
       if (aliveCount == 0) {
+         extinctions++;
          initEcosystem();
          return; // Break out of physics loop to let init take over
       }
