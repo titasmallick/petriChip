@@ -33,7 +33,7 @@ The dashboard is served directly from the ESP32 `PROGMEM` to your browser.
 * **Dominant Species Predictor:** Analyzes growth trends to predict which species will achieve dominance or face collapse.
 * **Circadian Rhythms:** The environment smoothly interpolates between Day and Night every 60 seconds, halving the organisms' vision at night and forcing them to adapt their hunting strategies.
 * **"God Mode":** Tapping the petri dish on a phone screen manually drops clusters of food and poison into the simulation.
-* **Asteroid Strike:** A manual trigger to instantly kill 95% of the ecosystem to demonstrate the Endospore recovery mechanic.
+* **Asteroid Strike:** A manual trigger to instantly kill 95% of the ecosystem to test the survivors' evolutionary resilience or trigger a Genesis reset.
 * **WebAudio Geiger Counter:** Synthesizes Geiger counter clicks proportional to the detected WiFi radiation.
 
 ## 🛠️ Hardware & Setup
