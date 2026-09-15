@@ -334,15 +334,18 @@ void tickPhysics() {
 
          // 2. SYMBIOSIS, MATING, vs PREDATION
          if (hueDiff < 20.0) {
-             // KIN SELECTION (Same Species)
-             // Sexual Reproduction (Crossover) if both have high energy!
-             if (creatures[i].energy > 120.0 && creatures[j].energy > 120.0) {
+             // KIN SELECTION & MATE CHOICE (Sexual Selection)
+             // Organisms now discriminate based on fitness! They refuse to mate with "losers".
+             if (creatures[i].energy > 100.0 && creatures[j].energy > 100.0 &&
+                 creatures[j].fitness >= (creatures[i].fitness * 0.5) && 
+                 creatures[i].fitness >= (creatures[j].fitness * 0.5)) {
+                 
                  int emptySlot = -1;
                  for(int s=0; s<MAX_CREATURES; s++) {
                      if (!creatures[s].alive) { emptySlot = s; break; }
                  }
                  if (emptySlot != -1) {
-                     // Mating successful! 
+                     // Mating is significantly cheaper (costs 40) than Asexual Mitosis (costs 120).
                      creatures[i].energy -= 40.0;
                      creatures[j].energy -= 40.0;
                      creatures[emptySlot].energy = 80.0;
@@ -365,7 +368,7 @@ void tickPhysics() {
                      creatures[emptySlot].gene_vision = (creatures[i].gene_vision + creatures[j].gene_vision) / 2.0 + randomFloat(-5.0, 5.0);
                  }
              } else {
-                 // Mutualism: If not mating, they pool and share energy to prevent starvation
+                 // Mutualism: If not mating (rejected or low energy), they pool and share energy
                  float totalEn = creatures[i].energy + creatures[j].energy;
                  creatures[i].energy = totalEn / 2.0;
                  creatures[j].energy = totalEn / 2.0;
@@ -449,7 +452,11 @@ void tickPhysics() {
     }
     
     // Mitosis (Asexual Reproduction / Cloning)
-    if (creatures[i].energy > 160.0) {
+    // Fitness directly gates asexual reproduction! High fitness lowers the energy barrier.
+    float mitosis_barrier = 200.0 - (creatures[i].fitness * 0.2); 
+    if (mitosis_barrier < 150.0) mitosis_barrier = 150.0; // Hard minimum barrier
+    
+    if (creatures[i].energy > mitosis_barrier) {
        // Find an empty grave slot to spawn the child
        int emptySlot = -1;
        for(int j=0; j<MAX_CREATURES; j++) {
@@ -462,7 +469,9 @@ void tickPhysics() {
           creatures[emptySlot].energy = 80.0;
           creatures[emptySlot].fitness = 0; // Child starts at 0 fitness
           creatures[emptySlot].age = 0; // Child starts at age 0
-          creatures[i].energy = 80.0; 
+          
+          // Mitosis is brutally expensive (cost: 120 energy) compared to sex (cost: 40 energy)
+          creatures[i].energy -= 120.0; 
           creatures[emptySlot].alive = true;
           aliveCount++;
           totalBirths++;
