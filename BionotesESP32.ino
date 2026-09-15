@@ -25,6 +25,12 @@ struct Creature {
   float fitness; // Explicit evolutionary reward score
   bool alive;
   float hue; // Color-coding for Speciation!
+  int age; // Senescence (Aging)
+  
+  // Morphology (Body Plan Genes)
+  float gene_speed;  // Base speed multiplier (costs energy)
+  float gene_vision; // Base vision radius (costs energy)
+
   float w[100]; // 8 inputs * 8 hidden + 9 * 2 outputs = 82 weights (padded to 100)
 };
 
@@ -40,11 +46,15 @@ unsigned long epochStartMillis = 0;
 // Spore Bank for carrying genes across mass extinctions
 float spore_dna[100];
 float spore_hue = 0; // Preserve species color across extinctions
+float spore_speed = 1.5;
+float spore_vision = 50.0;
 bool has_spore = false;
 
 // The Alpha Vault (Elitism)
 float alpha_dna[100];
 float alpha_hue = 0;
+float alpha_speed = 1.5;
+float alpha_vision = 50.0;
 float max_epoch_fitness = 0;
 bool alpha_found = false;
 
@@ -75,6 +85,7 @@ void initEcosystem() {
     creatures[i].angle = randomFloat(0, 2*PI);
     creatures[i].energy = 100.0;
     creatures[i].fitness = 0; // Start at 0 fitness
+    creatures[i].age = 0; // Start at age 0
     creatures[i].alive = true;
     
     // Inject DNA
@@ -82,21 +93,29 @@ void initEcosystem() {
       int cloneType = random(100); 
       for(int w = 0; w < 100; w++) {
         if (cloneType < 10) { 
-            // 10% Saltation (Completely new species to test against the reigning champ)
-            creatures[i].w[w] = randomFloat(-1.0, 1.0); // Tamed to 1.0 to avoid neural saturation!
+            // 10% Saltation (Completely new species)
+            creatures[i].w[w] = randomFloat(-1.0, 1.0); 
             creatures[i].hue = random(0, 360);
+            creatures[i].gene_speed = randomFloat(0.5, 3.0);
+            creatures[i].gene_vision = randomFloat(30.0, 150.0);
         } else if (cloneType < 30) { 
             // 20% Heavy Mutation (Large drift)
             creatures[i].w[w] = spore_dna[w] + randomFloat(-0.8, 0.8);
             creatures[i].hue = spore_hue + randomFloat(-45, 45);
+            creatures[i].gene_speed = spore_speed + randomFloat(-0.5, 0.5);
+            creatures[i].gene_vision = spore_vision + randomFloat(-20.0, 20.0);
         } else if (cloneType < 70) { 
             // 40% Gentle Mutation (Fine-tuning)
             creatures[i].w[w] = spore_dna[w] + randomFloat(-0.2, 0.2);
             creatures[i].hue = spore_hue + randomFloat(-15, 15);
+            creatures[i].gene_speed = spore_speed + randomFloat(-0.1, 0.1);
+            creatures[i].gene_vision = spore_vision + randomFloat(-5.0, 5.0);
         } else { 
             // 30% Perfect Clones (Preserve the exact champion)
             creatures[i].w[w] = spore_dna[w];
             creatures[i].hue = spore_hue;
+            creatures[i].gene_speed = spore_speed;
+            creatures[i].gene_vision = spore_vision;
         }
       }
     } else {
@@ -105,7 +124,15 @@ void initEcosystem() {
         creatures[i].w[w] = randomFloat(-1.0, 1.0);
       }
       creatures[i].hue = random(0, 360);
+      creatures[i].gene_speed = randomFloat(0.5, 3.0);
+      creatures[i].gene_vision = randomFloat(30.0, 150.0);
     }
+    
+    // Bounds checking for morphology
+    if (creatures[i].gene_speed < 0.5) creatures[i].gene_speed = 0.5;
+    if (creatures[i].gene_speed > 4.0) creatures[i].gene_speed = 4.0;
+    if (creatures[i].gene_vision < 20.0) creatures[i].gene_vision = 20.0;
+    if (creatures[i].gene_vision > 200.0) creatures[i].gene_vision = 200.0;
     
     // Normalize hue
     if (creatures[i].hue < 0) creatures[i].hue += 360;
@@ -174,14 +201,17 @@ void tickPhysics() {
 
   // --- PHYSICS ENGINE START ---
   float dayCycle = (sin(millis() * 2.0 * PI / 60000.0) + 1.0) / 2.0;
-  float currentVision = 50.0 + (100.0 * dayCycle);
 
   for (int i = 0; i < MAX_CREATURES; i++) {
     if (!creatures[i].alive) continue;
     aliveCount++;
+    creatures[i].age++; // Senescence (Aging clock)
+    
+    // Morphology: Individual vision radius affected by day/night cycle
+    float myVision = creatures[i].gene_vision * (0.5 + 0.5 * dayCycle);
     
     // 1. Calculate inputs for Neural Net (Sight!)
-    float closestDist = currentVision;
+    float closestDist = myVision;
     float closestAngle = 0;
     float closestType = 0; // 1.0 for Food, -1.0 for Poison
     
@@ -213,7 +243,7 @@ void tickPhysics() {
     }
 
     // 2. SOCIAL SIGHT: Find the closest other organism!
-    float closestCreatDist = currentVision;
+    float closestCreatDist = myVision;
     float closestCreatAngle = 0;
     float closestCreatSim = 0; // 1.0 = Same Species (Kin), -1.0 = Different Species (Alien)
 
@@ -237,10 +267,10 @@ void tickPhysics() {
     
     // Normalize inputs (8 Inputs now!)
     float in_bias = 1.0;
-    float in_item_dist = closestDist / currentVision;
+    float in_item_dist = closestDist / myVision;
     float in_item_angle = closestAngle / PI; 
     float in_item_type = closestType;
-    float in_creat_dist = closestCreatDist / currentVision;
+    float in_creat_dist = closestCreatDist / myVision;
     float in_creat_angle = closestCreatAngle / PI;
     float in_creat_sim = closestCreatSim;
     float in_self_energy = creatures[i].energy / 160.0; // Niche Selection! Know when to hunt vs hide.
@@ -264,15 +294,15 @@ void tickPhysics() {
     float sumTurn  = (1.0 * creatures[i].w[73]) + (h[0]*creatures[i].w[74]) + (h[1]*creatures[i].w[75]) + (h[2]*creatures[i].w[76]) + (h[3]*creatures[i].w[77]) + (h[4]*creatures[i].w[78]) + (h[5]*creatures[i].w[79]) + (h[6]*creatures[i].w[80]) + (h[7]*creatures[i].w[81]);
     
     // WANDER MECHANIC: If absolutely nothing is in vision, inject random turn noise so they sweep the arena
-    if (closestDist >= currentVision - 0.1 && closestCreatDist >= currentVision - 0.1) {
+    if (closestDist >= myVision - 0.1 && closestCreatDist >= myVision - 0.1) {
         sumTurn += randomFloat(-0.8, 0.8);
     }
     
-    // RADIATION FRENZY: Scaled back. Slightly faster movement up to 2x speed max.
+    // Morphology: Evolved Speed & Turn Rate
     float radMult = 1.0 + (envRadiation * 0.02); 
     if (radMult > 2.0) radMult = 2.0;
-    float speed = (tanh(sumSpeed) + 1.0) * 1.5 * radMult; 
-    float turn = tanh(sumTurn) * 0.35 * radMult; 
+    float speed = (tanh(sumSpeed) + 1.0) * creatures[i].gene_speed * radMult; 
+    float turn = tanh(sumTurn) * (creatures[i].gene_speed * 0.25) * radMult; 
     
     creatures[i].angle += turn;
     creatures[i].x += cos(creatures[i].angle) * speed;
@@ -298,34 +328,62 @@ void tickPhysics() {
          creatures[j].x -= ddx * 0.05;
          creatures[j].y -= ddy * 0.05;
          
-         // 1. Horizontal Gene Transfer (Conjugation - 5% chance)
-         if (random(100) < 5) { 
-            int gene = random(100);
-            float temp = creatures[i].w[gene];
-            creatures[i].w[gene] = creatures[j].w[gene];
-            creatures[j].w[gene] = temp;
-         }
-
          // Calculate Genetic Distance (Color difference: 0 to 180 degrees)
          float hueDiff = abs(creatures[i].hue - creatures[j].hue);
          if (hueDiff > 180.0) hueDiff = 360.0 - hueDiff;
 
-         // 2. SYMBIOSIS vs COMPETITION (Based on Speciation)
+         // 2. SYMBIOSIS, MATING, vs PREDATION
          if (hueDiff < 20.0) {
-             // MUTUALISM / KIN SELECTION (Same Species)
-             float totalEn = creatures[i].energy + creatures[j].energy;
-             creatures[i].energy = totalEn / 2.0;
-             creatures[j].energy = totalEn / 2.0;
+             // KIN SELECTION (Same Species)
+             // Sexual Reproduction (Crossover) if both have high energy!
+             if (creatures[i].energy > 120.0 && creatures[j].energy > 120.0) {
+                 int emptySlot = -1;
+                 for(int s=0; s<MAX_CREATURES; s++) {
+                     if (!creatures[s].alive) { emptySlot = s; break; }
+                 }
+                 if (emptySlot != -1) {
+                     // Mating successful! 
+                     creatures[i].energy -= 40.0;
+                     creatures[j].energy -= 40.0;
+                     creatures[emptySlot].energy = 80.0;
+                     creatures[emptySlot].x = creatures[i].x;
+                     creatures[emptySlot].y = creatures[i].y;
+                     creatures[emptySlot].angle = randomFloat(0, 2*PI);
+                     creatures[emptySlot].age = 0;
+                     creatures[emptySlot].fitness = 0;
+                     creatures[emptySlot].alive = true;
+                     aliveCount++;
+                     totalBirths++;
+                     
+                     // Crossover DNA
+                     for (int w = 0; w < 100; w++) {
+                         creatures[emptySlot].w[w] = (random(100) < 50) ? creatures[i].w[w] : creatures[j].w[w];
+                         if (random(100) < 5) creatures[emptySlot].w[w] += randomFloat(-0.5, 0.5); // Micro-mutation
+                     }
+                     creatures[emptySlot].hue = (creatures[i].hue + creatures[j].hue) / 2.0 + randomFloat(-10, 10);
+                     creatures[emptySlot].gene_speed = (creatures[i].gene_speed + creatures[j].gene_speed) / 2.0 + randomFloat(-0.1, 0.1);
+                     creatures[emptySlot].gene_vision = (creatures[i].gene_vision + creatures[j].gene_vision) / 2.0 + randomFloat(-5.0, 5.0);
+                 }
+             } else {
+                 // Mutualism: If not mating, they pool and share energy to prevent starvation
+                 float totalEn = creatures[i].energy + creatures[j].energy;
+                 creatures[i].energy = totalEn / 2.0;
+                 creatures[j].energy = totalEn / 2.0;
+             }
          } else {
-             // COMPETITIVE EXCLUSION / PREDATION (Different Species)
-             if (creatures[i].energy > creatures[j].energy) {
-                 creatures[i].energy += 15.0;  // Steal energy
-                 creatures[j].energy -= 15.0;  // Take damage
-                 creatures[i].fitness += 20.0; // Reward hunting behavior!
+             // PREDATION (Different Species)
+             // Predation is now asymmetric based on Morphology (Speed/Size)! Faster/Bigger organism wins.
+             float powerI = creatures[i].energy * creatures[i].gene_speed;
+             float powerJ = creatures[j].energy * creatures[j].gene_speed;
+             
+             if (powerI > powerJ) {
+                 creatures[i].energy += 15.0;  
+                 creatures[j].energy -= 15.0;  
+                 creatures[i].fitness += 20.0; 
              } else {
                  creatures[j].energy += 15.0;
                  creatures[i].energy -= 15.0;
-                 creatures[j].fitness += 20.0; // Reward hunting behavior!
+                 creatures[j].fitness += 20.0; 
              }
          }
       }
@@ -337,9 +395,13 @@ void tickPhysics() {
     if (creatures[i].y < 0) { creatures[i].y = 0; creatures[i].angle += PI; }
     if (creatures[i].y > ARENA_SIZE) { creatures[i].y = ARENA_SIZE; creatures[i].angle += PI; }
     
-    // Continuous Metabolism & Fitness Score Tracking
-    // Lowered base metabolism to give new generations a fair chance to find food (~35 second lifespan)
-    float metabolism = (0.10 + abs(speed) * 0.03) * (1.0 + (envRadiation * 0.03)); 
+    // Continuous Metabolism, Morphology Tax, and Senescence (Aging)
+    float baseline = 0.10;
+    float movementTax = abs(speed) * 0.03;
+    float visionTax = creatures[i].gene_vision * 0.0005; // Having huge vision burns energy
+    float ageTax = creatures[i].age * 0.0002; // Getting older burns more energy (Forces R/K selection!)
+    
+    float metabolism = (baseline + movementTax + visionTax + ageTax) * (1.0 + (envRadiation * 0.03)); 
     creatures[i].energy -= metabolism;
     creatures[i].fitness += 0.1; // Reward for simply staying alive!
     
@@ -348,6 +410,8 @@ void tickPhysics() {
         max_epoch_fitness = creatures[i].fitness;
         for (int w = 0; w < 100; w++) alpha_dna[w] = creatures[i].w[w];
         alpha_hue = creatures[i].hue;
+        alpha_speed = creatures[i].gene_speed;
+        alpha_vision = creatures[i].gene_vision;
         alpha_found = true;
     }
     
@@ -358,13 +422,15 @@ void tickPhysics() {
       // LAST SURVIVOR RULE / ALPHA ELITISM
       if (aliveCount == 0) {
         if (alpha_found) {
-           // We had an organism score > 0 fitness this epoch. Save the BEST one.
            for(int w = 0; w < 100; w++) spore_dna[w] = alpha_dna[w];
            spore_hue = alpha_hue;
+           spore_speed = alpha_speed;
+           spore_vision = alpha_vision;
         } else {
-           // Entire generation literally did zero things. Save the last one as a fallback.
            for(int w = 0; w < 100; w++) spore_dna[w] = creatures[i].w[w];
            spore_hue = creatures[i].hue; 
+           spore_speed = creatures[i].gene_speed;
+           spore_vision = creatures[i].gene_vision;
         }
         has_spore = true;
       }
@@ -382,7 +448,7 @@ void tickPhysics() {
       continue;
     }
     
-    // Mitosis (Continuous Reproduction without Epochs)
+    // Mitosis (Asexual Reproduction / Cloning)
     if (creatures[i].energy > 160.0) {
        // Find an empty grave slot to spawn the child
        int emptySlot = -1;
@@ -395,6 +461,7 @@ void tickPhysics() {
           creatures[emptySlot].angle = randomFloat(0, 2*PI);
           creatures[emptySlot].energy = 80.0;
           creatures[emptySlot].fitness = 0; // Child starts at 0 fitness
+          creatures[emptySlot].age = 0; // Child starts at age 0
           creatures[i].energy = 80.0; 
           creatures[emptySlot].alive = true;
           aliveCount++;
@@ -414,13 +481,20 @@ void tickPhysics() {
           if (creatures[emptySlot].hue < 0) creatures[emptySlot].hue += 360;
           if (creatures[emptySlot].hue > 360) creatures[emptySlot].hue -= 360;
           
+          // Morphological drift
+          creatures[emptySlot].gene_speed = creatures[i].gene_speed + randomFloat(-0.1, 0.1);
+          creatures[emptySlot].gene_vision = creatures[i].gene_vision + randomFloat(-5.0, 5.0);
+          if (creatures[emptySlot].gene_speed < 0.5) creatures[emptySlot].gene_speed = 0.5;
+          if (creatures[emptySlot].gene_speed > 4.0) creatures[emptySlot].gene_speed = 4.0;
+          if (creatures[emptySlot].gene_vision < 20.0) creatures[emptySlot].gene_vision = 20.0;
+          if (creatures[emptySlot].gene_vision > 200.0) creatures[emptySlot].gene_vision = 200.0;
+
           for (int w = 0; w < 100; w++) {
             creatures[emptySlot].w[w] = creatures[i].w[w];
             if (random(100) < saltationChance) { 
               creatures[emptySlot].w[w] = randomFloat(-1.0, 1.0); // Saltation (scrambled)
             } else {
               creatures[emptySlot].w[w] += randomFloat(-mutSeverity, mutSeverity); // Micro-mutation
-              // Keep bounds reasonable to avoid saturation
               if (creatures[emptySlot].w[w] > 2.0) creatures[emptySlot].w[w] = 2.0;
               if (creatures[emptySlot].w[w] < -2.0) creatures[emptySlot].w[w] = -2.0;
             }
