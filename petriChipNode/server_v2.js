@@ -85,6 +85,8 @@ function initEcosystem() {
         
 
         let c = {
+            id: i, // Unique ID
+            familyId: i, // Genesis root family
             x: alive ? randomFloat(50, ARENA_SIZE - 50) : 0,
             y: alive ? randomFloat(50, ARENA_SIZE - 50) : 0,
             angle: randomFloat(0, Math.PI * 2),
