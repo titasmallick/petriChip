@@ -73,15 +73,35 @@
        <span>Avg Connects: <span id="avg-vis" class="val" style="color: #ff00ff;">0</span></span>
     </div>
   </div>
-  <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 15px;">
-     <button id="rad-btn" style="width:100%; padding: 10px; font-weight:bold; background:#ff0033; color:white; border:none; border-radius:4px; cursor:pointer; margin-top:10px;">⚠️ TRIGGER RADIATION BURST (10s) ⚠️</button>
-      <button id="meteor-btn" style="width:100%; padding: 10px; font-weight:bold; background:#ff8c00; color:white; border:none; border-radius:4px; cursor:pointer; margin-top:10px;">☄️ TRIGGER METEOR STRIKE ☄️</button>
-  </div>
+
   
   <canvas id="arena" width="3000" height="3000"></canvas>
   <canvas id="graph" width="900" height="150" style="width: 100%; max-width: 900px; height: auto; aspect-ratio: 6 / 1; display: block; margin: 15px auto; border: 2px solid #333; border-radius: 8px; background: #0b0c10;"></canvas>
   
   <div style="width: 100%; max-width: 900px; margin: 15px auto; display: flex; gap: 15px; flex-direction: column;">
+      
+      <!-- Interactive Buttons -->
+      <div style="display: flex; justify-content: center; gap: 15px;">
+          <button id="rad-btn" style="width:100%; padding: 15px; font-weight:bold; font-size: 1.1em; background:#ff0033; color:white; border:none; border-radius:8px; cursor:pointer; box-shadow: 0 0 10px #ff0033;">⚠️ TRIGGER RADIATION BURST (10s) ⚠️</button>
+          <button id="meteor-btn" style="width:100%; padding: 15px; font-weight:bold; font-size: 1.1em; background:#ff8c00; color:white; border:none; border-radius:8px; cursor:pointer; box-shadow: 0 0 10px #ff8c00;">☄️ TRIGGER METEOR STRIKE ☄️</button>
+      </div>
+
+      <!-- VISUAL LEGEND -->
+      <div style="border: 1px solid #45a29e; border-radius: 4px; background: #1f2833; padding: 15px; text-align: left; color: #c5c6c7; font-size: 0.95rem;">
+          <h3 style="color: #45a29e; margin-top: 0; border-bottom: 1px solid #45a29e; padding-bottom: 5px;">🎨 VISUAL LEGEND (What are you looking at?)</h3>
+          <ul style="margin:0; padding-left: 20px; line-height: 1.6;">
+              <li><strong>Triangles:</strong> Living organisms. The triangle always points in the direction they are moving.</li>
+              <li><strong>Size/Shape:</strong> Varies by <code>gene_size</code>. Massive triangles are K-strategist Predators (strong but slow/hungry). Tiny triangles are r-strategist Scavengers (weak but fast/efficient).</li>
+              <li><strong>Color (Hue):</strong> Denotes distinct Species. Only organisms of the same color (kin) can mate.</li>
+              <li><strong>Cyan Dots:</strong> Food/Plant matter (+60 energy).</li>
+              <li><strong>Red Crossed Bones:</strong> Toxic Corpses. Left behind when an organism dies. Decomposers eat these!</li>
+              <li><strong style="color: #00ffcc;">White Glowing Rings:</strong> <code>gene_vision</code> radar radius. The organism can only 'see' food/predators inside this ring!</li>
+              <li><strong style="color: #33ff33;">Green Glowing Aura:</strong> Actively infected by the Winter Virus. They will drain energy and spread it!</li>
+              <li><strong style="color: #ff3333;">Red Jagged Lines:</strong> Carnivore Combat! A predator is actively attacking another species.</li>
+              <li><strong style="color: #ff99cc;">Pink Lines:</strong> Mating event! Two kin have found each other and spawned a child.</li>
+              <li><strong style="color: #aaa;">Clicking an Organism:</strong> Traces its entire family lineage, drawing thick glowing lines between all relatives!</li>
+          </ul>
+      </div>
       <div id="log-box" style="height: 120px; background: #0b0c10; border: 1px solid #45a29e; border-radius: 4px; padding: 10px; font-size: 0.9rem; text-align: left; overflow-y: scroll; display: flex; flex-direction: column; gap: 4px;"></div>
       
       <div style="border: 1px solid #fdf800; border-radius: 4px; background: #1f2833; padding: 15px; text-align: left;">
