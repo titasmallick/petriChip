@@ -328,9 +328,10 @@ function tickPhysics() {
                     if (c.energy > mateI && c2.energy > mateJ && Math.abs(c.gene_size - c2.gene_size) < 0.5) {
                         let empty = creatures.findIndex(x => !x.alive);
                         if (empty !== -1) {
-                            c.energy -= 40; c2.energy -= 40;
+                            c.energy -= (40.0 * c.gene_size); 
+                            c2.energy -= (40.0 * c2.gene_size);
                             let child = creatures[empty];
-                            child.energy = 80; child.x = c.x; child.y = c.y;
+                            child.x = c.x; child.y = c.y;
                             child.angle = randomFloat(0, Math.PI*2);
                             child.age = 0;
                             child.mem.fill(0); // Clear memory at birth
@@ -341,15 +342,21 @@ function tickPhysics() {
                             child.brain = crossoverBrain(c.brain, c2.brain);
                             child.brain = mutateBrain(child.brain, envRadiation);
                             
-                            child.hue = (c.hue + c2.hue)/2.0 + randomFloat(-10, 10);
-                            child.gene_speed = (c.gene_speed + c2.gene_speed)/2.0 + randomFloat(-0.1, 0.1);
-                            child.gene_vision = (c.gene_vision + c2.gene_vision)/2.0 + randomFloat(-5, 5);
-                            child.gene_size = (c.gene_size + c2.gene_size)/2.0 + randomFloat(-0.1, 0.1);
+                            let saltChance = 0.05 + (envRadiation * 0.01);
                             
+                            if (Math.random() < saltChance) child.hue = Math.floor(Math.random() * 360);
+                            else child.hue = (c.hue + c2.hue) / 2.0 + randomFloat(-10, 10);
                             if (child.hue < 0) child.hue += 360; if (child.hue > 360) child.hue -= 360;
+                            
+                            child.gene_speed = (c.gene_speed + c2.gene_speed) / 2.0 + randomFloat(-0.1, 0.1);
+                            child.gene_vision = (c.gene_vision + c2.gene_vision) / 2.0 + randomFloat(-5, 5);
+                            child.gene_size = (c.gene_size + c2.gene_size) / 2.0 + randomFloat(-0.1, 0.1);
+                            
                             child.gene_speed = Math.max(0.5, Math.min(4.0, child.gene_speed));
                             child.gene_vision = Math.max(20.0, Math.min(200.0, child.gene_vision));
                             child.gene_size = Math.max(0.5, Math.min(2.5, child.gene_size));
+                            
+                            child.energy = 80.0 * child.gene_size;
                         }
                     } else {
                         // Symbiosis
@@ -398,11 +405,10 @@ function tickPhysics() {
                 let child = creatures[empty];
                 child.x = c.x + randomFloat(-30, 30); child.y = c.y + randomFloat(-30, 30);
                 child.angle = randomFloat(0, 2*Math.PI);
-                child.energy = 80;
                 child.age = 0;
                 child.mem.fill(0); // Clear memory at birth!
                 child.lineage = c.lineage + 1;
-                c.energy -= 120;
+                c.energy -= (120.0 * c.gene_size);
                 child.alive = true;
                 aliveCount++; totalBirths++;
                 
@@ -419,6 +425,8 @@ function tickPhysics() {
                 child.gene_speed = Math.max(0.5, Math.min(4.0, child.gene_speed));
                 child.gene_vision = Math.max(20.0, Math.min(200.0, child.gene_vision));
                 child.gene_size = Math.max(0.5, Math.min(2.5, child.gene_size));
+                
+                child.energy = 80.0 * child.gene_size; // Child energy scales with its new body size
                 
                 child.brain = mutateBrain(c.brain, envRadiation);
                 if(Math.random() < saltChance) child.brain = buildBrain(); // Saltation restarts brain
