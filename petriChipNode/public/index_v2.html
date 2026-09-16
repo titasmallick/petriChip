@@ -289,6 +289,39 @@
            ctx.fill();
         });
         
+        // Draw Interaction Lines (Mating & Combat Thunderbolts)
+        ctx.lineWidth = 2;
+        for (let i = 0; i < creatures.length; i++) {
+            for (let j = i + 1; j < creatures.length; j++) {
+                let c1 = creatures[i], c2 = creatures[j];
+                let dx = c1[0] - c2[0], dy = c1[1] - c2[1];
+                let distSq = dx*dx + dy*dy;
+                
+                if (distSq < 1500) { // Touching physically
+                    let h1 = c1[4], h2 = c2[4];
+                    let hueDiff = Math.abs(h1 - h2);
+                    if (hueDiff > 180) hueDiff = 360 - hueDiff;
+                    
+                    if (hueDiff < 20) {
+                        // Kin / Mating
+                        ctx.beginPath();
+                        ctx.moveTo(c1[0], c1[1]);
+                        ctx.lineTo(c2[0], c2[1]);
+                        ctx.strokeStyle = 'rgba(255, 105, 180, 0.7)'; // Pink
+                        ctx.stroke();
+                    } else if (c1[6] === 4 || c2[6] === 4) {
+                        // Combat / Predation (Carnivore involved)
+                        ctx.beginPath();
+                        ctx.moveTo(c1[0], c1[1]);
+                        ctx.lineTo(c1[0] - dx*0.5 + 8, c1[1] - dy*0.5 + 8); // Jagged thunderbolt center
+                        ctx.lineTo(c2[0], c2[1]);
+                        ctx.strokeStyle = 'rgba(255, 30, 30, 0.9)'; // Red lightning
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
         // Creatures
         creatures.forEach((c, index) => {
             let x = c[0], y = c[1], angle = c[2], size = c[3], hue = c[4], infected = c[5], trophic = c[6];

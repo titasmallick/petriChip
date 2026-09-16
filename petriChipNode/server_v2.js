@@ -548,7 +548,11 @@ function broadcastState() {
             if (c.age > maxAge) maxAge = c.age;
             if (c.lineage > maxLineage) maxLineage = c.lineage;
             if (c.energy > maxEnergy) { maxEnergy = c.energy; alphaIndex = i; }
-            payloadCreatures.push([Math.round(c.x), Math.round(c.y), Number(c.angle.toFixed(2)), 1, Math.round(c.hue)]);
+            let trophic = 3;
+            if (c.gene_chloroplast > 0.5) trophic = 1;
+            else if (c.gene_carnivore > 0.5) trophic = 4;
+            else if (c.gene_scavenger > 0.5) trophic = 2;
+            payloadCreatures.push([Math.round(c.x), Math.round(c.y), Number(c.angle.toFixed(2)), Number(c.gene_size.toFixed(2)), Math.round(c.hue), c.infected ? 1 : 0, trophic]);
         }
     }
 
