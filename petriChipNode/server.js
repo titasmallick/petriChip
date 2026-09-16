@@ -485,7 +485,7 @@ async function runAiAnalysis() {
             csvData = lines[0] + '\n' + lines.slice(-50).join('\n');
         }
         
-        const prompt = `You are an evolutionary biologist analyzing an artificial life simulation. The dataset below represents the last few hours of evolution (Pop: active population, gen: extinctions, max_lineage: highest unbroken family tree, avg_connects: neural network size). Analyze what biological phenomena are playing out (like insular dwarfism, red queen hypothesis, carrying capacity), what recent changes occurred, and predict what happens next. Keep it under 250 words and format as clean HTML for a web dashboard.\n\nDATA:\n${csvData}`;
+        const prompt = `You are an evolutionary biologist analyzing an artificial life simulation. The dataset below represents the last few hours of evolution (Pop: active population, gen: extinctions, max_lineage: highest unbroken family tree, avg_connects: neural network size). Analyze what biological phenomena are playing out (like insular dwarfism, red queen hypothesis, carrying capacity), what recent changes occurred, and predict what happens next. Keep it under 250 words and format as clean HTML for a web dashboard. DO NOT use markdown tags (like \`\`\`html), just return the raw HTML string.\n\nDATA:\n${csvData}`;
 
         let apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
         
