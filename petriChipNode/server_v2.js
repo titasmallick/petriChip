@@ -672,6 +672,22 @@ io.on('connection', (socket) => {
         }, 10000);
     });
     
+    // Divine Intervention (Click to feed)
+    socket.on('divine_intervention', (coords) => {
+        // Drop a cluster of 3 food items at the mouse click!
+        for(let j=0; j<3; j++) {
+            let empty = items.findIndex(x => !x.active);
+            if (empty !== -1) {
+                items[empty] = {
+                    x: coords.x + (Math.random() * 40 - 20),
+                    y: coords.y + (Math.random() * 40 - 20),
+                    type: 1, // Food
+                    active: true
+                };
+            }
+        }
+    });
+
     // Meteor strike event
     socket.on('trigger_meteor', () => {
         io.emit('meteor_warning');
