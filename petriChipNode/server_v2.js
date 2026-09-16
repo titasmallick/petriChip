@@ -519,6 +519,7 @@ function tickPhysics() {
 function broadcastState() {
     let alphaIndex = -1, maxEnergy = -1, maxAge = 0, maxLineage = 0;
     let sumSize = 0, sumSpeed = 0, sumConn = 0, count = 0;
+    let sumImm = 0, sumIns = 0, infectedPop = 0, sumChloro = 0, sumScav = 0, sumCarn = 0;
 
     let payloadCreatures = [];
     for(let i=0; i<MAX_CREATURES; i++) {
