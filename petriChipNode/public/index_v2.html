@@ -311,6 +311,39 @@
         // Draw frame directly
         ctx.clearRect(0, 0, 3000, 3000);
         
+        // 1. Dynamic Soil Color
+        let fert = Math.min(2000, Math.max(0, data.fert || 500));
+        let soilG = Math.floor(34 + (fert / 2000) * 30); // Max 64 (rich green)
+        let soilR = Math.floor(34 - (fert / 2000) * 10);
+        let soilB = Math.floor(34 - (fert / 2000) * 15);
+        document.getElementById('sim-canvas').style.backgroundColor = 
+gb(, , );
+        
+        // 2. Weather Overlays (Particles)
+        window.weatherParticles = window.weatherParticles || [];
+        let targetCount = 0; let pColor = 'white'; let pSize = 2; let pDrift = 1;
+        if (data.season === 3) { targetCount = 800; pColor = 'rgba(255,255,255,0.8)'; pSize = 3; pDrift = 0; } // Winter Snow
+        else if (data.season === 2) { targetCount = 200; pColor = 'rgba(217, 123, 41, 0.8)'; pSize = 4; pDrift = 2; } // Autumn Leaves
+        
+        while (window.weatherParticles.length < targetCount) {
+            window.weatherParticles.push({ x: Math.random() * 3000, y: Math.random() * 3000, vx: (Math.random() - 0.5) * pDrift, vy: Math.random() * 3 + 1, wobbly: Math.random() * 0.1 });
+        }
+        if (window.weatherParticles.length > targetCount) window.weatherParticles.splice(0, window.weatherParticles.length - targetCount);
+        
+        ctx.fillStyle = pColor;
+        window.weatherParticles.forEach(p => {
+            p.x += p.vx + Math.sin(Date.now() * 0.001 * p.wobbly) * 2;
+            p.y += p.vy;
+            if (p.y > 3000) { p.y = -10; p.x = Math.random() * 3000; }
+            if (p.x > 3000) p.x = 0; else if (p.x < 0) p.x = 3000;
+            ctx.beginPath(); ctx.arc(p.x, p.y, pSize, 0, Math.PI*2); ctx.fill();
+        });
+        
+        if (data.season === 1 && data.era === 2) { // Greenhouse Summer Heatwave
+            ctx.fillStyle = 'rgba(255, 60, 0, 0.05)';
+            ctx.fillRect(0, 0, 3000, 3000);
+        }
+        
         // Items
         items.forEach(i => {
            ctx.beginPath();
@@ -354,7 +387,16 @@
 
         // Creatures
         creatures.forEach((c, index) => {
-            let x = c[0], y = c[1], angle = c[2], size = c[3], hue = c[4], infected = c[5], trophic = c[6];
+            let x = c[0], y = c[1], angle = c[2], size = c[3], hue = c[4], infected = c[5], trophic = c[6], vision = c[7] || 50;
+            
+            // 3. Draw Vision Radar
+            ctx.beginPath();
+            ctx.arc(x, y, vision, 0, Math.PI*2);
+            ctx.fillStyle = hsla(, 100%, 50%, 0.03);
+            ctx.fill();
+            ctx.strokeStyle = hsla(, 100%, 50%, 0.1);
+            ctx.lineWidth = 1;
+            ctx.stroke();
             
             ctx.save();
             ctx.translate(x, y);

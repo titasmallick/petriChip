@@ -552,7 +552,7 @@ function broadcastState() {
             if (c.gene_chloroplast > 0.5) trophic = 1;
             else if (c.gene_carnivore > 0.5) trophic = 4;
             else if (c.gene_scavenger > 0.5) trophic = 2;
-            payloadCreatures.push([Math.round(c.x), Math.round(c.y), Number(c.angle.toFixed(2)), Number(c.gene_size.toFixed(2)), Math.round(c.hue), c.infected ? 1 : 0, trophic]);
+            payloadCreatures.push([Math.round(c.x), Math.round(c.y), Number(c.angle.toFixed(2)), Number(c.gene_size.toFixed(2)), Math.round(c.hue), c.infected ? 1 : 0, trophic, Math.round(c.gene_vision)]);
         }
     }
 
@@ -579,7 +579,7 @@ function broadcastState() {
     io.emit('state', {
         e: extinctions, a: count, b: totalBirths, d: totalDeaths,
         asz: asz, asp: asp, aconn: aconn,
-        achloro: achloro, ascav: ascav, acarn: acarn, aimm: aimm, ains: ains,
+        achloro: achloro, ascav: ascav, acarn: acarn, aimm: aimm, ains: ains, fert: globalFertilizer,
         rad: envRadiation, alpha: alphaIndex, age: epochAge,
         mE: maxEnergy, mA: maxAge, mL: maxLineage,
         fC: foodCount, pC: poisonCount,
