@@ -298,19 +298,24 @@
             if(!res.ok) return;
             let text = await res.text();
             let lines = text.trim().split('\n');
-            if (lines.length <= 1) return; // Only headers
             
             let labels = [], popData = [], sizeData = [], speedData = [], connData = [];
             
-            for(let i=1; i<lines.length; i++) {
-                let cols = lines[i].split(',');
-                if(cols.length < 11) continue;
-                let date = new Date(cols[0]);
-                labels.push(date.getHours() + ":" + date.getMinutes().toString().padStart(2, '0'));
-                popData.push(parseFloat(cols[2]));
-                sizeData.push(parseFloat(cols[8]));
-                speedData.push(parseFloat(cols[9]));
-                connData.push(parseFloat(cols[10]));
+            if (lines.length <= 1) {
+                // No data yet, show placeholder
+                labels.push("Awaiting first 10-min log...");
+                popData.push(0); sizeData.push(0); speedData.push(0); connData.push(0);
+            } else {
+                for(let i=1; i<lines.length; i++) {
+                    let cols = lines[i].split(',');
+                    if(cols.length < 11) continue;
+                    let date = new Date(cols[0]);
+                    labels.push(date.getHours() + ":" + date.getMinutes().toString().padStart(2, '0'));
+                    popData.push(parseFloat(cols[2]));
+                    sizeData.push(parseFloat(cols[8]));
+                    speedData.push(parseFloat(cols[9]));
+                    connData.push(parseFloat(cols[10]));
+                }
             }
             
             let ctxChart = document.getElementById('metricsChart').getContext('2d');
