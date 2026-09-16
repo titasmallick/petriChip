@@ -271,13 +271,13 @@ function tickPhysics() {
     
     // Season Logic
     eraTicks++;
-    if (eraTicks > 180000) { // ~15 minutes real-time for an Epoch shift
+    if (eraTicks > 36000) { // ~15 minutes real-time for an Epoch shift
         globalEra = Math.floor(Math.random() * 3);
         eraTicks = 0;
     }
     
     seasonTicks++;
-    if (seasonTicks > 24000) { // ~2 minutes real time per season
+    if (seasonTicks > 3000) { // ~2 minutes real time per season
         season = (season + 1) % 4;
         seasonTicks = 0;
         // Trigger a random viral outbreak in Winter
