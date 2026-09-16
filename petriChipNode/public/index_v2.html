@@ -263,11 +263,12 @@
         
         // Creatures
         creatures.forEach((c, index) => {
-            let x = c[0], y = c[1], angle = c[2], hue = c[4];
+            let x = c[0], y = c[1], angle = c[2], size = c[3], hue = c[4], infected = c[5];
             
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(angle);
+            ctx.scale(size, size);
             
             ctx.beginPath();
             ctx.moveTo(15, 0);
@@ -275,15 +276,15 @@
             ctx.lineTo(-10, -10);
             ctx.closePath();
             
-            ctx.fillStyle = c.infected ? '#00ff00' : `hsl(${c.hue}, 100%, 50%)`;
-        if (c.infected) {
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#00ff00';
-        } else {
-            ctx.shadowBlur = 0;
-        }
-        ctx.fill();
-        ctx.shadowBlur = 0; // Reset for other draws
+            ctx.fillStyle = infected ? '#00ff00' : `hsl(${hue}, 100%, 50%)`;
+            if (infected) {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#00ff00';
+            } else {
+                ctx.shadowBlur = 0;
+            }
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset for other draws
             ctx.lineWidth = 2;
             ctx.strokeStyle = '#fff';
             ctx.stroke();

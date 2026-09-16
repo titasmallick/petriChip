@@ -20,7 +20,7 @@ app.get('/api/history', (req, res) => {
 });
 
 // --- LOGGING & AI CONSTANTS ---
-const LOG_FILE = 'evolution_log.csv';
+const LOG_FILE = 'evolution_v2_log.csv';
 const LOG_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 const AI_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 const serverStartTime = Date.now();
@@ -30,7 +30,7 @@ let lastAiTime = Date.now();
 let lastAiAnalysis = "No AI analysis performed yet. Waiting for enough data (runs every 30 mins).";
 
 if (!fs.existsSync(LOG_FILE)) {
-    fs.writeFileSync(LOG_FILE, 'timestamp,gen,pop,births,deaths,food,poison,max_lineage,avg_size,avg_speed,avg_connects,max_age,max_energy\n');
+    fs.writeFileSync(LOG_FILE, 'timestamp,gen,pop,births,deaths,food,poison,max_lineage,avg_size,avg_speed,avg_connects,max_age,max_energy,season,avg_immunity,avg_insulation,infected_pop\n');
 }
 
 // --- SIMULATION CONSTANTS ---
@@ -488,7 +488,7 @@ function broadcastState() {
     for(let i=0; i<MAX_CREATURES; i++) {
         if (creatures[i].alive) {
             let c = creatures[i];
-            sumSize += c.gene_size; sumSpeed += c.gene_speed; sumConn += c.brain.conns.length; count++;
+            sumSize += c.gene_size; sumSpeed += c.gene_speed; sumConn += c.brain.conns.length; count++;\n            sumImm += c.gene_immunity; sumIns += c.gene_insulation; if (c.infected) infectedPop++;
             if (c.age > maxAge) maxAge = c.age;
             if (c.lineage > maxLineage) maxLineage = c.lineage;
             if (c.energy > maxEnergy) { maxEnergy = c.energy; alphaIndex = i; }
@@ -509,7 +509,7 @@ function broadcastState() {
     
     let asz = count ? sumSize/count : 0;
     let asp = count ? sumSpeed/count : 0;
-    let aconn = count ? sumConn/count : 0;
+    let aconn = count ? sumConn/count : 0;\n    let aimm = count ? sumImm/count : 0;\n    let ains = count ? sumIns/count : 0;
 
     io.emit('state', {
         e: extinctions, a: count, b: totalBirths, d: totalDeaths,
