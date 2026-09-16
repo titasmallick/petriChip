@@ -46,7 +46,9 @@ let extinctions = 0;
 let aliveCount = 0;
 let epochStartMillis = Date.now();
 let envRadiation = 0;
-let globalFertilizer = 500.0; // Biogeochemical cycle currency\nlet globalEra = 0; // 0: Normal, 1: Ice Age, 2: Greenhouse Drought\nlet eraTicks = 0;
+let globalFertilizer = 500.0; // Biogeochemical cycle currency
+let globalEra = 0; // 0: Normal, 1: Ice Age, 2: Greenhouse Drought
+let eraTicks = 0;
 let season = 0; // 0=Spring, 1=Summer, 2=Autumn, 3=Winter
 let seasonTicks = 0;
 
@@ -551,7 +553,8 @@ function broadcastState() {
         fC: foodCount, pC: poisonCount,
         c: payloadCreatures, f: payloadItems,
         arenaSize: ARENA_SIZE,
-        startT: serverStartTime,\n        era: globalEra,
+        startT: serverStartTime,
+        era: globalEra,
         season: season
     });
 
