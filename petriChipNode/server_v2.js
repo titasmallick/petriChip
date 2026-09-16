@@ -340,8 +340,8 @@ function tickPhysics() {
         let ageTax = c.age * 0.00001; // Scaled down for 200 ticks/sec
         let brainTax = c.brain.conns.length * 0.0001; 
         
-        let heatMultiplier = (globalEra === 2) ? 2.0 : 1.0;
-        let freezeMultiplier = (globalEra === 1) ? 2.0 : 1.0;
+        let heatMultiplier = (globalEra === 2) ? 2.0 : (globalEra === 1 ? 0.5 : 1.0);
+        let freezeMultiplier = (globalEra === 1) ? 2.0 : (globalEra === 2 ? 0.5 : 1.0);
         
         let tempPenalty = 0;
         if (season === 1) tempPenalty = c.gene_insulation * 0.05 * heatMultiplier; // Summer overheating
