@@ -376,6 +376,7 @@ function tickPhysics() {
             aliveCount--;
             totalDeaths++;
             if (aliveCount === 0) {
+                forceLog = true;
                 extinctions++;
                 initEcosystem();
                 return;
