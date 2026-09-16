@@ -332,7 +332,15 @@ function tickPhysics() {
         let visionCost = (c.gene_vision * c.gene_vision) * 0.000001;
         let ageTax = c.age * 0.00001; // Scaled down for 200 ticks/sec
         let brainTax = c.brain.conns.length * 0.0001; 
-        c.energy -= (baselineCost + movementCost + visionCost + ageTax + brainTax);
+        
+        let heatMultiplier = (globalEra === 2) ? 2.0 : 1.0;
+        let freezeMultiplier = (globalEra === 1) ? 2.0 : 1.0;
+        
+        let tempPenalty = 0;
+        if (season === 1) tempPenalty = c.gene_insulation * 0.05 * heatMultiplier; // Summer overheating
+        if (season === 3) tempPenalty = (1.0 - c.gene_insulation) * 0.1 * freezeMultiplier; // Winter freezing
+        
+        c.energy -= (baselineCost + movementCost + visionCost + ageTax + brainTax + tempPenalty);
 
         // Eating
         let mouthSize = 15.0 * c.gene_size;
