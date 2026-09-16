@@ -561,7 +561,7 @@
             let dist = Math.hypot(c[0] - simX, c[1] - simY);
             if (dist < c[3] * 15) { // Radius check
                 window.selectedFamilyId = c[8];
-                window.logEvent(🧬 LINEAGE TRACER: Tracking Family Dynasty #!, hsl(, 100%, 50%));
+                window.logEvent(`🧬 LINEAGE TRACER: Tracking Family Dynasty #${c[8]}!`, `hsl(${c[4]}, 100%, 50%)`);
                 found = true;
                 break;
             }
