@@ -30,7 +30,7 @@ let lastAiTime = Date.now();
 let lastAiAnalysis = "No AI analysis performed yet. Waiting for enough data (runs every 30 mins).";
 
 if (!fs.existsSync(LOG_FILE)) {
-    fs.writeFileSync(LOG_FILE, 'timestamp,gen,pop,births,deaths,food,poison,max_lineage,avg_size,avg_speed,avg_connects,max_age,max_energy,season,avg_immunity,avg_insulation,infected_pop\n');
+    fs.writeFileSync(LOG_FILE, 'timestamp,gen,pop,births,deaths,food,poison,max_lineage,avg_size,avg_speed,avg_connects,max_age,max_energy,season,avg_immunity,avg_insulation,infected_pop,avg_chloroplast,avg_scavenger,avg_carnivore,fertilizer\n');
 }
 
 // --- SIMULATION CONSTANTS ---
@@ -45,7 +45,7 @@ let totalDeaths = 0;
 let extinctions = 0;
 let aliveCount = 0;
 let epochStartMillis = Date.now();
-let envRadiation = 0;
+let envRadiation = 0;\nlet globalFertilizer = 500.0; // Biogeochemical cycle currency
 let season = 0; // 0=Spring, 1=Summer, 2=Autumn, 3=Winter
 let seasonTicks = 0;
 
@@ -90,7 +90,7 @@ function initEcosystem() {
             gene_vision: randomFloat(30.0, 150.0),
             gene_size: randomFloat(0.5, 2.5),
             gene_insulation: randomFloat(0.0, 1.0),
-            gene_immunity: randomFloat(0.0, 1.0),
+            gene_immunity: randomFloat(0.0, 1.0),\n            gene_chloroplast: randomFloat(0.0, 1.0),\n            gene_scavenger: randomFloat(0.0, 1.0),\n            gene_carnivore: randomFloat(0.0, 1.0),
             infected: false,
             viralLoad: 0.0,
             brain: buildBrain(), // NEAT Brain!
@@ -272,7 +272,7 @@ function tickPhysics() {
     if (season === 0) foodSpawnRate = 0.40; // Spring bloom
     if (season === 3) foodSpawnRate = 0.05; // Winter famine
     
-    if (Math.random() < foodSpawnRate) { // 20% chance to spawn food every tick on massive board
+    if (Math.random() < foodSpawnRate && globalFertilizer > 0) {\n        globalFertilizer -= 1.0; // 20% chance to spawn food every tick on massive board
         for (let f = 0; f < NUM_ITEMS; f++) {
             if (!items[f].active) {
                 items[f].x = randomFloat(20, ARENA_SIZE - 20);
@@ -325,7 +325,7 @@ function tickPhysics() {
                 let dy = items[f].y - c.y;
                 if (dx*dx + dy*dy < mouthSize * mouthSize) {
                     items[f].active = false;
-                    c.energy += (items[f].type === 1) ? 60.0 : -80.0;
+                    if (items[f].type === 1) {\n                        c.energy += 60.0 * (1.0 - c.gene_carnivore); // Pure carnivores cant digest plants\n                    } else {\n                        c.energy += (-80.0 + (140.0 * c.gene_scavenger)); // If scavenger > 0.6, corpses give energy. Otherwise, they are toxic.\n                        globalFertilizer += 1.0; // Decomposers return nutrients to soil\n                    }
                 }
             }
         }
@@ -378,7 +378,7 @@ function tickPhysics() {
                             child.gene_vision = (c.gene_vision + c2.gene_vision) / 2.0 + randomFloat(-5, 5);
                             child.gene_size = (c.gene_size + c2.gene_size) / 2.0 + randomFloat(-0.1, 0.1);
                             child.gene_insulation = (c.gene_insulation + c2.gene_insulation) / 2.0 + randomFloat(-0.05, 0.05);
-                            child.gene_immunity = (c.gene_immunity + c2.gene_immunity) / 2.0 + randomFloat(-0.05, 0.05);
+                            child.gene_immunity = (c.gene_immunity + c2.gene_immunity) / 2.0 + randomFloat(-0.05, 0.05);\n                            child.gene_chloroplast = Math.max(0.0, Math.min(1.0, (c.gene_chloroplast + c2.gene_chloroplast) / 2.0 + randomFloat(-0.05, 0.05)));\n                            child.gene_scavenger = Math.max(0.0, Math.min(1.0, (c.gene_scavenger + c2.gene_scavenger) / 2.0 + randomFloat(-0.05, 0.05)));\n                            child.gene_carnivore = Math.max(0.0, Math.min(1.0, (c.gene_carnivore + c2.gene_carnivore) / 2.0 + randomFloat(-0.05, 0.05)));
                             child.gene_insulation = Math.max(0.0, Math.min(1.0, child.gene_insulation));
                             child.gene_immunity = Math.max(0.0, Math.min(1.0, child.gene_immunity));
                             child.infected = false; child.viralLoad = 0;
@@ -398,9 +398,9 @@ function tickPhysics() {
                 } else {
                     // Predation / Combat
                     if (c.gene_size > c2.gene_size * 1.5 && c.energy > c2.energy) {
-                        c.energy += 30; c2.energy -= 60;
+                        c.energy += (60.0 * c.gene_carnivore); c2.energy -= (60.0 * c.gene_carnivore);
                     } else if (c2.gene_size > c.gene_size * 1.5 && c2.energy > c.energy) {
-                        c2.energy += 30; c.energy -= 60;
+                        c2.energy += (60.0 * c2.gene_carnivore); c.energy -= (60.0 * c2.gene_carnivore);
                     } else {
                         c.energy -= 10; c2.energy -= 10;
                         // Viral transmission on contact
@@ -458,7 +458,7 @@ function tickPhysics() {
                 child.gene_vision = c.gene_vision + randomFloat(-5, 5);
                 child.gene_size = c.gene_size + randomFloat(-0.1, 0.1);
                 child.gene_insulation = c.gene_insulation + randomFloat(-0.05, 0.05);
-                child.gene_immunity = c.gene_immunity + randomFloat(-0.05, 0.05);
+                child.gene_immunity = c.gene_immunity + randomFloat(-0.05, 0.05);\n                child.gene_chloroplast = Math.max(0.0, Math.min(1.0, c.gene_chloroplast + randomFloat(-0.05, 0.05)));\n                child.gene_scavenger = Math.max(0.0, Math.min(1.0, c.gene_scavenger + randomFloat(-0.05, 0.05)));\n                child.gene_carnivore = Math.max(0.0, Math.min(1.0, c.gene_carnivore + randomFloat(-0.05, 0.05)));
                 child.gene_insulation = Math.max(0.0, Math.min(1.0, child.gene_insulation));
                 child.gene_immunity = Math.max(0.0, Math.min(1.0, child.gene_immunity));
                 child.infected = false; child.viralLoad = 0;
@@ -488,7 +488,7 @@ function broadcastState() {
     for(let i=0; i<MAX_CREATURES; i++) {
         if (creatures[i].alive) {
             let c = creatures[i];
-            sumSize += c.gene_size; sumSpeed += c.gene_speed; sumConn += c.brain.conns.length; count++;\n            sumImm += c.gene_immunity; sumIns += c.gene_insulation; if (c.infected) infectedPop++;
+            sumSize += c.gene_size; sumSpeed += c.gene_speed; sumConn += c.brain.conns.length; count++;\n            sumImm += c.gene_immunity; sumIns += c.gene_insulation; if (c.infected) infectedPop++; sumChloro += c.gene_chloroplast; sumScav += c.gene_scavenger; sumCarn += c.gene_carnivore;
             if (c.age > maxAge) maxAge = c.age;
             if (c.lineage > maxLineage) maxLineage = c.lineage;
             if (c.energy > maxEnergy) { maxEnergy = c.energy; alphaIndex = i; }
@@ -509,7 +509,7 @@ function broadcastState() {
     
     let asz = count ? sumSize/count : 0;
     let asp = count ? sumSpeed/count : 0;
-    let aconn = count ? sumConn/count : 0;\n    let aimm = count ? sumImm/count : 0;\n    let ains = count ? sumIns/count : 0;
+    let aconn = count ? sumConn/count : 0;\n    let aimm = count ? sumImm/count : 0;\n    let ains = count ? sumIns/count : 0;\n    let achloro = count ? sumChloro/count : 0;\n    let ascav = count ? sumScav/count : 0;\n    let acarn = count ? sumCarn/count : 0;
 
     io.emit('state', {
         e: extinctions, a: count, b: totalBirths, d: totalDeaths,
