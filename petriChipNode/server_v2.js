@@ -447,9 +447,11 @@ function tickPhysics() {
                 } else {
                     // Predation / Combat
                     if (c.gene_size > c2.gene_size * 1.5 && c.energy > c2.energy) {
-                        c.energy += (60.0 * c.gene_carnivore); c2.energy -= (60.0 * c.gene_carnivore);
+                        let meat = Math.min(Math.max(0, c2.energy), 60.0 * c.gene_carnivore);
+                        c.energy += meat; c2.energy -= (60.0 * c.gene_carnivore);
                     } else if (c2.gene_size > c.gene_size * 1.5 && c2.energy > c.energy) {
-                        c2.energy += (60.0 * c2.gene_carnivore); c.energy -= (60.0 * c2.gene_carnivore);
+                        let meat = Math.min(Math.max(0, c.energy), 60.0 * c2.gene_carnivore);
+                        c2.energy += meat; c.energy -= (60.0 * c2.gene_carnivore);
                     } else {
                         c.energy -= 10; c2.energy -= 10;
                         // Viral transmission on contact
