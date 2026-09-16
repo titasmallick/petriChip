@@ -671,6 +671,17 @@ io.on('connection', (socket) => {
             io.emit('radiation_warning', false);
         }, 10000);
     });
+    
+    // Meteor strike event
+    socket.on('trigger_meteor', () => {
+        io.emit('meteor_warning');
+        for (let i = 0; i < creatures.length; i++) {
+            if (Math.random() < 0.9) creatures[i].energy = -1; // 90% death rate
+        }
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type === 1 && Math.random() < 0.9) items[i].active = false; // Vaporize food
+        }
+    });
 });
 
 server.listen(3000, () => {

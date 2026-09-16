@@ -74,7 +74,8 @@
     </div>
   </div>
   <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 15px;">
-     <button id="rad-btn" style="background: #ff0033; color: white; border: none; padding: 10px 20px; font-family: monospace; font-size: 1.1rem; cursor: pointer; border-radius: 4px; box-shadow: 0 0 10px #ff0033;">⚠️ TRIGGER RADIATION BURST (10s) ⚠️</button>
+     <button id="rad-btn" style="width:100%; padding: 10px; font-weight:bold; background:#ff0033; color:white; border:none; border-radius:4px; cursor:pointer; margin-top:10px;">⚠️ TRIGGER RADIATION BURST (10s) ⚠️</button>
+      <button id="meteor-btn" style="width:100%; padding: 10px; font-weight:bold; background:#ff8c00; color:white; border:none; border-radius:4px; cursor:pointer; margin-top:10px;">☄️ TRIGGER METEOR STRIKE ☄️</button>
   </div>
   
   <canvas id="arena" width="3000" height="3000"></canvas>
@@ -316,7 +317,7 @@
         let soilG = Math.floor(34 + (fert / 2000) * 30); // Max 64 (rich green)
         let soilR = Math.floor(34 - (fert / 2000) * 10);
         let soilB = Math.floor(34 - (fert / 2000) * 15);
-        document.getElementById('sim-canvas').style.backgroundColor = `rgb(${soilR}, ${soilG}, ${soilB})`;
+        document.getElementById('arena').style.backgroundColor = `rgb(${soilR}, ${soilG}, ${soilB})`;
         
         // 2. Weather Overlays (Particles)
         window.weatherParticles = window.weatherParticles || [];
@@ -353,12 +354,30 @@
             ctx.strokeRect(0, 0, 3000, 3000);
         }
         
-        // Items
+        if (window.meteorFlash > 0) {
+            ctx.fillStyle = `rgba(255, 140, 0, ${window.meteorFlash})`;
+            ctx.fillRect(0, 0, 3000, 3000);
+            window.meteorFlash -= 0.05;
+        }
+        
+        // Items & Corpses
         items.forEach(i => {
-           ctx.beginPath();
-           ctx.arc(i[0], i[1], 8, 0, Math.PI*2);
-           ctx.fillStyle = (i[2] === 1) ? '#00ffcc' : '#ff0033';
-           ctx.fill();
+           if (i[2] === 1) { // Food
+               ctx.beginPath();
+               ctx.arc(i[0], i[1], 8, 0, Math.PI*2);
+               ctx.fillStyle = '#00ffcc';
+               ctx.fill();
+           } else { // Corpse / Poison
+               // Draw tiny crossed bones
+               ctx.strokeStyle = '#ff0033';
+               ctx.lineWidth = 3;
+               ctx.beginPath();
+               ctx.moveTo(i[0] - 6, i[1] - 6);
+               ctx.lineTo(i[0] + 6, i[1] + 6);
+               ctx.moveTo(i[0] + 6, i[1] - 6);
+               ctx.lineTo(i[0] - 6, i[1] + 6);
+               ctx.stroke();
+           }
         });
         
         // Draw Interaction Lines (Mating & Combat Thunderbolts)
@@ -477,6 +496,15 @@
 
     document.getElementById('rad-btn').addEventListener('click', () => {
         socket.emit('trigger_radiation');
+    });
+    
+    document.getElementById('meteor-btn').addEventListener('click', () => {
+        socket.emit('trigger_meteor');
+    });
+
+    socket.on('meteor_warning', () => {
+        window.logEvent('☄️ K-T EXTINCTION EVENT: A massive asteroid has struck! 90% of all life and food vaporized!', '#ff8c00');
+        window.meteorFlash = 1.0;
     });
 
     // Historical Charting Logic
