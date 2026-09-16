@@ -334,7 +334,7 @@ function tickPhysics() {
         if (c.y > ARENA_SIZE) { c.y = ARENA_SIZE; c.angle += Math.PI; }
         
         // Metabolism
-        let baselineCost = 0.015 * c.gene_size; // Reduced for 200fps
+        let baselineCost = 0.05 * c.gene_size; // Increased baseline to prevent infinite camping // Reduced for 200fps
         let movementCost = (Math.abs(leftMotor) + Math.abs(rightMotor)) * 0.005 * c.gene_size;
         let visionCost = (c.gene_vision * c.gene_vision) * 0.000001;
         let ageTax = c.age * 0.00001; // Scaled down for 200 ticks/sec
@@ -431,9 +431,11 @@ function tickPhysics() {
                             child.energy = 80.0 * child.gene_size;
                         }
                     } else {
-                        // Symbiosis
+                        // Symbiosis & Crowding Penalty
                         let total = c.energy + c2.energy;
                         c.energy = total/2; c2.energy = total/2;
+                        // If they are clumped up on top of each other, they steal each other's sunlight and starve!
+                        c.energy -= 2.0; c2.energy -= 2.0; 
                     }
                 } else {
                     // Predation / Combat
@@ -474,7 +476,7 @@ function tickPhysics() {
         }
 
         // Mitosis
-        let mitosis_barrier = 220.0 * c.gene_size;
+        let mitosis_barrier = 300.0 * c.gene_size; // Raised to slow down explosive cloning
         if (c.energy > mitosis_barrier) {
             let empty = creatures.findIndex(x => !x.alive);
             if (empty !== -1) {
@@ -484,7 +486,7 @@ function tickPhysics() {
                 child.age = 0;
                 child.mem.fill(0); // Clear memory at birth!
                 child.lineage = c.lineage + 1;
-                c.energy -= (120.0 * c.gene_size);
+                c.energy -= (200.0 * c.gene_size);
                 child.alive = true;
                 aliveCount++; totalBirths++;
                 
