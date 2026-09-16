@@ -24,6 +24,7 @@ const LOG_FILE = 'evolution_log.csv';
 const LOG_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 const AI_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 let lastLogTime = 0;
+let forceLog = false;
 let lastAiTime = Date.now();
 let lastAiAnalysis = "No AI analysis performed yet. Waiting for enough data (runs every 30 mins).";
 
@@ -236,7 +237,8 @@ function getSensors(c) {
 }
 
 function tickPhysics() {
-    if (aliveCount === 0) {
+    if (aliveCount === 0 && (Date.now() - epochStartMillis) > 2000) {
+        forceLog = true;
         extinctions++;
         initEcosystem();
         return;
@@ -470,8 +472,9 @@ function broadcastState() {
     let now = Date.now();
     
     // --- CSV LOGGING ---
-    if (lastLogTime === 0 || now - lastLogTime >= LOG_INTERVAL_MS) {
+    if (forceLog || lastLogTime === 0 || now - lastLogTime >= LOG_INTERVAL_MS) {
         lastLogTime = now;
+        forceLog = false; // Reset the flag
         let csvLine = `${new Date().toISOString()},${extinctions},${count},${totalBirths},${totalDeaths},${foodCount},${poisonCount},${maxLineage},${asz.toFixed(3)},${asp.toFixed(3)},${aconn.toFixed(1)},${maxAge},${maxEnergy.toFixed(1)}\n`;
         fs.appendFileSync(LOG_FILE, csvLine);
     }
