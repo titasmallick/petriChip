@@ -316,8 +316,7 @@
         let soilG = Math.floor(34 + (fert / 2000) * 30); // Max 64 (rich green)
         let soilR = Math.floor(34 - (fert / 2000) * 10);
         let soilB = Math.floor(34 - (fert / 2000) * 15);
-        document.getElementById('sim-canvas').style.backgroundColor = 
-gb(, , );
+        document.getElementById('sim-canvas').style.backgroundColor = `rgb(${soilR}, ${soilG}, ${soilB})`;
         
         // 2. Weather Overlays (Particles)
         window.weatherParticles = window.weatherParticles || [];
@@ -392,9 +391,9 @@ gb(, , );
             // 3. Draw Vision Radar
             ctx.beginPath();
             ctx.arc(x, y, vision, 0, Math.PI*2);
-            ctx.fillStyle = hsla(, 100%, 50%, 0.03);
+            ctx.fillStyle = `hsla(${hue}, 100%, 50%, 0.03)`;
             ctx.fill();
-            ctx.strokeStyle = hsla(, 100%, 50%, 0.1);
+            ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.1)`;
             ctx.lineWidth = 1;
             ctx.stroke();
             
