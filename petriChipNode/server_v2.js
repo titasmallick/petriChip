@@ -255,8 +255,8 @@ function getSensors(c) {
 
 function tickPhysics() {
     // Geological nutrient cycle
-    globalFertilizer += 1.5;
-    if (globalFertilizer > 2000.0) globalFertilizer = 2000.0;
+    globalFertilizer += 10.0;
+    if (globalFertilizer > 10000.0) globalFertilizer = 10000.0;
 
     if (aliveCount === 0 && (Date.now() - epochStartMillis) > 2000) {
         forceLog = true;
