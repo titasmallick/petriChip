@@ -63,6 +63,9 @@ function randomFloat(min, max) {
 function initEcosystem() {
     aliveCount = 0;
     epochStartMillis = Date.now();
+    globalFertilizer = 500.0; // Reset biogeochemical cycle on mass extinction
+    globalEra = 0; eraTicks = 0; // Reset to Holocene
+    season = 0; seasonTicks = 0; // Reset to Spring
     
     // Spawn massive amounts of food and poison
     items = [];
