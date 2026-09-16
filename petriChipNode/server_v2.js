@@ -405,6 +405,7 @@ function tickPhysics() {
                             child.angle = randomFloat(0, Math.PI*2);
                             child.age = 0;
                             child.mem.fill(0); // Clear memory at birth
+                            child.familyId = Math.random() < 0.5 ? c.familyId : c2.familyId; // Inherit family
                             child.lineage = Math.max(c.lineage, c2.lineage) + 1;
                             child.alive = true;
                             aliveCount++; totalBirths++;
@@ -494,6 +495,7 @@ function tickPhysics() {
                 child.angle = randomFloat(0, 2*Math.PI);
                 child.age = 0;
                 child.mem.fill(0); // Clear memory at birth!
+                child.familyId = c.familyId; // Inherit family
                 child.lineage = c.lineage + 1;
                 c.energy -= (200.0 * c.gene_size);
                 child.alive = true;
@@ -552,7 +554,7 @@ function broadcastState() {
             if (c.gene_chloroplast > 0.5) trophic = 1;
             else if (c.gene_carnivore > 0.5) trophic = 4;
             else if (c.gene_scavenger > 0.5) trophic = 2;
-            payloadCreatures.push([Math.round(c.x), Math.round(c.y), Number(c.angle.toFixed(2)), Number(c.gene_size.toFixed(2)), Math.round(c.hue), c.infected ? 1 : 0, trophic, Math.round(c.gene_vision)]);
+            payloadCreatures.push([Math.round(c.x), Math.round(c.y), Number(c.angle.toFixed(2)), Number(c.gene_size.toFixed(2)), Math.round(c.hue), c.infected ? 1 : 0, trophic, Math.round(c.gene_vision), c.familyId]);
         }
     }
 

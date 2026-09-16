@@ -426,6 +426,31 @@
             ctx.lineWidth = 1;
             ctx.stroke();
             
+            // Highlight selected family lineage
+            if (window.selectedFamilyId !== -1 && c[8] === window.selectedFamilyId) {
+                ctx.beginPath();
+                ctx.arc(x, y, size * 15, 0, Math.PI*2);
+                ctx.strokeStyle = `hsl(${hue}, 100%, 80%)`;
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                
+                // Draw connecting lines to nearby family members
+                for (let j = index + 1; j < creatures.length; j++) {
+                    let kin = creatures[j];
+                    if (kin[8] === window.selectedFamilyId) {
+                        let dist = Math.hypot(x - kin[0], y - kin[1]);
+                        if (dist < 400) {
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            ctx.lineTo(kin[0], kin[1]);
+                            ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.4)`;
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+            
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(angle);
@@ -502,12 +527,30 @@
         socket.emit('trigger_meteor');
     });
 
-    // Divine Intervention: Click Canvas to drop food
+    // Divine Intervention & Lineage Tracing
+    window.selectedFamilyId = -1;
     canvas.addEventListener('click', (e) => {
         let rect = canvas.getBoundingClientRect();
         let simX = ((e.clientX - rect.left) / rect.width) * 3000;
         let simY = ((e.clientY - rect.top) / rect.height) * 3000;
-        socket.emit('divine_intervention', {x: simX, y: simY});
+        
+        // Check if clicked on a creature
+        let found = false;
+        for (let i = 0; i < creatures.length; i++) {
+            let c = creatures[i];
+            let dist = Math.hypot(c[0] - simX, c[1] - simY);
+            if (dist < c[3] * 15) { // Radius check
+                window.selectedFamilyId = c[8];
+                window.logEvent(🧬 LINEAGE TRACER: Tracking Family Dynasty #!, hsl(, 100%, 50%));
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            window.selectedFamilyId = -1; // Deselect
+            socket.emit('divine_intervention', {x: simX, y: simY});
+        }
     });
 
     socket.on('meteor_warning', () => {
