@@ -343,6 +343,16 @@
             ctx.fillRect(0, 0, 3000, 3000);
         }
         
+        if (data.rad) { // Radiation Active
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.08)'; // Toxic Green Wash
+            ctx.fillRect(0, 0, 3000, 3000);
+            
+            // Draw a massive glowing green border
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 20;
+            ctx.strokeRect(0, 0, 3000, 3000);
+        }
+        
         // Items
         items.forEach(i => {
            ctx.beginPath();
@@ -451,6 +461,8 @@
     });
 
     socket.on('radiation_warning', (isActive) => {
+        if (isActive) window.logEvent('☣️ INCOMING: Extreme cosmic radiation burst detected! Genetic mutation rate +500%!', '#00ff00');
+        else window.logEvent('Shields stabilized. Cosmic radiation levels returned to normal.', '#00ff00');
         let btn = document.getElementById('rad-btn');
         if (isActive) {
             btn.style.background = 'white';
