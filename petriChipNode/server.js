@@ -12,8 +12,8 @@ app.use(express.static('public'));
 
 app.get('/api/history', (req, res) => {
     if (fs.existsSync('evolution_log.csv')) {
-        const path = require('path');
-        res.sendFile(path.resolve('evolution_log.csv'));
+        let content = fs.readFileSync('evolution_log.csv', 'utf8');
+        res.send(content);
     } else {
         res.status(404).send("No data yet");
     }
@@ -487,7 +487,11 @@ function broadcastState() {
         lastLogTime = now;
         forceLog = false; // Reset the flag
         let csvLine = `${new Date().toISOString()},${extinctions},${count},${totalBirths},${totalDeaths},${foodCount},${poisonCount},${maxLineage},${asz.toFixed(3)},${asp.toFixed(3)},${aconn.toFixed(1)},${maxAge},${maxEnergy.toFixed(1)}\n`;
-        fs.appendFileSync(LOG_FILE, csvLine);
+        try {
+            fs.appendFileSync(LOG_FILE, csvLine);
+        } catch(e) {
+            console.error("Warning: Could not write to CSV log. Is the file open in Excel?", e.message);
+        }
     }
     
     // --- GEMINI AI LOOP ---
