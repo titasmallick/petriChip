@@ -505,7 +505,10 @@ async function runAiAnalysis() {
         
         if (res.ok) {
             const data = await res.json();
-            lastAiAnalysis = data.candidates[0].content.parts[0].text;
+            let rawText = data.candidates[0].content.parts[0].text;
+            // Clean up any potential markdown code blocks (```html ... ```) the AI might generate
+            rawText = rawText.replace(/```html/g, '').replace(/```/g, '').trim();
+            lastAiAnalysis = rawText;
             io.emit('ai_analysis', lastAiAnalysis);
         }
     } catch (e) {
