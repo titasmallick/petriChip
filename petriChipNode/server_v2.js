@@ -46,7 +46,7 @@ let extinctions = 0;
 let aliveCount = 0;
 let epochStartMillis = Date.now();
 let envRadiation = 0;
-let globalFertilizer = 500.0; // Biogeochemical cycle currency
+let globalFertilizer = 500.0; // Biogeochemical cycle currency\nlet globalEra = 0; // 0: Normal, 1: Ice Age, 2: Greenhouse Drought\nlet eraTicks = 0;
 let season = 0; // 0=Spring, 1=Summer, 2=Autumn, 3=Winter
 let seasonTicks = 0;
 
@@ -258,6 +258,12 @@ function tickPhysics() {
     // Food Replenishment
     
     // Season Logic
+    eraTicks++;
+    if (eraTicks > 180000) { // ~15 minutes real-time for an Epoch shift
+        globalEra = Math.floor(Math.random() * 3);
+        eraTicks = 0;
+    }
+    
     seasonTicks++;
     if (seasonTicks > 24000) { // ~2 minutes real time per season
         season = (season + 1) % 4;
@@ -273,6 +279,8 @@ function tickPhysics() {
     }
     
     let foodSpawnRate = 0.20;
+    if (globalEra === 1) foodSpawnRate *= 0.5; // Ice age kills global food
+    if (globalEra === 2) foodSpawnRate *= 0.8; // Drought reduces food
     if (season === 0) foodSpawnRate = 0.40; // Spring bloom
     if (season === 3) foodSpawnRate = 0.05; // Winter famine
     
@@ -543,7 +551,7 @@ function broadcastState() {
         fC: foodCount, pC: poisonCount,
         c: payloadCreatures, f: payloadItems,
         arenaSize: ARENA_SIZE,
-        startT: serverStartTime,
+        startT: serverStartTime,\n        era: globalEra,
         season: season
     });
 

@@ -44,6 +44,10 @@
       <span>🔲 Scavengers (Squares)</span>
   </div>
   
+  <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 5px;">
+      <span style="font-size: 1.0em; font-weight: bold; color: #aaa;" id="era-ui">🌍 EPOCH: Holocene (Normal Climate)</span>
+  </div>
+  
   <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 15px;">
       <span style="font-size: 1.2em; font-weight: bold; padding: 5px 15px; border-radius: 20px; background: rgba(255,255,255,0.1);" id="season-ui">🌸 SPRING</span>
   </div>
@@ -150,6 +154,13 @@
         if (data.startT) {
             let d = new Date(data.startT);
             document.getElementById('start-time').innerText = d.toLocaleString();
+        }
+        
+        if (data.era !== undefined) {
+            let eUI = document.getElementById('era-ui');
+            if (data.era === 0) { eUI.innerText = '🌍 EPOCH: Holocene (Normal Climate)'; eUI.style.color = '#aaa'; }
+            if (data.era === 1) { eUI.innerText = '🧊 EPOCH: ICE AGE (Extreme Freezing, 50% Food)'; eUI.style.color = '#00ffff'; }
+            if (data.era === 2) { eUI.innerText = '🔥 EPOCH: GREENHOUSE (Extreme Heatwaves)'; eUI.style.color = '#ff3300'; }
         }
         
         if (data.season !== undefined) {
