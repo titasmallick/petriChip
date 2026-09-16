@@ -27,6 +27,8 @@
     }
     #ai-readout, #ai-readout * {
         color: #fff !important;
+        background-color: transparent !important;
+        background: transparent !important;
     }
   </style>
 </head>
@@ -286,6 +288,7 @@
 
     socket.on('ai_analysis', (htmlData) => {
         let readout = document.getElementById('ai-readout');
+        htmlData = htmlData.replace(/`html/g, '').replace(/`/g, '');
         if(readout) readout.innerHTML = htmlData;
     });
 
