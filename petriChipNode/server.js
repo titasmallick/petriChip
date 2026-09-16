@@ -10,6 +10,15 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
+app.get('/api/history', (req, res) => {
+    if (fs.existsSync('evolution_log.csv')) {
+        const path = require('path');
+        res.sendFile(path.resolve('evolution_log.csv'));
+    } else {
+        res.status(404).send("No data yet");
+    }
+});
+
 // --- LOGGING & AI CONSTANTS ---
 const LOG_FILE = 'evolution_log.csv';
 const LOG_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes

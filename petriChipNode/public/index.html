@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Silicon Petri Dish: Node.js Cloud Edition</title>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
     body { background-color: #0b0c10; color: #c5c6c7; font-family: 'Share Tech Mono', monospace; padding: 10px; text-align: center; margin: 0; }
@@ -66,17 +67,23 @@
           <div id="ai-readout" style="font-size: 0.95rem; line-height: 1.5; color: #fff;">Awaiting connection...</div>
       </div>
       
+      <div style="border: 1px solid #33ff33; border-radius: 4px; background: #1f2833; padding: 15px; text-align: left;">
+          <h3 style="color: #33ff33; margin-top: 0; border-bottom: 1px solid #33ff33; padding-bottom: 5px;">📈 HISTORICAL DATA VISUALIZATION</h3>
+          <canvas id="metricsChart" style="width: 100%; height: 250px; background: #0b0c10; border-radius: 4px;"></canvas>
+      </div>
+      
       <div style="border: 1px solid #45a29e; border-radius: 4px; background: #0b0c10; padding: 15px; text-align: left; color: #c5c6c7; font-size: 0.9rem; line-height: 1.6;">
-          <h3 style="color: #45a29e; margin-top: 0; border-bottom: 1px solid #45a29e; padding-bottom: 5px;">📖 SYSTEM ARCHIVE: WHAT ARE YOU WATCHING?</h3>
-          <p>You are observing a high-speed Artificial Life simulation. Every triangle on the screen is an independent autonomous agent powered by its own mutating Neural Network.</p>
+          <h3 style="color: #45a29e; margin-top: 0; border-bottom: 1px solid #45a29e; padding-bottom: 5px;">📖 SYSTEM ARCHIVE: BIOLOGICAL PHENOMENA IN PLAY</h3>
+          <p>You are observing a high-speed Artificial Life simulation where neural-network-driven autonomous agents undergo natural selection. Several real-world evolutionary dynamics naturally emerge here:</p>
           <ul style="padding-left: 20px;">
-              <li><span style="color: #00ffcc;">Cyan Dots (Food):</span> Restores +60 energy. Essential for survival and reproduction.</li>
-              <li><span style="color: #ff0033;">Red Dots (Poison):</span> Drains -80 energy. Creatures must evolve the intelligence to avoid these.</li>
-              <li><strong style="color: #fff;">Metabolism:</strong> Every action costs energy. Moving fast, having a massive brain, or simply growing old drains their life force. If energy hits 0, they die.</li>
-              <li><strong style="color: #fff;">Evolution:</strong> If a creature gathers enough energy, it reproduces. The child inherits its parents' neural network with slight random mutations. Over thousands of generations, dumb creatures starve, and smart creatures build complex family lineages.</li>
-              <li><strong style="color: #fff;">The Graph:</strong> The real-time chart tracks species dominance based on their genetic color hue. When a single color spikes, it means that genetic lineage has discovered a highly successful survival strategy!</li>
+              <li><strong style="color: #fff;">Natural Selection & Poison Avoidance:</strong> Cyan dots (+60 energy) are food. Red dots (-80 energy) are poison. Because early generations have random brain wirings, they eat poison and die. Only those that randomly mutate a "Turn Away From Poison" reflex survive to reproduce.</li>
+              <li><strong style="color: #fff;">Insular Dwarfism (Directional Selection):</strong> Because food is scarce and a larger body (Avg Size) costs exponentially more metabolic energy to maintain, you will often see the species slowly shrink into "dwarfs" to conserve calories.</li>
+              <li><strong style="color: #fff;">The Red Queen Hypothesis (Arms Race):</strong> As food becomes scarce, the agents must evolve to be faster (Avg Speed) just to beat their siblings to the remaining food. They are forced to run at maximum speed simply to avoid extinction.</li>
+              <li><strong style="color: #fff;">Rapid Encephalization:</strong> The environments penalty for stupidity (poison) is so lethal that the survival benefit of a highly complex brain (Avg Connects) vastly outweighs its high metabolic cost, leading to rapid brain growth.</li>
+              <li><strong style="color: #fff;">Carrying Capacity (K-Selection):</strong> The environment only spawns a fixed amount of food per minute. The population will organically hit a ceiling (e.g., 60 creatures) and perfectly balance there—if they overpopulate, they starve back down to equilibrium.</li>
+              <li><strong style="color: #fff;">Speciation via Assortative Mating:</strong> Cloning (Mitosis) wastes 40 energy. Mating conserves it. Because mating requires bumping into a creature of a similar color hue, they naturally segregate into distinct, color-coded species (trackable on the live area chart).</li>
           </ul>
-          <p style="margin-bottom: 0;"><em>Warning: The "Radiation Burst" button will flood the arena with extreme radiation, drastically increasing the mutation rate of any children born during that 10-second window. Use it to force rapid evolution or break a stagnant ecosystem.</em></p>
+          <p style="margin-bottom: 0; color: #ff0033;"><em>Warning: The "Radiation Burst" button floods the arena with radiation, scrambling DNA (weights and structures) for 10s. Use it to force rapid evolution or shatter a stagnant ecosystem.</em></p>
       </div>
   </div>
   
@@ -282,6 +289,62 @@
     document.getElementById('rad-btn').addEventListener('click', () => {
         socket.emit('trigger_radiation');
     });
+
+    // Historical Charting Logic
+    let histChart = null;
+    async function loadHistoricalData() {
+        try {
+            let res = await fetch('/api/history');
+            if(!res.ok) return;
+            let text = await res.text();
+            let lines = text.trim().split('\n');
+            if (lines.length <= 1) return; // Only headers
+            
+            let labels = [], popData = [], sizeData = [], speedData = [], connData = [];
+            
+            for(let i=1; i<lines.length; i++) {
+                let cols = lines[i].split(',');
+                if(cols.length < 11) continue;
+                let date = new Date(cols[0]);
+                labels.push(date.getHours() + ":" + date.getMinutes().toString().padStart(2, '0'));
+                popData.push(parseFloat(cols[2]));
+                sizeData.push(parseFloat(cols[8]));
+                speedData.push(parseFloat(cols[9]));
+                connData.push(parseFloat(cols[10]));
+            }
+            
+            let ctxChart = document.getElementById('metricsChart').getContext('2d');
+            if(histChart) histChart.destroy();
+            
+            histChart = new Chart(ctxChart, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Population', data: popData, borderColor: '#fdf800', yAxisID: 'yPop', tension: 0.3, pointRadius: 0 },
+                        { label: 'Avg Size', data: sizeData, borderColor: '#33ff33', yAxisID: 'yStats', tension: 0.3, pointRadius: 0 },
+                        { label: 'Avg Speed', data: speedData, borderColor: '#ff3333', yAxisID: 'yStats', tension: 0.3, pointRadius: 0 },
+                        { label: 'Avg Connects', data: connData, borderColor: '#ff00ff', yAxisID: 'yStats', tension: 0.3, pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: '#333' } },
+                        yPop: { type: 'linear', position: 'left', grid: { color: '#333' }, title: {display: true, text: 'Population'} },
+                        yStats: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: {display: true, text: 'Phenotype / Neural'} }
+                    },
+                    plugins: { legend: { labels: { color: '#fff' } } }
+                }
+            });
+        } catch(e) { console.error('Chart load error:', e); }
+    }
+    
+    // Refresh historical chart every 5 minutes
+    loadHistoricalData();
+    setInterval(loadHistoricalData, 5 * 60 * 1000);
+
   </script>
 </body>
 </html>
