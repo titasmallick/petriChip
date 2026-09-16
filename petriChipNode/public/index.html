@@ -51,11 +51,21 @@
        <span>Avg Connects: <span id="avg-vis" class="val" style="color: #ff00ff;">0</span></span>
     </div>
   </div>
+  <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 15px;">
+     <button id="rad-btn" style="background: #ff0033; color: white; border: none; padding: 10px 20px; font-family: monospace; font-size: 1.1rem; cursor: pointer; border-radius: 4px; box-shadow: 0 0 10px #ff0033;">⚠️ TRIGGER RADIATION BURST (10s) ⚠️</button>
+  </div>
   
   <canvas id="arena" width="3000" height="3000"></canvas>
   <canvas id="graph" width="900" height="150" style="width: 100%; max-width: 900px; height: auto; aspect-ratio: 6 / 1; display: block; margin: 15px auto; border: 2px solid #333; border-radius: 8px; background: #0b0c10;"></canvas>
   
-  <div id="log-box" style="width: 100%; max-width: 900px; height: 120px; margin: 10px auto; background: #0b0c10; border: 1px solid #45a29e; border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.9rem; text-align: left; overflow-y: scroll; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px;"></div>
+  <div style="width: 100%; max-width: 900px; margin: 15px auto; display: flex; gap: 15px; flex-direction: column;">
+      <div id="log-box" style="height: 120px; background: #0b0c10; border: 1px solid #45a29e; border-radius: 4px; padding: 10px; font-size: 0.9rem; text-align: left; overflow-y: scroll; display: flex; flex-direction: column; gap: 4px;"></div>
+      
+      <div style="border: 1px solid #fdf800; border-radius: 4px; background: #1f2833; padding: 15px; text-align: left;">
+          <h3 style="color: #fdf800; margin-top: 0; border-bottom: 1px solid #fdf800; padding-bottom: 5px;">🧬 AI EVOLUTIONARY ANALYSIS (Updates every 30m)</h3>
+          <div id="ai-readout" style="font-size: 0.95rem; line-height: 1.5; color: #fff;">Awaiting connection...</div>
+      </div>
+  </div>
   
   <script>
     const socket = io();
@@ -236,6 +246,28 @@
             
             ctx.restore();
         });
+    });
+
+    socket.on('ai_analysis', (htmlData) => {
+        let readout = document.getElementById('ai-readout');
+        if(readout) readout.innerHTML = htmlData;
+    });
+
+    socket.on('radiation_warning', (isActive) => {
+        let btn = document.getElementById('rad-btn');
+        if (isActive) {
+            btn.style.background = 'white';
+            btn.style.color = 'red';
+            btn.innerText = '☢️ RADIATION BURST ACTIVE ☢️';
+        } else {
+            btn.style.background = '#ff0033';
+            btn.style.color = 'white';
+            btn.innerText = '⚠️ TRIGGER RADIATION BURST (10s) ⚠️';
+        }
+    });
+
+    document.getElementById('rad-btn').addEventListener('click', () => {
+        socket.emit('trigger_radiation');
     });
   </script>
 </body>

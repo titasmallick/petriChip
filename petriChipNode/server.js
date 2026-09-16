@@ -1,12 +1,26 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.static('public'));
+
+// --- LOGGING & AI CONSTANTS ---
+const LOG_FILE = 'evolution_log.csv';
+const LOG_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+const AI_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+let lastLogTime = 0;
+let lastAiTime = Date.now();
+let lastAiAnalysis = "No AI analysis performed yet. Waiting for enough data (runs every 30 mins).";
+
+if (!fs.existsSync(LOG_FILE)) {
+    fs.writeFileSync(LOG_FILE, 'timestamp,gen,pop,births,deaths,food,poison,max_lineage,avg_size,avg_speed,avg_connects,max_age,max_energy\n');
+}
 
 // --- SIMULATION CONSTANTS ---
 const ARENA_SIZE = 3000;
@@ -430,21 +444,94 @@ function broadcastState() {
 
     let epochAge = Math.floor((Date.now() - epochStartMillis) / 1000);
     
+    let asz = count ? sumSize/count : 0;
+    let asp = count ? sumSpeed/count : 0;
+    let aconn = count ? sumConn/count : 0;
+
     io.emit('state', {
         e: extinctions, a: count, b: totalBirths, d: totalDeaths,
-        asz: count ? sumSize/count : 0, asp: count ? sumSpeed/count : 0, aconn: count ? sumConn/count : 0,
+        asz: asz, asp: asp, aconn: aconn,
         rad: envRadiation, alpha: alphaIndex, age: epochAge,
         mE: maxEnergy, mA: maxAge, mL: maxLineage,
         fC: foodCount, pC: poisonCount,
         c: payloadCreatures, f: payloadItems,
         arenaSize: ARENA_SIZE
     });
+
+    let now = Date.now();
+    
+    // --- CSV LOGGING ---
+    if (lastLogTime === 0 || now - lastLogTime >= LOG_INTERVAL_MS) {
+        lastLogTime = now;
+        let csvLine = `${new Date().toISOString()},${extinctions},${count},${totalBirths},${totalDeaths},${foodCount},${poisonCount},${maxLineage},${asz.toFixed(3)},${asp.toFixed(3)},${aconn.toFixed(1)},${maxAge},${maxEnergy.toFixed(1)}\n`;
+        fs.appendFileSync(LOG_FILE, csvLine);
+    }
+    
+    // --- GEMINI AI LOOP ---
+    if (now - lastAiTime >= AI_INTERVAL_MS) {
+        lastAiTime = now;
+        runAiAnalysis();
+    }
+}
+
+async function runAiAnalysis() {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return;
+    try {
+        let csvData = fs.existsSync(LOG_FILE) ? fs.readFileSync(LOG_FILE, 'utf8') : "No data yet.";
+        // only keep last 50 lines to save tokens
+        let lines = csvData.split('\n');
+        if (lines.length > 51) {
+            csvData = lines[0] + '\n' + lines.slice(-50).join('\n');
+        }
+        
+        const prompt = `You are an evolutionary biologist analyzing an artificial life simulation. The dataset below represents the last few hours of evolution (Pop: active population, gen: extinctions, max_lineage: highest unbroken family tree, avg_connects: neural network size). Analyze what biological phenomena are playing out (like insular dwarfism, red queen hypothesis, carrying capacity), what recent changes occurred, and predict what happens next. Keep it under 250 words and format as clean HTML for a web dashboard.\n\nDATA:\n${csvData}`;
+
+        let apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+        
+        let reqBody = JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] });
+        
+        let res = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
+        
+        // Fallback cascade
+        if (!res.ok) {
+            apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${apiKey}`;
+            res = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
+        }
+        if (!res.ok) {
+            apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
+            res = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: reqBody });
+        }
+        
+        if (res.ok) {
+            const data = await res.json();
+            lastAiAnalysis = data.candidates[0].content.parts[0].text;
+            io.emit('ai_analysis', lastAiAnalysis);
+        }
+    } catch (e) {
+        console.error("AI Analysis failed:", e);
+    }
 }
 
 // Start simulation loops
 initEcosystem();
 setInterval(tickPhysics, TICK_RATE_MS);
 setInterval(broadcastState, BROADCAST_RATE_MS);
+
+io.on('connection', (socket) => {
+    // Send immediate AI state
+    socket.emit('ai_analysis', lastAiAnalysis);
+    
+    // Radiation burst event
+    socket.on('trigger_radiation', () => {
+        envRadiation = 50; // Severe mutation rate!
+        io.emit('radiation_warning', true);
+        setTimeout(() => { 
+            envRadiation = 0; 
+            io.emit('radiation_warning', false);
+        }, 10000);
+    });
+});
 
 server.listen(3000, () => {
     console.log('Node.js Petri Chip running wildly on http://localhost:3000');
