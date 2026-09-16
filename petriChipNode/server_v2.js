@@ -4,6 +4,10 @@ const http = require('http');
 const { Server } = require('socket.io');
 const fs = require('fs');
 
+// --- LOGGING & AI CONSTANTS ---
+const LOG_FILE = 'evolution_v2_log.csv';
+const LOG_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
+const AI_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -11,18 +15,15 @@ const io = new Server(server);
 app.use(express.static('public'));
 
 app.get('/api/history', (req, res) => {
-    if (fs.existsSync('evolution_log.csv')) {
-        let content = fs.readFileSync('evolution_log.csv', 'utf8');
+    if (fs.existsSync(LOG_FILE)) {
+        let content = fs.readFileSync(LOG_FILE, 'utf8');
         res.send(content);
     } else {
         res.status(404).send("No data yet");
     }
 });
 
-// --- LOGGING & AI CONSTANTS ---
-const LOG_FILE = 'evolution_v2_log.csv';
-const LOG_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
-const AI_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+
 const serverStartTime = Date.now();
 let lastLogTime = 0;
 let forceLog = false;
