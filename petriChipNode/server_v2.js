@@ -320,7 +320,13 @@ function tickPhysics() {
         c.angle += omega;
         c.x += Math.cos(c.angle) * v;
         c.y += Math.sin(c.angle) * v;
-        if (season === 0 || season === 1) c.energy += (c.gene_chloroplast * 0.1); // Sun energy
+        
+        if (season === 0 || season === 1) {
+            if (c.gene_chloroplast > 0.2 && globalFertilizer > 0) {
+                c.energy += (c.gene_chloroplast * 0.1); 
+                if (Math.random() < 0.01) globalFertilizer -= 1.0; 
+            }
+        }
         
         if (c.x < 0) { c.x = 0; c.angle += Math.PI; }
         if (c.x > ARENA_SIZE) { c.x = ARENA_SIZE; c.angle += Math.PI; }
