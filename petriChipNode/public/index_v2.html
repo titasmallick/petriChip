@@ -259,6 +259,36 @@
             window.lastConn += 2;
         }
         
+        // --- EVOLUTIONARY MILESTONES ---
+        window.milestones = window.milestones || { plant: false, carnivore: false, scavenger: false, immune: false, fur: false };
+        
+        if (data.a > 50) { // Only announce if population is stable
+            if (data.achloro > 0.70 && !window.milestones.plant) {
+                window.logEvent(`🌿 MILESTONE: The ecosystem is now dominated by Autotrophic Plants!`, "#00ffcc");
+                window.milestones.plant = true;
+            } else if (data.achloro < 0.50) window.milestones.plant = false;
+            
+            if (data.acarn > 0.70 && !window.milestones.carnivore) {
+                window.logEvent(`🩸 MILESTONE: Apex Predators have taken over the food web!`, "#ff3333");
+                window.milestones.carnivore = true;
+            } else if (data.acarn < 0.50) window.milestones.carnivore = false;
+            
+            if (data.ascav > 0.70 && !window.milestones.scavenger) {
+                window.logEvent(`🪲 MILESTONE: A massive population of Decomposers has emerged!`, "#999999");
+                window.milestones.scavenger = true;
+            } else if (data.ascav < 0.50) window.milestones.scavenger = false;
+            
+            if (data.aimm > 0.75 && !window.milestones.immune) {
+                window.logEvent(`🦠 MILESTONE: The population has evolved extreme Viral Immunity!`, "#00ff00");
+                window.milestones.immune = true;
+            } else if (data.aimm < 0.55) window.milestones.immune = false;
+            
+            if (data.ains > 0.75 && !window.milestones.fur) {
+                window.logEvent(`❄️ MILESTONE: The population has evolved thick fur for Ice Age survival!`, "#ffffff");
+                window.milestones.fur = true;
+            } else if (data.ains < 0.55) window.milestones.fur = false;
+        }
+        
         // Find current dominant color
         let currentDom = "None";
         let maxCount = 0;
