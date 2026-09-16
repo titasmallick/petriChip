@@ -30,6 +30,7 @@
 <body>
   <h1>// THE SILICON PETRI DISH (CLOUD SCALE)</h1>
   <h3>Massive Population Node.js Edition (1000x Speed)</h3>
+  <div style="font-size: 0.85em; color: #a0a4a8; margin-top: -15px; margin-bottom: 15px;">Experiment Started: <span id="start-time" style="color: #fff;">Loading...</span></div>
   
   <div class="stats">
     <div style="width: 100%; display: flex; justify-content: center; gap: 15px; font-size: 0.9em; flex-wrap: wrap;">
@@ -121,9 +122,14 @@
         
         document.getElementById('food-cnt').innerText = data.fC;
         document.getElementById('poison-cnt').innerText = data.pC;
-        document.getElementById('max-energy').innerText = data.mE.toFixed(0);
-        document.getElementById('max-age').innerText = data.mA;
-        document.getElementById('max-lineage').innerText = data.mL;
+        document.getElementById('max-energy').innerText = (data.mE || 0).toFixed(0);
+        document.getElementById('max-age').innerText = data.mA || 0;
+        document.getElementById('max-lineage').innerText = data.mL || 0;
+        
+        if (data.startT) {
+            let d = new Date(data.startT);
+            document.getElementById('start-time').innerText = d.toLocaleString();
+        }
         
         // Update Graph with Color Buckets (Muller Plot)
         let buckets = { r: 0, y: 0, g: 0, c: 0, b: 0, m: 0 };

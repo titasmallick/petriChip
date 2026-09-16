@@ -23,6 +23,7 @@ app.get('/api/history', (req, res) => {
 const LOG_FILE = 'evolution_log.csv';
 const LOG_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 const AI_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+const serverStartTime = Date.now();
 let lastLogTime = 0;
 let forceLog = false;
 let lastAiTime = Date.now();
@@ -467,7 +468,8 @@ function broadcastState() {
         mE: maxEnergy, mA: maxAge, mL: maxLineage,
         fC: foodCount, pC: poisonCount,
         c: payloadCreatures, f: payloadItems,
-        arenaSize: ARENA_SIZE
+        arenaSize: ARENA_SIZE,
+        startT: serverStartTime
     });
 
     let now = Date.now();
