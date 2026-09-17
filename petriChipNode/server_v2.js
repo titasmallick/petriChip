@@ -301,15 +301,13 @@ function tickPhysics() {
     if (season === 3) foodSpawnRate = 0.05; // Winter famine
     
     if (Math.random() < foodSpawnRate && globalFertilizer > 60.0) {
-        globalFertilizer -= 60.0; // Food costs exactly 60 fertilizer to spawn (Conservation of mass)
-        for (let f = 0; f < NUM_ITEMS; f++) {
-            if (!items[f].active) {
-                items[f].x = randomFloat(20, ARENA_SIZE - 20);
-                items[f].y = randomFloat(20, ARENA_SIZE - 20);
-                items[f].type = 1;
-                items[f].active = true;
-                break;
-            }
+        let emptySlot = items.findIndex(x => !x.active);
+        if (emptySlot !== -1) {
+            globalFertilizer -= 60.0; // Deduct ONLY if slot is available
+            items[emptySlot].x = randomFloat(20, ARENA_SIZE - 20);
+            items[emptySlot].y = randomFloat(20, ARENA_SIZE - 20);
+            items[emptySlot].type = 1;
+            items[emptySlot].active = true;
         }
     }
 
