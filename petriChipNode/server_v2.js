@@ -81,16 +81,16 @@ function initEcosystem() {
     // Genesis Event - 100 random ancestors
     creatures = [];
     for(let i = 0; i < MAX_CREATURES; i++) {
-        let alive = (i < 100);
+        let alive = (i < 400); // Increased from 100 to 400
         
 
         let c = {
             id: i, // Unique ID
             familyId: i, // Genesis root family
-            x: alive ? randomFloat(50, ARENA_SIZE - 50) : 0,
-            y: alive ? randomFloat(50, ARENA_SIZE - 50) : 0,
+            x: alive ? randomFloat(1000, 2000) : 0, // Primordial soup cluster!
+            y: alive ? randomFloat(1000, 2000) : 0,
             angle: randomFloat(0, Math.PI * 2),
-            energy: 200.0,
+            energy: 400.0,
             alive: alive,
             hue: Math.floor(Math.random() * 360),
             age: 0,
