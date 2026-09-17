@@ -315,17 +315,22 @@ function tickPhysics() {
     if (season === 0) foodSpawnRate = 0.40; // Spring bloom
     if (season === 3) foodSpawnRate = 0.05; // Winter famine
     
-    // Dynamic bloom: Rich soil rapidly converts into food dots
-    while (Math.random() < foodSpawnRate && globalFertilizer > 60.0) {
+    // True Dynamic Bloom: Soil richness mathematically dictates food spawn volume
+    let maxPotentialFood = Math.floor(globalFertilizer / 60.0);
+    let expectedSpawns = maxPotentialFood * 0.05 * foodSpawnRate; 
+    let spawnsThisTick = Math.floor(expectedSpawns);
+    if (Math.random() < (expectedSpawns - spawnsThisTick)) spawnsThisTick++; // Probabilistic fractional spawn
+    
+    for (let i = 0; i < spawnsThisTick; i++) {
         let emptySlot = items.findIndex(x => !x.active);
-        if (emptySlot !== -1) {
+        if (emptySlot !== -1 && globalFertilizer >= 60.0) {
             globalFertilizer -= 60.0;
             items[emptySlot].x = randomFloat(20, ARENA_SIZE - 20);
             items[emptySlot].y = randomFloat(20, ARENA_SIZE - 20);
             items[emptySlot].type = 1;
             items[emptySlot].active = true;
         } else {
-            break; // Array full
+            break;
         }
     }
 
