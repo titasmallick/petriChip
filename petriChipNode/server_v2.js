@@ -67,14 +67,15 @@ function initEcosystem() {
     globalEra = 0; eraTicks = 0; // Reset to Holocene
     season = 0; seasonTicks = 0; // Reset to Spring
     
-    // Spawn massive amounts of food and poison
+    // Spawn initial seed of food/poison, leaving plenty of empty slots for corpses and blooms
     items = [];
     for(let i = 0; i < NUM_ITEMS; i++) {
+        let shouldBeActive = (i < 400); // Only seed 400 items so the array isn't instantly full
         items.push({
             x: randomFloat(50, ARENA_SIZE - 50),
             y: randomFloat(50, ARENA_SIZE - 50),
-            type: (Math.random() < 0.25) ? -1 : 1, // 25% poison
-            active: true
+            type: (Math.random() < 0.25) ? -1 : 1,
+            active: shouldBeActive
         });
     }
 
