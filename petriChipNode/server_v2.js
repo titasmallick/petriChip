@@ -115,9 +115,9 @@ function initEcosystem() {
 }
 
 // --- NEAT LITE ARCHITECTURE ---
-// Node IDs: 0-7 (Sensors), 8-15 (Mem In), 16-17 (Motors), 18-25 (Mem Out), 26+ (Hidden)
+// Node IDs: 0-7 (Sensors), 8-15 (Mem In), 16-17 (Motors), 18 (Reproductive Intent), 19 (Aggression/Bite), 20-27 (Mem Out), 28+ (Hidden)
 function buildBrain() {
-    let brain = { maxNode: 25, conns: [] };
+    let brain = { maxNode: 27, conns: [] };
     // Start with 1 to 5 random rudimentary instinct wires
     let startConns = Math.floor(randomFloat(1, 6));
     for(let i=0; i<startConns; i++) {
@@ -150,7 +150,9 @@ function processBrain(brain, inputs, mem) {
     
     return {
         motors: [newNodes[16], newNodes[17]],
-        newMem: newNodes.slice(18, 26)
+        intent: newNodes[18],
+        aggression: newNodes[19],
+        newMem: newNodes.slice(20, 28)
     };
 }
 
@@ -257,7 +259,7 @@ function getSensors(c) {
 
 function tickPhysics() {
     // Geological nutrient cycle
-    globalFertilizer += 10.0;
+    // globalFertilizer += 10.0; // Removed for conservation of mass
     if (globalFertilizer > 10000.0) globalFertilizer = 10000.0;
 
     if (aliveCount === 0 && (Date.now() - epochStartMillis) > 2000) {
@@ -319,6 +321,9 @@ function tickPhysics() {
         let out = processBrain(c.brain, inputs, c.mem);
         
         c.mem = out.newMem; // Save memory state for next tick!
+        c.intent = out.intent;
+        c.aggression = out.aggression;
+
         let leftMotor = out.motors[0] * c.gene_speed;
         let rightMotor = out.motors[1] * c.gene_speed;
         
@@ -342,11 +347,12 @@ function tickPhysics() {
         if (c.y < 0) { c.y = 0; c.angle += Math.PI; }
         if (c.y > ARENA_SIZE) { c.y = ARENA_SIZE; c.angle += Math.PI; }
         
-        // Metabolism
-        let baselineCost = 0.05 * c.gene_size; // Increased baseline to prevent infinite camping // Reduced for 200fps
-        let movementCost = (Math.abs(leftMotor) + Math.abs(rightMotor)) * 0.005 * c.gene_size;
+        // Metabolism (Kleiber's Law Allometric Scaling)
+        let baselineCost = 0.05 * Math.pow(c.gene_size, 0.75); // S^0.75 basal metabolic rate
+        let actualV = Math.abs(v);
+        let movementCost = c.gene_size * actualV * actualV * 0.01; // S * v^2 kinetic energy drag
         let visionCost = (c.gene_vision * c.gene_vision) * 0.000001;
-        let ageTax = c.age * 0.00001; // Scaled down for 200 ticks/sec
+        let ageTax = c.age * 0.00001; 
         let brainTax = c.brain.conns.length * 0.0001; 
         
         let heatMultiplier = (globalEra === 2) ? 2.0 : (globalEra === 1 ? 0.5 : 1.0);
@@ -356,7 +362,9 @@ function tickPhysics() {
         if (season === 1) tempPenalty = c.gene_insulation * 0.05 * heatMultiplier; // Summer overheating
         if (season === 3) tempPenalty = (1.0 - c.gene_insulation) * 0.1 * freezeMultiplier; // Winter freezing
         
-        c.energy -= (baselineCost + movementCost + visionCost + ageTax + brainTax + tempPenalty);
+        let totalCost = baselineCost + movementCost + visionCost + ageTax + brainTax + tempPenalty;
+        c.energy -= totalCost;
+        globalFertilizer += (totalCost * 0.5); // Geochemical loop: 50% of burned energy returns as fertilizer
 
         // Eating
         let mouthSize = 15.0 * c.gene_size;
@@ -390,12 +398,10 @@ function tickPhysics() {
                 c.x += dx * 0.05; c.y += dy * 0.05;
                 c2.x -= dx * 0.05; c2.y -= dy * 0.05;
                 
-                let hueDiff = Math.abs(c.hue - c2.hue);
-                if (hueDiff > 180) hueDiff = 360 - hueDiff;
-                
-                if (hueDiff < 20) {
-                    // Mating
-                    let mateI = 150.0 * c.gene_size; // Increased threshold
+                // True Kin Recognition (Hamilton's Rule via Neural Net, not Hue) & Predation Intent
+                if (c.intent > 0 && c2.intent > 0) {
+                    // Mating (Both consent via Output 18)
+                    let mateI = 150.0 * c.gene_size; 
                     let mateJ = 150.0 * c2.gene_size;
                     if (c.energy > mateI && c2.energy > mateJ && Math.abs(c.gene_size - c2.gene_size) < 0.5) {
                         let empty = creatures.findIndex(x => !x.alive);
@@ -406,8 +412,8 @@ function tickPhysics() {
                             child.x = c.x; child.y = c.y;
                             child.angle = randomFloat(0, Math.PI*2);
                             child.age = 0;
-                            child.mem.fill(0); // Clear memory at birth
-                            child.familyId = Math.random() < 0.5 ? c.familyId : c2.familyId; // Inherit family
+                            child.mem.fill(0); 
+                            child.familyId = Math.random() < 0.5 ? c.familyId : c2.familyId; 
                             child.lineage = Math.max(c.lineage, c2.lineage) + 1;
                             child.alive = true;
                             aliveCount++; totalBirths++;
@@ -429,10 +435,18 @@ function tickPhysics() {
                             child.gene_chloroplast = Math.max(0.0, Math.min(1.0, (c.gene_chloroplast + c2.gene_chloroplast) / 2.0 + randomFloat(-0.05, 0.05)));
                             child.gene_scavenger = Math.max(0.0, Math.min(1.0, (c.gene_scavenger + c2.gene_scavenger) / 2.0 + randomFloat(-0.05, 0.05)));
                             child.gene_carnivore = Math.max(0.0, Math.min(1.0, (c.gene_carnivore + c2.gene_carnivore) / 2.0 + randomFloat(-0.05, 0.05)));
+                            
+                            // Trophic Mutual Exclusivity (The Polymath Paradox)
+                            let trophicSum = child.gene_chloroplast + child.gene_scavenger + child.gene_carnivore;
+                            if (trophicSum > 1.0) {
+                                child.gene_chloroplast /= trophicSum;
+                                child.gene_scavenger /= trophicSum;
+                                child.gene_carnivore /= trophicSum;
+                            }
+                            
                             child.gene_insulation = Math.max(0.0, Math.min(1.0, child.gene_insulation));
                             child.gene_immunity = Math.max(0.0, Math.min(1.0, child.gene_immunity));
                             child.infected = false; child.viralLoad = 0;
-
                             
                             child.gene_speed = Math.max(0.5, Math.min(4.0, child.gene_speed));
                             child.gene_vision = Math.max(20.0, Math.min(200.0, child.gene_vision));
@@ -444,23 +458,23 @@ function tickPhysics() {
                         // Symbiosis & Crowding Penalty
                         let total = c.energy + c2.energy;
                         c.energy = total/2; c2.energy = total/2;
-                        // If they are clumped up on top of each other, they steal each other's sunlight and starve!
                         c.energy -= 2.0; c2.energy -= 2.0; 
                     }
-                } else {
-                    // Predation / Combat
-                    if (c.gene_size > c2.gene_size * 1.5 && c.energy > c2.energy) {
+                } else if (c.aggression > 0 || c2.aggression > 0) {
+                    // Predation / Combat (Only if they actively decide to attack via Output 19)
+                    if (c.aggression > c2.aggression && c.gene_carnivore > 0.1 && c.gene_size > c2.gene_size * 1.2) {
+                        c.energy -= 5; // Cost of attack
                         let meat = Math.min(Math.max(0, c2.energy), 60.0 * c.gene_carnivore);
-                        c.energy += meat; c2.energy -= (60.0 * c.gene_carnivore);
-                    } else if (c2.gene_size > c.gene_size * 1.5 && c2.energy > c.energy) {
+                        c.energy += meat; c2.energy -= meat;
+                    } else if (c2.aggression > c.aggression && c2.gene_carnivore > 0.1 && c2.gene_size > c.gene_size * 1.2) {
+                        c2.energy -= 5; // Cost of attack
                         let meat = Math.min(Math.max(0, c.energy), 60.0 * c2.gene_carnivore);
-                        c2.energy += meat; c.energy -= (60.0 * c2.gene_carnivore);
+                        c2.energy += meat; c.energy -= meat;
                     } else {
-                        c.energy -= 10; c2.energy -= 10;
+                        c.energy -= 10; c2.energy -= 10; // Mutual scuffle cost
                         // Viral transmission on contact
                         if (c.infected && Math.random() < c.viralLoad) c2.infected = true;
                         if (c2.infected && Math.random() < c2.viralLoad) c.infected = true;
-
                     }
                 }
             }
@@ -517,6 +531,14 @@ function tickPhysics() {
                 child.gene_chloroplast = Math.max(0.0, Math.min(1.0, c.gene_chloroplast + randomFloat(-0.05, 0.05)));
                 child.gene_scavenger = Math.max(0.0, Math.min(1.0, c.gene_scavenger + randomFloat(-0.05, 0.05)));
                 child.gene_carnivore = Math.max(0.0, Math.min(1.0, c.gene_carnivore + randomFloat(-0.05, 0.05)));
+                
+                let trophicSum = child.gene_chloroplast + child.gene_scavenger + child.gene_carnivore;
+                if (trophicSum > 1.0) {
+                    child.gene_chloroplast /= trophicSum;
+                    child.gene_scavenger /= trophicSum;
+                    child.gene_carnivore /= trophicSum;
+                }
+                
                 child.gene_insulation = Math.max(0.0, Math.min(1.0, child.gene_insulation));
                 child.gene_immunity = Math.max(0.0, Math.min(1.0, child.gene_immunity));
                 child.infected = false; child.viralLoad = 0;
