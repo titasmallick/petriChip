@@ -403,7 +403,7 @@ function tickPhysics() {
         
         let totalCost = baselineCost + movementCost + visionCost + ageTax + brainTax + tempPenalty + viralTax;
         c.energy -= totalCost;
-        globalFertilizer += (totalCost * 0.5); // Geochemical loop: 50% of burned energy returns as fertilizer
+        globalFertilizer += totalCost; // Geochemical loop: 100% of burned energy returns to soil (Perfect Conservation)
 
         // Eating
         let mouthSize = 15.0 * c.gene_size;
@@ -414,10 +414,13 @@ function tickPhysics() {
                 if (dx*dx + dy*dy < mouthSize * mouthSize) {
                     items[f].active = false;
                     if (items[f].type === 1) {
-                        c.energy += 60.0 * (1.0 - c.gene_carnivore);
+                        let energyGained = 60.0 * (1.0 - c.gene_carnivore);
+                        c.energy += energyGained;
+                        globalFertilizer += (60.0 - energyGained); // Return undigested mass to soil
                     } else {
-                        c.energy += (-80.0 + (140.0 * c.gene_scavenger)); 
-                        globalFertilizer += 1.0; 
+                        let energyGained = -80.0 + (140.0 * c.gene_scavenger);
+                        c.energy += energyGained;
+                        globalFertilizer += (60.0 - energyGained); // Conserve corpse mass and poisoned energy loss
                     }
                 }
             }
