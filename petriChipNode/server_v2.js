@@ -220,7 +220,7 @@ function getSensors(c) {
         if (!items[f].active) continue;
         
         // Corpses decay over time, returning their 60 mass to the soil
-        if (items[f].type === -1 && Math.random() < 0.001) {
+        if (items[f].type === -1 && Math.random() < 0.0001) {
             items[f].active = false;
             globalFertilizer += 60.0;
             continue;
@@ -534,10 +534,15 @@ function tickPhysics() {
                 initEcosystem();
                 return;
             }
-            // Drop poison
+            // Strict Mass Conservation & Decomp
+            globalFertilizer += Math.max(0, c.energy); // Return residual energy to soil
             let emptyF = items.findIndex(x => !x.active);
             if (emptyF !== -1) {
+                globalFertilizer -= 60.0; // Materialize corpse mass
                 items[emptyF].x = c.x; items[emptyF].y = c.y; items[emptyF].type = -1; items[emptyF].active = true;
+            } else {
+                // If items array is full of food, corpse instantly dissolves into soil
+                // (Mass is perfectly conserved since we don't deduct 60)
             }
             continue;
         }
