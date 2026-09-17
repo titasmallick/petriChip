@@ -47,7 +47,7 @@ let extinctions = 0;
 let aliveCount = 0;
 let epochStartMillis = Date.now();
 let envRadiation = 0;
-let globalFertilizer = 500.0; // Biogeochemical cycle currency
+let globalFertilizer = 10000.0; // Massive initial bloom to support scattered genesis pop // Biogeochemical cycle currency
 let globalEra = 0; // 0: Normal, 1: Ice Age, 2: Greenhouse Drought
 let eraTicks = 0;
 let season = 0; // 0=Spring, 1=Summer, 2=Autumn, 3=Winter
@@ -63,7 +63,7 @@ function randomFloat(min, max) {
 function initEcosystem() {
     aliveCount = 0;
     epochStartMillis = Date.now();
-    globalFertilizer = 500.0; // Reset biogeochemical cycle on mass extinction
+    globalFertilizer = 10000.0; // Reset biogeochemical cycle
     globalEra = 0; eraTicks = 0; // Reset to Holocene
     season = 0; seasonTicks = 0; // Reset to Spring
     
@@ -90,13 +90,13 @@ function initEcosystem() {
             x: alive ? randomFloat(50, ARENA_SIZE - 50) : 0, // Scattered across entire map
             y: alive ? randomFloat(50, ARENA_SIZE - 50) : 0,
             angle: randomFloat(0, Math.PI * 2),
-            energy: 400.0,
+            energy: 1000.0, // Give them enough time to wander and find food on a massive board
             alive: alive,
             hue: Math.floor(Math.random() * 360),
             age: 0,
             lineage: 0,
             gene_speed: randomFloat(0.5, 3.0),
-            gene_vision: randomFloat(30.0, 150.0),
+            gene_vision: randomFloat(100.0, 200.0), // High initial vision to prevent immediate starvation
             gene_size: randomFloat(0.5, 2.5),
             gene_insulation: randomFloat(0.0, 1.0),
             gene_immunity: randomFloat(0.0, 1.0),
@@ -269,7 +269,7 @@ function getSensors(c) {
 function tickPhysics() {
     // Geological nutrient cycle
     // globalFertilizer += 10.0; // Removed for conservation of mass
-    if (globalFertilizer > 10000.0) globalFertilizer = 10000.0;
+    // Removed hard cap on globalFertilizer to preserve total ecosystem mass after extinctions
 
     if (aliveCount === 0 && (Date.now() - epochStartMillis) > 2000) {
         forceLog = true;
@@ -307,14 +307,17 @@ function tickPhysics() {
     if (season === 0) foodSpawnRate = 0.40; // Spring bloom
     if (season === 3) foodSpawnRate = 0.05; // Winter famine
     
-    if (Math.random() < foodSpawnRate && globalFertilizer > 60.0) {
+    // Dynamic bloom: Rich soil rapidly converts into food dots
+    while (Math.random() < foodSpawnRate && globalFertilizer > 60.0) {
         let emptySlot = items.findIndex(x => !x.active);
         if (emptySlot !== -1) {
-            globalFertilizer -= 60.0; // Deduct ONLY if slot is available
+            globalFertilizer -= 60.0;
             items[emptySlot].x = randomFloat(20, ARENA_SIZE - 20);
             items[emptySlot].y = randomFloat(20, ARENA_SIZE - 20);
             items[emptySlot].type = 1;
             items[emptySlot].active = true;
+        } else {
+            break; // Array full
         }
     }
 
