@@ -100,9 +100,9 @@ function initEcosystem() {
             gene_size: randomFloat(0.5, 2.5),
             gene_insulation: randomFloat(0.0, 1.0),
             gene_immunity: randomFloat(0.0, 1.0),
-            gene_chloroplast: randomFloat(0.0, 1.0),
-            gene_scavenger: randomFloat(0.0, 1.0),
-            gene_carnivore: randomFloat(0.0, 1.0),
+            gene_chloroplast: 0.0, // Start as simple heterotrophs (chemotrophs)
+            gene_scavenger: 0.0,
+            gene_carnivore: 0.0,
             infected: false,
             viralLoad: 0.0,
             brain: buildBrain(), // NEAT Brain!
