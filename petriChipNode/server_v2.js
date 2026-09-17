@@ -538,7 +538,7 @@ function tickPhysics() {
                             child.intent = 0.0; child.aggression = 0.0; // Clear memory at birth!
                 child.familyId = c.familyId; // Inherit family
                 child.lineage = c.lineage + 1;
-                c.energy -= (200.0 * c.gene_size);
+                let asexualCost = 200.0 * c.gene_size; c.energy -= asexualCost;
                 child.alive = true;
                 aliveCount++; totalBirths++;
                 
