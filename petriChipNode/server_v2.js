@@ -283,7 +283,9 @@ function tickPhysics() {
     // Season Logic
     eraTicks++;
     if (eraTicks > 36000) { // ~15 minutes real-time for an Epoch shift
-        globalEra = Math.floor(Math.random() * 3);
+        let nextEra;
+        do { nextEra = Math.floor(Math.random() * 3); } while (nextEra === globalEra);
+        globalEra = nextEra; // Guarantee a visual shift to a NEW epoch
         eraTicks = 0;
     }
     
