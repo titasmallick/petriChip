@@ -424,8 +424,10 @@ function tickPhysics() {
                     if (c.energy > mateI && c2.energy > mateJ && Math.abs(c.gene_size - c2.gene_size) < 0.5) {
                         let empty = creatures.findIndex(x => !x.alive);
                         if (empty !== -1) {
-                            c.energy -= (40.0 * c.gene_size); 
-                            c2.energy -= (40.0 * c2.gene_size);
+                            let cost1 = 40.0 * c.gene_size;
+                            let cost2 = 40.0 * c2.gene_size;
+                            c.energy -= cost1; 
+                            c2.energy -= cost2;
                             let child = creatures[empty];
                             child.x = c.x; child.y = c.y;
                             child.angle = randomFloat(0, Math.PI*2);
@@ -471,7 +473,7 @@ function tickPhysics() {
                             child.gene_vision = Math.max(20.0, Math.min(200.0, child.gene_vision));
                             child.gene_size = Math.max(0.5, Math.min(2.5, child.gene_size));
                             
-                            child.energy = 80.0 * child.gene_size;
+                            child.energy = cost1 + cost2;
                         }
                     } else {
                         // Symbiosis & Crowding Penalty
@@ -502,7 +504,10 @@ function tickPhysics() {
         // Senescence (Age & Mass-related mortality curve)
         // Older and larger organisms have a higher chance of spontaneous heart failure/cancer
         let mortalityChance = 0.000001 * (c.age / 1000.0) * c.gene_size;
-        if (Math.random() < mortalityChance) c.energy = -1;
+        if (Math.random() < mortalityChance) {
+            globalFertilizer += Math.max(0, c.energy); // Return remaining life force to the soil
+            c.energy = -1;
+        }
         
         if (c.energy <= 0) {
             c.alive = false;
@@ -570,7 +575,7 @@ function tickPhysics() {
                 child.gene_vision = Math.max(20.0, Math.min(200.0, child.gene_vision));
                 child.gene_size = Math.max(0.5, Math.min(2.5, child.gene_size));
                 
-                child.energy = 80.0 * child.gene_size; // Child energy scales with its new body size
+                child.energy = asexualCost; // Strict mass conservation
                 
                 child.brain = mutateBrain(c.brain, envRadiation);
                 if(Math.random() < saltChance) child.brain = buildBrain(); // Saltation restarts brain
