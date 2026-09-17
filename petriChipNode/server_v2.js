@@ -283,9 +283,14 @@ function tickPhysics() {
     // Season Logic
     eraTicks++;
     if (eraTicks > 36000) { // ~15 minutes real-time for an Epoch shift
-        let nextEra;
-        do { nextEra = Math.floor(Math.random() * 3); } while (nextEra === globalEra);
-        globalEra = nextEra; // Guarantee a visual shift to a NEW epoch
+        // Milankovitch Cycle (Orbital eccentricity driving predictable climate shifts)
+        // Progression: Holocene (0) -> Ice Age (1) -> Holocene (0) -> Greenhouse (2) -> Holocene (0)
+        if (globalEra === 1 || globalEra === 2) {
+            globalEra = 0; // Extreme periods always recede back to a temperate interglacial (Holocene)
+        } else {
+            // If in Holocene, flip a coin to determine which extreme the orbit swings towards next
+            globalEra = Math.random() < 0.5 ? 1 : 2;
+        }
         eraTicks = 0;
     }
     
