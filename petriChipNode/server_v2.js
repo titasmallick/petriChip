@@ -366,7 +366,21 @@ function tickPhysics() {
         if (season === 1) tempPenalty = c.gene_insulation * 0.05 * heatMultiplier; // Summer overheating
         if (season === 3) tempPenalty = (1.0 - c.gene_insulation) * 0.1 * freezeMultiplier; // Winter freezing
         
-        let totalCost = baselineCost + movementCost + visionCost + ageTax + brainTax + tempPenalty;
+        // Viral Replication & Immune Drain
+        let viralTax = 0;
+        if (c.infected) {
+            c.viralLoad += 0.005 * (1.0 - c.gene_immunity); // Virus replicates faster in weak hosts
+            c.viralLoad = Math.min(1.0, c.viralLoad);
+            viralTax = c.viralLoad * 0.5 * (1.0 - c.gene_immunity); // Fever/Metabolic drain
+            
+            // Immune system fights back (Chance to clear infection)
+            if (Math.random() < (c.gene_immunity * 0.001)) {
+                c.infected = false;
+                c.viralLoad = 0.0;
+            }
+        }
+        
+        let totalCost = baselineCost + movementCost + visionCost + ageTax + brainTax + tempPenalty + viralTax;
         c.energy -= totalCost;
         globalFertilizer += (totalCost * 0.5); // Geochemical loop: 50% of burned energy returns as fertilizer
 
@@ -477,16 +491,18 @@ function tickPhysics() {
                         c2.energy += meat; c.energy -= meat;
                     } else {
                         c.energy -= 10; c2.energy -= 10; // Mutual scuffle cost
-                        // Viral transmission on contact
-                        if (c.infected && Math.random() < c.viralLoad) c2.infected = true;
-                        if (c2.infected && Math.random() < c2.viralLoad) c.infected = true;
+                        // Viral transmission on contact (Resisted by gene_immunity)
+                        if (c.infected && Math.random() < c.viralLoad * (1.0 - c2.gene_immunity)) c2.infected = true;
+                        if (c2.infected && Math.random() < c2.viralLoad * (1.0 - c.gene_immunity)) c.infected = true;
                     }
                 }
             }
         }
         
-        // Random disease/death (scaled for 200fps to mean 1 death per 1000 seconds on avg per unit)
-        if (Math.random() < 0.00001) c.energy = -1;
+        // Senescence (Age & Mass-related mortality curve)
+        // Older and larger organisms have a higher chance of spontaneous heart failure/cancer
+        let mortalityChance = 0.000001 * (c.age / 1000.0) * c.gene_size;
+        if (Math.random() < mortalityChance) c.energy = -1;
         
         if (c.energy <= 0) {
             c.alive = false;
