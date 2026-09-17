@@ -197,7 +197,8 @@
         creatures = data.c;
         items = data.f;
         
-        creatures.forEach(c => {
+        for (let i = 0; i < creatures.length; i++) {
+            let c = creatures[i];
             let h = c[4]; // Hue
             if (h >= 330 || h < 30) buckets.r++;
             else if (h >= 30 && h < 90) buckets.y++;
