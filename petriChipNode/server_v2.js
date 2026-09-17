@@ -87,8 +87,8 @@ function initEcosystem() {
         let c = {
             id: i, // Unique ID
             familyId: i, // Genesis root family
-            x: alive ? randomFloat(1000, 2000) : 0, // Primordial soup cluster!
-            y: alive ? randomFloat(1000, 2000) : 0,
+            x: alive ? randomFloat(50, ARENA_SIZE - 50) : 0, // Scattered across entire map
+            y: alive ? randomFloat(50, ARENA_SIZE - 50) : 0,
             angle: randomFloat(0, Math.PI * 2),
             energy: 400.0,
             alive: alive,
