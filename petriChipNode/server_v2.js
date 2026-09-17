@@ -218,6 +218,13 @@ function getSensors(c) {
 
     for (let f = 0; f < NUM_ITEMS; f++) {
         if (!items[f].active) continue;
+        
+        // Corpses decay over time, returning their 60 mass to the soil
+        if (items[f].type === -1 && Math.random() < 0.001) {
+            items[f].active = false;
+            globalFertilizer += 60.0;
+            continue;
+        }
         let dx = items[f].x - c.x;
         let dy = items[f].y - c.y;
         let d2 = dx*dx + dy*dy;
