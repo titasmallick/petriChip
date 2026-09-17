@@ -106,7 +106,9 @@ function initEcosystem() {
             infected: false,
             viralLoad: 0.0,
             brain: buildBrain(), // NEAT Brain!
-            mem: new Array(8).fill(0)
+            mem: new Array(8).fill(0),
+            intent: 0.0,
+            aggression: 0.0
         };
 
         if (alive) aliveCount++;
@@ -298,8 +300,8 @@ function tickPhysics() {
     if (season === 0) foodSpawnRate = 0.40; // Spring bloom
     if (season === 3) foodSpawnRate = 0.05; // Winter famine
     
-    if (Math.random() < foodSpawnRate && globalFertilizer > 0) {
-        globalFertilizer -= 1.0; // 20% chance to spawn food every tick on massive board
+    if (Math.random() < foodSpawnRate && globalFertilizer > 60.0) {
+        globalFertilizer -= 60.0; // Food costs exactly 60 fertilizer to spawn (Conservation of mass)
         for (let f = 0; f < NUM_ITEMS; f++) {
             if (!items[f].active) {
                 items[f].x = randomFloat(20, ARENA_SIZE - 20);
@@ -337,8 +339,10 @@ function tickPhysics() {
         
         if (season === 0 || season === 1) {
             if (c.gene_chloroplast > 0.2 && globalFertilizer > 0) {
-                c.energy += (c.gene_chloroplast * 0.1); 
-                if (Math.random() < 0.01) globalFertilizer -= 1.0; 
+                let energyGained = c.gene_chloroplast * 0.1;
+                // Strict Conservation of Mass
+                c.energy += energyGained;
+                globalFertilizer -= energyGained; 
             }
         }
         
@@ -412,7 +416,8 @@ function tickPhysics() {
                             child.x = c.x; child.y = c.y;
                             child.angle = randomFloat(0, Math.PI*2);
                             child.age = 0;
-                            child.mem.fill(0); 
+                            child.mem.fill(0);
+                            child.intent = 0.0; child.aggression = 0.0; 
                             child.familyId = Math.random() < 0.5 ? c.familyId : c2.familyId; 
                             child.lineage = Math.max(c.lineage, c2.lineage) + 1;
                             child.alive = true;
@@ -510,7 +515,8 @@ function tickPhysics() {
                 child.x = c.x + randomFloat(-30, 30); child.y = c.y + randomFloat(-30, 30);
                 child.angle = randomFloat(0, 2*Math.PI);
                 child.age = 0;
-                child.mem.fill(0); // Clear memory at birth!
+                child.mem.fill(0);
+                            child.intent = 0.0; child.aggression = 0.0; // Clear memory at birth!
                 child.familyId = c.familyId; // Inherit family
                 child.lineage = c.lineage + 1;
                 c.energy -= (200.0 * c.gene_size);
@@ -718,10 +724,10 @@ io.on('connection', (socket) => {
     socket.on('trigger_meteor', () => {
         io.emit('meteor_warning');
         for (let i = 0; i < creatures.length; i++) {
-            if (Math.random() < 0.9) creatures[i].energy = -1; // 90% death rate
+            if (creatures[i].alive && Math.random() < 0.9) { globalFertilizer += Math.max(0, creatures[i].energy); creatures[i].energy = -1; }
         }
         for (let i = 0; i < items.length; i++) {
-            if (items[i].type === 1 && Math.random() < 0.9) items[i].active = false; // Vaporize food
+            if (items[i].type === 1 && Math.random() < 0.9) { items[i].active = false; globalFertilizer += 60.0; } // Vaporize food (Returns mass as ash)
         }
     });
 });
