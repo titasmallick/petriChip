@@ -1,61 +1,90 @@
-# 🧫 Silicon Petri Dish (petriChip)
+# Silicon Petri Dish (petriChip)
 
-A fully autonomous, real-time evolutionary ecosystem running entirely on the **ESP32** microcontroller.
+An autonomous, real-time evolutionary ecosystem and artificial life simulation framework. This project explores biologically-inspired mathematical ecosystems across different computational environments, ranging from edge microcontrollers to scalable Node.js servers. The simulation features emergent behaviors driven by neural networks, strict resource limitations, and physical interactions.
 
-This project is a biologically-inspired artificial life simulation. The ESP32 hosts a C++ physics engine and a mathematical neural-network ecosystem, broadcasting a high-performance 60FPS dashboard to any connected browser via its own local web server.
+## Framework Architectures
 
-## 🧬 Biological Phenomena Implemented
+The repository contains three distinct implementations of the simulation, each scaling in biological complexity and computational requirements.
 
-The entities in this simulation are not hard-coded to survive. They are equipped with **100-gene neural networks** (8 sensory inputs, 8 hidden neurons, 2 motor outputs). There is no artificial fitness score or overarching objective function; they must mathematically learn to hunt food, avoid poison, and interact with other species purely to gather enough energy to reproduce. Survival and replication are their own intrinsic metrics.
+### 1. BionotesESP32.ino: Native ESP32 Evolutionary Simulation
 
-* **Social Sight & Niche Selection:** Organisms do not just see food; they can see the distance, angle, and *genetic similarity* of the nearest living organism. They also possess an internal sensory input for their own **Self Energy**, allowing them to dynamically switch between aggressive pack hunting when starving and predator evasion/hiding when full.
-* **Evolvable Morphology (r/K Selection):** Organisms do not just evolve their brains; they evolve their bodies. Each organism has specific genes for **Base Speed**, **Vision Radius**, and **Body Size (`gene_size`)**. Size dictates an organism's life strategy: massive organisms have incredible predation power and can store huge amounts of energy, but they move slower, burn massive amounts of baseline calories, and require enormous food reserves to reproduce. Tiny organisms are weak but can breed incredibly fast on very little food.
-* **Senescence (Aging) & Extrinsic Mortality:** Organisms are not biologically immortal. As their `age` increases, their metabolic efficiency decays. Additionally, there is a constant background stochastic mortality rate (random death via disease/accidents), forcing a true Darwinian pressure to hunt and reproduce before they die.
-* **True Sexual Reproduction (Crossover):** When two organisms of a similar genetic color (Kin) bump into each other, and *both* have sufficient energy reserves, they will expend their energy to mate! They spawn a child that inherits a 50/50 genetic crossover of both parents' neural weights and morphological body plans, massively accelerating the discovery of beneficial traits. Organisms practice **Mate Choice**, refusing to mate with partners that have starvation-level energy reserves or drastically different body sizes.
-* **Mitosis (Asexual):** If an organism is utterly alone but successfully hunts a massive amount of food, it can reproduce asexually by splitting in half. However, this is *brutally expensive* compared to sexual reproduction, enforcing the evolutionary advantage of seeking a mate.
-* **Asymmetric Predation:** When organisms of different species collide, it is no longer a coin-flip. The stronger organism—calculated by multiplying its current energy reserves by its evolved **Speed and Body Size**—overpowers the weaker species, stealing its energy.
-* **Bacterial Toxicity:** In a closed environment, dead organisms lyse and release toxic metabolic waste. Starving organisms pollute the arena with deadly poison upon death.
-* **True Darwinian Extinction:** There is no "Alpha Vault" or genetic backup. If a lineage goes extinct, it is gone forever. If a mass extinction wipes out the entire board, the simulation experiences a "Genesis Event", randomly seeding the board with primitive ancestors to start evolution entirely from scratch.
+The foundational implementation runs entirely on an ESP32 microcontroller, hosting both a C++ physics engine and a mathematical neural-network ecosystem. 
 
-## 📡 Interactive EMF Radiation
+*   **Fixed Topology Neural Networks:** Organisms possess 100-gene neural networks consisting of 8 sensory inputs, 8 hidden neurons, and 2 motor outputs.
+*   **Edge Computing Dashboard:** The simulation broadcasts a high-performance 60 FPS dashboard to connected browsers via a local web server served directly from the ESP32 PROGMEM.
+*   **Environmental Radiation via EMF:** The ESP32 asynchronously scans for nearby WiFi networks using `WiFi.RSSI()`. Strong local signals (such as a mobile hotspot) are interpreted as environmental radiation. This triggers physical displacement through electromagnetic drift and radically increases mutation rates, forcing saltation (extreme speciation events) if reproduction occurs during exposure.
 
-The ESP32 asynchronously scans for nearby WiFi networks using `WiFi.RSSI()`. 
-If you bring a phone (with a Mobile Hotspot enabled) physically close to the ESP32 chip, the simulation detects the signal strength and interprets it as **Environmental Radiation**.
+### 2. server.js: Node.js NEAT Lite Architecture
 
-* Triggers a Red Radar Pulse on the UI.
-* Physically irradiates the organisms, knocking them around via electromagnetic drift.
-* Radically scrambles their DNA, forcing **Saltation** (extreme speciation events) if they reproduce while irradiated.
+A server-side implementation utilizing Node.js, designed for massive scale and topological evolution. 
 
-## 💻 Dashboard & Analytics
+*   **Expanded Ecosystem:** Supports a 3000x3000 dimensional arena capable of sustaining 600 simultaneous organisms and 1500 resource items.
+*   **NeuroEvolution of Augmenting Topologies (NEAT):** Replaces the fixed neural topology with dynamic brains. Organisms start with rudimentary instinct wires and can randomly mutate to add nodes or connections, theoretically increasing cognitive capacity over evolutionary time.
+*   **Memory States:** Organisms retain a cyclical memory vector, allowing historical context to influence immediate motor decisions.
+*   **Automated Analytical Observer:** Integrates the Gemini API to periodically evaluate the CSV-logged population metrics, functioning as an artificial evolutionary biologist providing real-time hypotheses on the ecosystem's state.
 
-The dashboard is served directly from the ESP32 `PROGMEM` to your browser.
-* **Evolutionary Muller Plot:** A real-time Stacked Area Chart tracking the population history of 12 distinct genetic strains over the last 60 seconds.
-* **Dominant Species Predictor:** Analyzes growth trends to predict which species will achieve dominance or face collapse.
-* **Circadian Rhythms:** The environment smoothly interpolates between Day and Night every 60 seconds, halving the organisms' vision at night and forcing them to adapt their hunting strategies.
-* **"God Mode":** Tapping the petri dish on a phone screen manually drops clusters of food and poison into the simulation.
-* **Asteroid Strike:** A manual trigger to instantly kill 95% of the ecosystem to test the survivors' evolutionary resilience or trigger a Genesis reset.
-* **WebAudio Geiger Counter:** Synthesizes Geiger counter clicks proportional to the detected WiFi radiation.
+### 3. server_v2.js: Advanced Biogeochemical and Trophic Ecosystem
 
-## 🛠️ Hardware & Setup
+The most sophisticated version, introducing strict conservation of mass, thermodynamic limits, and complex ecological niches.
 
-* **Hardware:** Any standard ESP32 development board.
-* **Dependencies:** None. Only native `WiFi.h` and `WebServer.h`.
-* **Installation:** 
-  1. Open `BionotesESP32.ino` in the Arduino IDE.
-  2. Update the `ssid` and `password` variables to match your local WiFi network.
-  3. Flash to the ESP32.
-  4. Open the Serial Monitor (115200 baud) to find the ESP32's local IP address (e.g., `http://192.168.0.116`).
-  5. Open that IP address in any modern desktop or mobile browser.
+*   **Strict Nutrient Cycling:** Mass is conserved perfectly. Burned metabolic energy, dead organism mass, and consumed resources return to a global geological nutrient pool (`globalFertilizer`), which mathematically dictates the replenishment rate of consumable items.
+*   **Trophic Specialization:** Organisms evolve along a mutually exclusive trophic spectrum governed by genes for autotrophy (`gene_chloroplast`), detritivory (`gene_scavenger`), and predation (`gene_carnivore`). Detritivores extract energy from toxic corpses, while autotrophs draw trace energy directly from the environment.
+*   **Milankovitch Cycles and Seasonality:** The environment undergoes cyclic climatic shifts. Short-term seasonal cycles (Spring, Summer, Autumn, Winter) alter food spawn rates and thermal penalties. Long-term epochs (Ice Age, Greenhouse Drought, Holocene) impose severe selective pressures on the population.
+*   **Thermal Adaptation and Epidemiology:** Survival in climatic extremes requires the evolution of insulation (`gene_insulation`). Furthermore, winter seasons trigger viral outbreaks, necessitating the evolution of immunity (`gene_immunity`) to resist infection and metabolic drain.
+*   **Intent and Kin Recognition:** Organisms use a dedicated neural output to signal aggressive or reproductive intent, introducing Hamilton's Rule (kin selection) into mating and combat decisions.
 
-## 🚀 Performance Notes
+## Fundamental Biological Mechanics
 
-* The C++ physics engine runs asynchronously at 20 ticks per second on the ESP32.
-* The frontend uses a decoupled `requestAnimationFrame` loop with mathematical `lerp` interpolation to render the entities at a buttery-smooth 60fps, even on mobile devices.
-* The state payload is severely optimized to keep the JSON string small, preventing heap fragmentation on the microcontroller.
+Across all implementations, survival and replication are intrinsic metrics. There is no artificial fitness function.
 
----
-*Created as a demonstration of artificial life, edge computing, and biological data visualization.*
+*   **Sensory and Niche Selection:** Organisms perceive the distance, angle, and genetic similarity of the nearest living organism, as well as their own internal energy state. This allows for dynamic behavioral switching between foraging, evasion, and reproduction.
+*   **Evolvable Morphology (r/K Selection):** Body plan genes (`gene_speed`, `gene_vision`, `gene_size`) dictate life-history strategies. High mass (K-selection) grants predation power and energy storage but incurs severe basal metabolic costs and high reproductive thresholds. Low mass (r-selection) enables rapid, cheap reproduction.
+*   **Metabolic Constraints and Senescence:** Energy is depleted according to Kleiber's Law allometric scaling, kinetic drag, neural processing costs, and thermal penalties. Extrinsic stochastic mortality and age-related metabolic decay ensure continuous selective pressure.
+*   **Reproductive Dynamics:** Sexual reproduction (crossover) requires mutual intent, threshold energy reserves, and morphological compatibility, enabling rapid discovery of beneficial traits. Asexual reproduction (mitosis) is biologically permitted but computationally penalized with exorbitant energy costs to enforce the advantage of mating.
 
-## Big Brother Version (Node.js)
+## Empirical Observation Report
 
-This repository now also includes the **Node.js Big Brother** version of the simulation (/petriChipNode). This version runs on a scalable backend, featuring a massive 3000x3000 arena, support for 600 simultaneous organisms, and a full NEAT (NeuroEvolution of Augmenting Topologies) implementation where neural networks structurally grow over time. It includes a beautiful WebSocket dashboard with a live Muller graph and Evolutionary Observer terminal.
+The following report analyzes an extended 78.5-hour runtime of `server_v2.js`, documenting the emergent evolutionary phenomena.
+
+### Key Findings
+
+1.  **The Founder Filter:** The simulation is a near-lethal environment. Of 196 completed founder epochs, the median survival time was 1.5 minutes. Most lineages starve before selection can operate.
+2.  **Evolutionary Rescue:** In the single epoch that survived for 78.5 hours (achieving 1.36 million births and an ancestry depth of 10,516 generations), survivors rapidly doubled their speed and tripled their neural connections within the first 10 minutes.
+3.  **Boundary Selection:** Mean velocity locked at 3.84 against a hard cap of 4.0. Directional selection drove the trait to the constraint ceiling, exhausting variation.
+4.  **Detritivory Dominance:** The scavenger gene stabilized around 0.7. Autotrophy and carnivory remained low (~4-5%). A tight necromass recycling loop became the optimal survival strategy.
+5.  **Thermal Directional Adaptation:** Insulation genes rose from 0.50 to approximately 0.85, tracking the mathematically defined optimal state for minimizing thermal penalties across normal eras.
+6.  **Alternative Stable States (r/K Shift):** The population exhibited distinct body-size regimes. Large-body states (mean ~2.2) correlated with lower birth rates and longer lifespans, while small-body states (mean ~1.3) exhibited high turnover. Switches between these states were abrupt, resembling punctuated equilibrium.
+7.  **Seasonal Nutrient Cycling:** A defined seasonal sawtooth emerged. Winter famines caused the soil nutrient pool to accumulate (due to high mortality), followed by rapid depletion during the spring bloom.
+8.  **Neutral Evolution:** Immunity randomly walked across its range (0.06 to 0.97) due to the failure of epidemics to establish effective transmission, demonstrating genetic drift and potential hitchhiking with body-size sweeps.
+
+### Figures
+
+*   ![Founder Filter](fig1_founder_filter.png)
+*   ![Trait Trajectories](fig2_trait_trajectories.png)
+*   ![Size Regimes and Life History](fig3_size_regimes_life_history.png)
+*   ![Seasonality](fig4_seasonality.png)
+
+## Installation and Execution
+
+### ESP32 Microcontroller (`BionotesESP32.ino`)
+
+1.  Open the file in the Arduino IDE.
+2.  Provide valid local WiFi credentials to the `ssid` and `password` constants.
+3.  Compile and flash to an ESP32 development board.
+4.  Monitor the Serial output (115200 baud) to obtain the assigned local IP address.
+5.  Navigate to the IP address in a web browser to view the real-time simulation dashboard.
+
+### Node.js Servers (`server.js` and `server_v2.js`)
+
+1.  Ensure Node.js is installed on the host machine.
+2.  Navigate to the `petriChipNode` directory.
+3.  Install dependencies: `npm install express socket.io dotenv`
+4.  (Optional) Provide a valid Gemini API key in a `.env` file (`GEMINI_API_KEY=your_key`) for the analytical observer.
+5.  Execute the desired simulation: `node server.js` or `node server_v2.js`.
+6.  Access the simulation at `http://localhost:3000`.
+
+## Limits and Constraints
+
+*   Population metrics are currently logged as aggregate means, masking intra-population variance and specific clade dynamics.
+*   Topological neural growth outpaces expected functional utility. Current analysis suggests a significant portion of connection growth represents inert structural bloat rather than active cognitive processing.
+*   Carrying capacity fluctuates dramatically based on localized resource availability and thermodynamic era, rather than remaining static.
