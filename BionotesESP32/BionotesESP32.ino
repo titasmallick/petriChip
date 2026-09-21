@@ -75,7 +75,7 @@ void initEcosystem() {
     creatures[i].alive = true;
     
     for(int w = 0; w < 100; w++) {
-      creatures[i].w[w] = randomFloat(-1.0, 1.0);
+      creatures[i].w[w] = randomFloat(-0.35, 0.35);
     }
     
     creatures[i].hue = random(0, 360);
@@ -99,12 +99,23 @@ void tickPhysics() {
     return;
   }
   
-  aliveCount = 0;
-  
   // Immigration removed to enforce a closed-system True Darwinian ecosystem.
 
-  // Rare renewable resources (Food & Poison bloom)
-  if (random(100) < 5) { // 5% chance per tick
+  // Maintain target food levels (batch respawning)
+  int activeItems = 0;
+  for (int f = 0; f < NUM_ITEMS; f++) {
+    if (items[f].active) activeItems++;
+  }
+  if (activeItems < NUM_ITEMS / 2) { // Refill if below 50%
+    for (int f = 0; f < NUM_ITEMS; f++) {
+      if (!items[f].active && random(100) < 10) { // 10% chance to respawn inactive items
+         items[f].x = randomFloat(20, ARENA_SIZE - 20);
+         items[f].y = randomFloat(20, ARENA_SIZE - 20);
+         items[f].type = (random(100) < 20) ? -1 : 1; 
+         items[f].active = true;
+      }
+    }
+  } else if (random(100) < 5) { // Normal 5% chance per tick to spawn one item
     for (int f = 0; f < NUM_ITEMS; f++) {
       if (!items[f].active) {
          items[f].x = randomFloat(20, ARENA_SIZE - 20);
@@ -134,7 +145,10 @@ void tickPhysics() {
 
   for (int i = 0; i < MAX_CREATURES; i++) {
     if (!creatures[i].alive) continue;
-    aliveCount++;
+    if (creatures[i].age < 0) {
+        creatures[i].age = 0;
+        continue;
+    }
     creatures[i].age++; // Senescence (Aging clock)
     
     // Morphology: Individual vision radius affected by day/night cycle
@@ -176,7 +190,7 @@ void tickPhysics() {
     float closestCreatSim = 0; // 1.0 = Same Species (Kin), -1.0 = Different Species (Alien)
 
     for (int j = 0; j < MAX_CREATURES; j++) {
-      if (i == j || !creatures[j].alive) continue;
+      if (i == j || !creatures[j].alive || creatures[j].energy <= 0) continue;
       float dx = creatures[j].x - creatures[i].x;
       float dy = creatures[j].y - creatures[i].y;
       float d = sqrt(dx*dx + dy*dy);
@@ -244,14 +258,15 @@ void tickPhysics() {
     
     // MULTIPLE ECOLOGICAL INTERACTIONS (When organisms physically touch)
     for(int j = i + 1; j < MAX_CREATURES; j++) {
-      if (!creatures[j].alive) continue;
+      if (!creatures[i].alive || creatures[i].energy <= 0) break;
+      if (!creatures[j].alive || creatures[j].energy <= 0) continue;
       float ddx = creatures[i].x - creatures[j].x;
       float ddy = creatures[i].y - creatures[j].y;
       
       // Collision radius scales with body size!
-      float collideDist = 100.0 * ((creatures[i].gene_size + creatures[j].gene_size) / 2.0);
+      float collideDist = 15.0 * ((creatures[i].gene_size + creatures[j].gene_size) / 2.0);
       
-      if (ddx*ddx + ddy*ddy < collideDist) { 
+      if (ddx*ddx + ddy*ddy < (collideDist * collideDist)) { 
          
          // Anti-clumping physical pushback
          creatures[i].x += ddx * 0.05;
@@ -285,10 +300,9 @@ void tickPhysics() {
                      creatures[emptySlot].x = creatures[i].x;
                      creatures[emptySlot].y = creatures[i].y;
                      creatures[emptySlot].angle = randomFloat(0, 2*PI);
-                     creatures[emptySlot].age = 0;
+                     creatures[emptySlot].age = -1; // -1 prevents double processing this tick
                      creatures[emptySlot].lineage = max(creatures[i].lineage, creatures[j].lineage) + 1;
                      creatures[emptySlot].alive = true;
-                     aliveCount++;
                      totalBirths++;
                      
                      // Crossover DNA & Morphology
@@ -324,11 +338,14 @@ void tickPhysics() {
              float powerJ = creatures[j].energy * creatures[j].gene_speed * creatures[j].gene_size;
              
              if (powerI > powerJ) {
-                 creatures[i].energy += 15.0;  
-                 creatures[j].energy -= 15.0;  
+                 float stolen = min(15.0f, creatures[j].energy);
+                 creatures[i].energy += stolen;  
+                 creatures[j].energy -= stolen;  
              } else {
-                 creatures[j].energy += 15.0;
-                 creatures[i].energy -= 15.0;
+                 // Recoil/counter-attack: attacker loses energy, defender absorbs a fraction
+                 float damage = min(15.0f, creatures[i].energy);
+                 creatures[i].energy -= damage;
+                 creatures[j].energy += (damage * 0.5f);
              }
          }
       }
@@ -357,16 +374,7 @@ void tickPhysics() {
     
     if (creatures[i].energy <= 0) {
       creatures[i].alive = false;
-      aliveCount--;
       totalDeaths++;
-      
-      // TRUE EXTINCTION / GENESIS RESTART
-      // Without the Alpha Vault, total extinction triggers a hard reset of the ecosystem
-      if (aliveCount == 0) {
-         extinctions++;
-         initEcosystem();
-         return; // Break out of physics loop to let init take over
-      }
       
       // BACTERIAL TOXICITY: Dead organisms lyse and release toxic waste.
       for (int f = 0; f < NUM_ITEMS; f++) {
@@ -396,13 +404,12 @@ void tickPhysics() {
           creatures[emptySlot].y = creatures[i].y + randomFloat(-30, 30);
           creatures[emptySlot].angle = randomFloat(0, 2*PI);
           creatures[emptySlot].energy = 80.0;
-          creatures[emptySlot].age = 0; // Child starts at age 0
+          creatures[emptySlot].age = -1; // -1 prevents double processing this tick
           creatures[emptySlot].lineage = creatures[i].lineage + 1; // Generation depth increases!
           
           // Mitosis is brutally expensive (cost: 120 energy) compared to sex (cost: 40 energy)
           creatures[i].energy -= 120.0; 
           creatures[emptySlot].alive = true;
-          aliveCount++;
           totalBirths++;
           
           // WiFi Radiation (Signal Strength) drives mutation rate!
@@ -435,7 +442,7 @@ void tickPhysics() {
           for (int w = 0; w < 100; w++) {
             creatures[emptySlot].w[w] = creatures[i].w[w];
             if (random(100) < saltationChance) { 
-              creatures[emptySlot].w[w] = randomFloat(-1.0, 1.0); // Saltation (scrambled)
+              creatures[emptySlot].w[w] = randomFloat(-0.35, 0.35); // Saltation (scrambled)
             } else {
               creatures[emptySlot].w[w] += randomFloat(-mutSeverity, mutSeverity); // Micro-mutation
               if (creatures[emptySlot].w[w] > 2.0) creatures[emptySlot].w[w] = 2.0;
@@ -446,6 +453,17 @@ void tickPhysics() {
            creatures[i].energy = 160.0; // Cap energy if world is overpopulated
        }
     }
+  }
+  
+  aliveCount = 0;
+  for (int i = 0; i < MAX_CREATURES; i++) {
+    if (creatures[i].alive) aliveCount++;
+  }
+  
+  if (aliveCount == 0) {
+    extinctions++;
+    initEcosystem();
+    return;
   }
 }
 
@@ -592,6 +610,10 @@ const char index_html[] PROGMEM = R"rawliteral(
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.03);
         osc.start(audioCtx.currentTime);
         osc.stop(audioCtx.currentTime + 0.03);
+        osc.onended = () => {
+            osc.disconnect();
+            gain.disconnect();
+        };
     }
     
     // Geiger Counter loop
@@ -817,8 +839,8 @@ const char index_html[] PROGMEM = R"rawliteral(
             ctx.lineWidth = 2;
             ctx.stroke();
             r.r += 2;
-            r.alpha -= 0.02;
-            if (r.alpha <= 0) ripples.splice(i, 1);
+            r.alpha = Math.max(0, r.alpha - 0.02);
+            if (r.alpha === 0) ripples.splice(i, 1);
         }
         
         items.forEach(f => {
@@ -905,7 +927,7 @@ const char index_html[] PROGMEM = R"rawliteral(
         requestAnimationFrame(draw);
     }
     
-    setInterval(fetchState, 100); 
+    setInterval(fetchState, 300); 
     setInterval(updateGraphData, 500);
     requestAnimationFrame(draw); 
   </script>
@@ -924,8 +946,8 @@ void handleTouch() {
          if(!items[j].active) { emptySlot = j; break; }
        }
        if(emptySlot != -1) {
-         items[emptySlot].x = tx + randomFloat(-20, 20);
-         items[emptySlot].y = ty + randomFloat(-20, 20);
+         items[emptySlot].x = constrain(tx + randomFloat(-20, 20), 20.0f, (float)ARENA_SIZE - 20.0f);
+         items[emptySlot].y = constrain(ty + randomFloat(-20, 20), 20.0f, (float)ARENA_SIZE - 20.0f);
          items[emptySlot].type = (i == 3) ? -1 : 1; // 3 food, 1 poison
          items[emptySlot].active = true;
        }
@@ -938,7 +960,7 @@ void handleTouch() {
 
 void handleAsteroid() {
   for(int i=0; i<MAX_CREATURES; i++) {
-     if(creatures[i].alive && random(100) < 95) {
+     if(creatures[i].alive) {
          creatures[i].energy = 0; // Trigger death and spore check next tick
      }
   }
@@ -1044,11 +1066,11 @@ void setup() {
 void loop() {
   server.handleClient();
   
+  static unsigned long lastWifiScan = 0;
+  
   // Handle async WiFi scanning (Environmental Radiation by RSSI / Signal Strength)
   int n = WiFi.scanComplete();
-  if (n == WIFI_SCAN_FAILED) {
-    WiFi.scanNetworks(true); // Restart scan
-  } else if (n >= 0) {
+  if (n >= 0) {
     int totalRad = 0;
     for (int i = 0; i < n; i++) {
       int rssi = WiFi.RSSI(i);
@@ -1064,7 +1086,12 @@ void loop() {
     }
     envRadiation = totalRad;
     WiFi.scanDelete(); // Clear memory
+  }
+  
+  // Throttle new scans to every 5 seconds to prevent TCP drops
+  if ((n == WIFI_SCAN_FAILED || n >= 0) && (millis() - lastWifiScan > 5000)) {
     WiFi.scanNetworks(true); // Start next scan
+    lastWifiScan = millis();
   }
   
   unsigned long currentMillis = millis();
