@@ -53,7 +53,6 @@ float randomFloat(float min, float max) {
 
 void initEcosystem() {
   aliveCount = 0;
-  epochStartMillis = millis();
   
   // Scatter initial items (mostly food, some poison)
   for(int i = 0; i < NUM_ITEMS; i++) {
@@ -99,12 +98,10 @@ void tickPhysics() {
     return;
   }
   
-  // Immigration removed to enforce a closed-system True Darwinian ecosystem.
-
   // Maintain target food levels (batch respawning)
   int activeItems = 0;
   for (int f = 0; f < NUM_ITEMS; f++) {
-    if (items[f].active) activeItems++;
+    if (items[f].active && items[f].type == 1) activeItems++;
   }
   if (activeItems < NUM_ITEMS / 2) { // Refill if below 50%
     for (int f = 0; f < NUM_ITEMS; f++) {
@@ -140,6 +137,15 @@ void tickPhysics() {
     }
   }
 
+  // Poison Decay (prevent dead-matter eutrophication)
+  if (random(1000) < 50) { 
+    for (int f = 0; f < NUM_ITEMS; f++) {
+      if (items[f].active && items[f].type == -1 && random(100) < 5) {
+        items[f].active = false;
+      }
+    }
+  }
+
   // --- PHYSICS ENGINE START ---
   float dayCycle = (sin(millis() * 2.0 * PI / 60000.0) + 1.0) / 2.0;
 
@@ -152,7 +158,8 @@ void tickPhysics() {
     creatures[i].age++; // Senescence (Aging clock)
     
     // Morphology: Individual vision radius affected by day/night cycle
-    float myVision = creatures[i].gene_vision * (0.5 + 0.5 * dayCycle);
+    float safeSize = max(creatures[i].gene_size, 0.5f);
+    float myVision = max(creatures[i].gene_vision * (0.5f + 0.5f * dayCycle), 1.0f);
     
     // 1. Calculate inputs for Neural Net (Sight!)
     float closestDist = myVision;
@@ -181,6 +188,7 @@ void tickPhysics() {
         } else {
            creatures[i].energy -= 80.0; // Poison is DEADLY
         }
+        break; // Prevent multiple consumption events in a single physics step
       }
     }
 
@@ -215,7 +223,7 @@ void tickPhysics() {
     float in_creat_dist = closestCreatDist / myVision;
     float in_creat_angle = closestCreatAngle / PI;
     float in_creat_sim = closestCreatSim;
-    float in_self_energy = creatures[i].energy / (160.0 * creatures[i].gene_size); // Normalize by body size
+    float in_self_energy = creatures[i].energy / (160.0 * safeSize); // Normalize by body size
     
     // Hidden Layer (8 neurons) with 8 inputs each = 64 weights (w[0] to w[63])
     float h[8];
@@ -243,10 +251,12 @@ void tickPhysics() {
     // Morphology: Evolved Speed & Turn Rate. Larger bodies (gene_size) move slower!
     float radMult = 1.0 + (envRadiation * 0.02); 
     if (radMult > 2.0) radMult = 2.0;
-    float speed = (tanh(sumSpeed) + 1.0) * (creatures[i].gene_speed / creatures[i].gene_size) * radMult; 
-    float turn = tanh(sumTurn) * (creatures[i].gene_speed * 0.25 / creatures[i].gene_size) * radMult; 
+    float speed = (tanh(sumSpeed) + 1.0) * (creatures[i].gene_speed / safeSize) * radMult; 
+    float turn = tanh(sumTurn) * (creatures[i].gene_speed * 0.25 / safeSize) * radMult; 
     
     creatures[i].angle += turn;
+    while (creatures[i].angle >= 2.0f * PI) creatures[i].angle -= 2.0f * PI;
+    while (creatures[i].angle < 0.0f)       creatures[i].angle += 2.0f * PI;
     creatures[i].x += cos(creatures[i].angle) * speed;
     creatures[i].y += sin(creatures[i].angle) * speed;
     
@@ -259,7 +269,7 @@ void tickPhysics() {
     // MULTIPLE ECOLOGICAL INTERACTIONS (When organisms physically touch)
     for(int j = i + 1; j < MAX_CREATURES; j++) {
       if (!creatures[i].alive || creatures[i].energy <= 0) break;
-      if (!creatures[j].alive || creatures[j].energy <= 0) continue;
+      if (!creatures[j].alive || creatures[j].energy <= 0 || creatures[j].age < 0) continue;
       float ddx = creatures[i].x - creatures[j].x;
       float ddy = creatures[i].y - creatures[j].y;
       
@@ -296,9 +306,13 @@ void tickPhysics() {
                      // Mating is significantly cheaper (costs 40) than Asexual Mitosis (costs 120).
                      creatures[i].energy -= 40.0;
                      creatures[j].energy -= 40.0;
-                     creatures[emptySlot].energy = 80.0;
-                     creatures[emptySlot].x = creatures[i].x;
-                     creatures[emptySlot].y = creatures[i].y;
+                     creatures[emptySlot].gene_size = (creatures[i].gene_size + creatures[j].gene_size) / 2.0 + randomFloat(-0.1, 0.1);
+                     if (creatures[emptySlot].gene_size < 0.5) creatures[emptySlot].gene_size = 0.5;
+                     if (creatures[emptySlot].gene_size > 2.5) creatures[emptySlot].gene_size = 2.5;
+
+                     creatures[emptySlot].energy = 50.0 * creatures[emptySlot].gene_size;
+                     creatures[emptySlot].x = constrain(creatures[i].x + randomFloat(-30, 30), 10.0f, (float)ARENA_SIZE - 10.0f);
+                     creatures[emptySlot].y = constrain(creatures[i].y + randomFloat(-30, 30), 10.0f, (float)ARENA_SIZE - 10.0f);
                      creatures[emptySlot].angle = randomFloat(0, 2*PI);
                      creatures[emptySlot].age = -1; // -1 prevents double processing this tick
                      creatures[emptySlot].lineage = max(creatures[i].lineage, creatures[j].lineage) + 1;
@@ -309,12 +323,12 @@ void tickPhysics() {
                      for (int w = 0; w < 100; w++) {
                          creatures[emptySlot].w[w] = (random(100) < 50) ? creatures[i].w[w] : creatures[j].w[w];
                          if (random(100) < 5) creatures[emptySlot].w[w] += randomFloat(-0.5, 0.5); // Micro-mutation
+                         if (creatures[emptySlot].w[w] > 2.0f) creatures[emptySlot].w[w] = 2.0f;
+                         if (creatures[emptySlot].w[w] < -2.0f) creatures[emptySlot].w[w] = -2.0f;
                      }
                      creatures[emptySlot].hue = (creatures[i].hue + creatures[j].hue) / 2.0 + randomFloat(-10, 10);
                      creatures[emptySlot].gene_speed = (creatures[i].gene_speed + creatures[j].gene_speed) / 2.0 + randomFloat(-0.1, 0.1);
                      creatures[emptySlot].gene_vision = (creatures[i].gene_vision + creatures[j].gene_vision) / 2.0 + randomFloat(-5.0, 5.0);
-                     creatures[emptySlot].gene_size = (creatures[i].gene_size + creatures[j].gene_size) / 2.0 + randomFloat(-0.1, 0.1);
-                     
                      if (creatures[emptySlot].hue < 0) creatures[emptySlot].hue += 360;
                      if (creatures[emptySlot].hue > 360) creatures[emptySlot].hue -= 360;
                      
@@ -322,14 +336,9 @@ void tickPhysics() {
                      if (creatures[emptySlot].gene_speed > 4.0) creatures[emptySlot].gene_speed = 4.0;
                      if (creatures[emptySlot].gene_vision < 20.0) creatures[emptySlot].gene_vision = 20.0;
                      if (creatures[emptySlot].gene_vision > 200.0) creatures[emptySlot].gene_vision = 200.0;
-                     if (creatures[emptySlot].gene_size < 0.5) creatures[emptySlot].gene_size = 0.5;
-                     if (creatures[emptySlot].gene_size > 2.5) creatures[emptySlot].gene_size = 2.5;
+                     
+                     break; // Prevent multiple mating events in a single tick
                  }
-             } else {
-                 // Mutualism: If not mating (rejected or low energy), they pool and share energy
-                 float totalEn = creatures[i].energy + creatures[j].energy;
-                 creatures[i].energy = totalEn / 2.0;
-                 creatures[j].energy = totalEn / 2.0;
              }
          } else {
              // PREDATION (Different Species)
@@ -345,21 +354,33 @@ void tickPhysics() {
                  // Recoil/counter-attack: attacker loses energy, defender absorbs a fraction
                  float damage = min(15.0f, creatures[i].energy);
                  creatures[i].energy -= damage;
-                 creatures[j].energy += (damage * 0.5f);
+                 creatures[j].energy = min(creatures[j].energy + (damage * 0.5f), 160.0f * creatures[j].gene_size);
              }
          }
       }
     }
     
     // Arena Bounds (Bounce slightly so they don't get stuck)
-    if (creatures[i].x < 0) { creatures[i].x = 0; creatures[i].angle += PI; }
-    if (creatures[i].x > ARENA_SIZE) { creatures[i].x = ARENA_SIZE; creatures[i].angle += PI; }
-    if (creatures[i].y < 0) { creatures[i].y = 0; creatures[i].angle += PI; }
-    if (creatures[i].y > ARENA_SIZE) { creatures[i].y = ARENA_SIZE; creatures[i].angle += PI; }
+    if (creatures[i].x < 2.0f && cos(creatures[i].angle) < 0) { 
+      creatures[i].x = 2.0f; 
+      creatures[i].angle = PI - creatures[i].angle; 
+    } else if (creatures[i].x > ARENA_SIZE - 2.0f && cos(creatures[i].angle) > 0) { 
+      creatures[i].x = ARENA_SIZE - 2.0f; 
+      creatures[i].angle = PI - creatures[i].angle; 
+    }
+    if (creatures[i].y < 2.0f && sin(creatures[i].angle) < 0) { 
+      creatures[i].y = 2.0f; 
+      creatures[i].angle = -creatures[i].angle; 
+    } else if (creatures[i].y > ARENA_SIZE - 2.0f && sin(creatures[i].angle) > 0) { 
+      creatures[i].y = ARENA_SIZE - 2.0f; 
+      creatures[i].angle = -creatures[i].angle; 
+    }
+    while (creatures[i].angle >= 2.0f * PI) creatures[i].angle -= 2.0f * PI;
+    while (creatures[i].angle < 0.0f)       creatures[i].angle += 2.0f * PI;
     
     // Continuous Metabolism, Morphology Tax, and Senescence (Aging)
-    float baseline = 0.10 * creatures[i].gene_size; // Larger bodies burn more resting energy
-    float movementTax = abs(speed) * 0.03 * creatures[i].gene_size; // Larger bodies take more energy to move
+    float baseline = 0.10 * safeSize; // Larger bodies burn more resting energy
+    float movementTax = abs(speed) * 0.03 * safeSize; // Larger bodies take more energy to move
     float visionTax = creatures[i].gene_vision * 0.0005; // Having huge vision burns energy
     float ageTax = creatures[i].age * 0.0002; // Getting older burns more energy (Forces R/K selection!)
     
@@ -379,8 +400,8 @@ void tickPhysics() {
       // BACTERIAL TOXICITY: Dead organisms lyse and release toxic waste.
       for (int f = 0; f < NUM_ITEMS; f++) {
          if (!items[f].active) {
-            items[f].x = creatures[i].x;
-            items[f].y = creatures[i].y;
+            items[f].x = constrain(creatures[i].x + randomFloat(-15, 15), 10.0f, (float)ARENA_SIZE - 10.0f);
+            items[f].y = constrain(creatures[i].y + randomFloat(-15, 15), 10.0f, (float)ARENA_SIZE - 10.0f);
             items[f].type = -1; // -1 = Poison
             items[f].active = true;
             break;
@@ -399,16 +420,19 @@ void tickPhysics() {
        for(int j=0; j<MAX_CREATURES; j++) {
            if (!creatures[j].alive) { emptySlot = j; break; }
        }
-       if (emptySlot != -1) {
-          creatures[emptySlot].x = creatures[i].x + randomFloat(-30, 30);
-          creatures[emptySlot].y = creatures[i].y + randomFloat(-30, 30);
+        if (emptySlot != -1) {
+          creatures[emptySlot].x = constrain(creatures[i].x + randomFloat(-30, 30), 10.0f, (float)ARENA_SIZE - 10.0f);
+          creatures[emptySlot].y = constrain(creatures[i].y + randomFloat(-30, 30), 10.0f, (float)ARENA_SIZE - 10.0f);
           creatures[emptySlot].angle = randomFloat(0, 2*PI);
-          creatures[emptySlot].energy = 80.0;
+          creatures[emptySlot].gene_size = creatures[i].gene_size + randomFloat(-0.1, 0.1); // Calculate size first
+          if (creatures[emptySlot].gene_size < 0.5) creatures[emptySlot].gene_size = 0.5;
+          if (creatures[emptySlot].gene_size > 2.5) creatures[emptySlot].gene_size = 2.5;
+          
+          creatures[emptySlot].energy = 50.0 * creatures[emptySlot].gene_size;
           creatures[emptySlot].age = -1; // -1 prevents double processing this tick
           creatures[emptySlot].lineage = creatures[i].lineage + 1; // Generation depth increases!
           
-          // Mitosis is brutally expensive (cost: 120 energy) compared to sex (cost: 40 energy)
-          creatures[i].energy -= 120.0; 
+          creatures[i].energy -= mitosis_barrier * 0.75; // Costs 75% of the barrier
           creatures[emptySlot].alive = true;
           totalBirths++;
           
@@ -429,15 +453,11 @@ void tickPhysics() {
           // Morphological drift
           creatures[emptySlot].gene_speed = creatures[i].gene_speed + randomFloat(-0.1, 0.1);
           creatures[emptySlot].gene_vision = creatures[i].gene_vision + randomFloat(-5.0, 5.0);
-          creatures[emptySlot].gene_size = creatures[i].gene_size + randomFloat(-0.1, 0.1);
-          
           // Constrain genes
           if (creatures[emptySlot].gene_speed < 0.5) creatures[emptySlot].gene_speed = 0.5;
           if (creatures[emptySlot].gene_speed > 4.0) creatures[emptySlot].gene_speed = 4.0;
           if (creatures[emptySlot].gene_vision < 20.0) creatures[emptySlot].gene_vision = 20.0;
           if (creatures[emptySlot].gene_vision > 200.0) creatures[emptySlot].gene_vision = 200.0;
-          if (creatures[emptySlot].gene_size < 0.5) creatures[emptySlot].gene_size = 0.5;
-          if (creatures[emptySlot].gene_size > 2.5) creatures[emptySlot].gene_size = 2.5;
 
           for (int w = 0; w < 100; w++) {
             creatures[emptySlot].w[w] = creatures[i].w[w];
@@ -450,7 +470,7 @@ void tickPhysics() {
             }
           }
        } else {
-           creatures[i].energy = 160.0; // Cap energy if world is overpopulated
+           creatures[i].energy = min(creatures[i].energy, 160.0f * creatures[i].gene_size); // Cap energy if world is overpopulated
        }
     }
   }
@@ -669,7 +689,10 @@ const char index_html[] PROGMEM = R"rawliteral(
         let total = 0;
         for(let i=0; i<50; i++) {
             if(currentCreatures[i] && currentCreatures[i].alive) {
-                let binIndex = Math.floor(((currentCreatures[i].hue + 15) % 360) / 30);
+                let hueVal = currentCreatures[i].hue;
+                let binIndex = Math.floor((((hueVal + 15) % 360) + 360) % 360 / 30);
+                if (binIndex > 11) binIndex = 11;
+                if (binIndex < 0) binIndex = 0;
                 bins[binIndex]++;
                 total++;
             }
@@ -709,6 +732,7 @@ const char index_html[] PROGMEM = R"rawliteral(
            domEl.style.color = "#888";
            trendEl.innerText = "";
         }
+        drawGraph(); // Re-render graph only when new history is recorded
     }
     
     function drawGraph() {
@@ -857,63 +881,64 @@ const char index_html[] PROGMEM = R"rawliteral(
             
             if(t.alive === 0) {
                 c.alive = 0;
+                continue; // Instantly skip dead entities
+            }
+
+            // Interpolate living creatures only...
+            if(c.alive === 0 || Math.abs(c.x - t.x) > 50) {
                 c.x = t.x; c.y = t.y; c.angle = t.angle;
             } else {
-                if(c.alive === 0 || Math.abs(c.x - t.x) > 50) {
-                    c.x = t.x; c.y = t.y; c.angle = t.angle;
-                } else {
-                    c.x += (t.x - c.x) * 0.1;
-                    c.y += (t.y - c.y) * 0.1;
-                    let da = t.angle - c.angle;
-                    while(da > Math.PI) da -= 2*Math.PI;
-                    while(da < -Math.PI) da += 2*Math.PI;
-                    c.angle += da * 0.1;
-                }
-                c.alive = 1;
+                c.x += (t.x - c.x) * 0.1;
+                c.y += (t.y - c.y) * 0.1;
+                let da = t.angle - c.angle;
+                while(da > Math.PI) da -= 2*Math.PI;
+                while(da < -Math.PI) da += 2*Math.PI;
+                c.angle += da * 0.1;
+                while (c.angle >= Math.PI * 2) c.angle -= Math.PI * 2;
+                while (c.angle < 0)            c.angle += Math.PI * 2;
             }
+            c.alive = 1;
             
             ctx.save();
             ctx.translate(c.x, c.y);
             
-            if(c.alive !== 0) {
-                // Draw Vision Radius at night (faintly)
-                if (currentDay < 0.5) {
-                    ctx.beginPath();
-                    ctx.arc(0, 0, 50 + (100 * currentDay), 0, Math.PI*2);
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                } else {
-                    ctx.beginPath();
-                    ctx.arc(0, 0, 150, 0, Math.PI*2);
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                }
-                
-                if (currentRad > 10) {
-                    ctx.beginPath();
-                    ctx.arc(0, 0, 25, 0, Math.PI*2);
-                    ctx.fillStyle = `hsla(${c.hue}, 100%, 50%, 0.25)`;
-                    ctx.fill();
-                }
-                
-                // Highlight the Alpha (Highest Energy Organism)
-                if (i === alphaIndex) {
-                    ctx.beginPath();
-                    ctx.arc(0, 0, 20 + Math.sin(Date.now()/150)*5, 0, Math.PI*2);
-                    ctx.strokeStyle = 'gold';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = 'gold';
-                }
+            // Draw Vision Radius at night (faintly)
+            if (currentDay < 0.5) {
+                ctx.beginPath();
+                ctx.arc(0, 0, 50 + (100 * currentDay), 0, Math.PI*2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.arc(0, 0, 150, 0, Math.PI*2);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+            
+            if (currentRad > 10) {
+                ctx.beginPath();
+                ctx.arc(0, 0, 25, 0, Math.PI*2);
+                ctx.fillStyle = `hsla(${c.hue}, 100%, 50%, 0.25)`;
+                ctx.fill();
+            }
+            
+            // Highlight the Alpha (Highest Energy Organism)
+            if (i === alphaIndex) {
+                ctx.beginPath();
+                ctx.arc(0, 0, 20 + Math.sin(Date.now()/150)*5, 0, Math.PI*2);
+                ctx.strokeStyle = 'gold';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'gold';
             }
             
             ctx.rotate(c.angle);
-            ctx.fillStyle = (c.alive === 0) ? 'rgba(100, 100, 100, 0.3)' : `hsl(${c.hue}, 100%, 50%)`;
-            
-            ctx.beginPath();
+              ctx.fillStyle = `hsl(${c.hue}, 100%, 50%)`;
+              
+              ctx.beginPath();
             ctx.moveTo(10, 0);
             ctx.lineTo(-6, -6);
             ctx.lineTo(-4, 0);
@@ -923,7 +948,6 @@ const char index_html[] PROGMEM = R"rawliteral(
             ctx.restore();
         }
         
-        drawGraph();
         requestAnimationFrame(draw);
     }
     
@@ -1018,27 +1042,51 @@ void handleState() {
   float dayCycle = (sin(millis() * 2.0 * PI / 60000.0) + 1.0) / 2.0;
   unsigned long epochAge = (millis() - epochStartMillis) / 1000;
 
-  String json;
-  json.reserve(6000);
-  json = "{\"e\":" + String(extinctions) + ",\"a\":" + String(aliveCount) + ",\"b\":" + String(totalBirths) + ",\"d\":" + String(totalDeaths) + ",\"asz\":" + String(avgSize, 2) + ",\"asp\":" + String(avgSpeed, 2) + ",\"avi\":" + String(avgVision, 1) + ",\"rad\":" + String(envRadiation) + ",\"alpha\":" + String(alphaIndex) + ",\"day\":" + String(dayCycle, 2) + ",\"age\":" + String(epochAge) + ",\"mE\":" + String(maxEnergy, 1) + ",\"mA\":" + String(maxAge) + ",\"mL\":" + String(maxLineage) + ",\"fC\":" + String(foodCount) + ",\"pC\":" + String(poisonCount) + ",\"c\":[";
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.sendHeader("Cache-Control", "no-cache");
+  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.send(200, "application/json", "");
+  
+  String buffer = "";
+  buffer.reserve(1024);
+  
+  buffer += "{\"e\":" + String(extinctions) + ",\"a\":" + String(aliveCount) + ",\"b\":" + String(totalBirths) + 
+",\"d\":" + String(totalDeaths) + ",\"asz\":" + String(avgSize, 2) + ",\"asp\":" + String(avgSpeed, 2) + ",\"avi\":" + 
+String(avgVision, 1) + ",\"rad\":" + String(envRadiation) + ",\"alpha\":" + String(alphaIndex) + ",\"day\":" + 
+String(dayCycle, 2) + ",\"age\":" + String(epochAge) + ",\"mE\":" + String(maxEnergy, 1) + ",\"mA\":" + String(maxAge) 
++ ",\"mL\":" + String(maxLineage) + ",\"fC\":" + String(foodCount) + ",\"pC\":" + String(poisonCount) + ",\"c\":[";
+
   for(int i = 0; i < MAX_CREATURES; i++) {
-    json += "[" + String(creatures[i].x, 1) + "," + String(creatures[i].y, 1) + "," + String(creatures[i].angle, 2) + "," + String(creatures[i].alive ? 1 : 0) + "," + String(creatures[i].hue, 0) + "]";
-    if(i < MAX_CREATURES - 1) json += ",";
+    buffer += "[" + String(creatures[i].x, 1) + "," + String(creatures[i].y, 1) + "," + String(creatures[i].angle, 2) 
++ "," + String(creatures[i].alive ? 1 : 0) + "," + String(creatures[i].hue, 0) + "]";
+    if(i < MAX_CREATURES - 1) buffer += ",";
+    
+    if (buffer.length() > 800) {
+      server.sendContent(buffer);
+      buffer = "";
+    }
   }
-  json += "],\"f\":[";
+  
+  buffer += "],\"f\":[";
   bool firstItem = true;
   for(int i = 0; i < NUM_ITEMS; i++) {
     if (items[i].active) {
-      if (!firstItem) json += ",";
-      json += "[" + String(items[i].x, 1) + "," + String(items[i].y, 1) + "," + String(items[i].type) + "]";
+      if (!firstItem) buffer += ",";
+      buffer += "[" + String(items[i].x, 1) + "," + String(items[i].y, 1) + "," + String(items[i].type) + "]";
       firstItem = false;
+      
+      if (buffer.length() > 800) {
+        server.sendContent(buffer);
+        buffer = "";
+      }
     }
   }
-  json += "]}";
   
-  server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.sendHeader("Cache-Control", "no-cache");
-  server.send(200, "application/json", json);
+  buffer += "]}";
+  if (buffer.length() > 0) {
+    server.sendContent(buffer);
+  }
+  server.sendContent(""); // Close chunked transfer
 }
 
 void setup() {
@@ -1060,6 +1108,7 @@ void setup() {
   server.on("/api/asteroid", HTTP_GET, handleAsteroid);
   server.begin();
   
+  epochStartMillis = millis();
   initEcosystem();
 }
 
@@ -1088,8 +1137,8 @@ void loop() {
     WiFi.scanDelete(); // Clear memory
   }
   
-  // Throttle new scans to every 5 seconds to prevent TCP drops
-  if ((n == WIFI_SCAN_FAILED || n >= 0) && (millis() - lastWifiScan > 5000)) {
+  // Throttle new scans to every 30 seconds to prevent TCP drops
+  if ((n == WIFI_SCAN_FAILED || n >= 0) && (millis() - lastWifiScan > 30000)) {
     WiFi.scanNetworks(true); // Start next scan
     lastWifiScan = millis();
   }
