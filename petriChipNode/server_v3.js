@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 // --- LOGGING & AI CONSTANTS ---
-const LOG_FILE = 'evolution_v2_log.csv';
+const LOG_FILE = 'evolution_v3_log.csv';
 const LOG_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 const AI_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 const app = express();
