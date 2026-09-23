@@ -50,15 +50,36 @@ let totalDeaths = 0;
 let extinctions = 0;
 let aliveCount = 0;
 let epochStartMillis = Date.now();
-let envRadiation = 0;
+let envRadiation = getGeoState(geologicEpoch).radBoost;
 let globalFertilizer = 10000.0;
 let geologicEpoch = 0;
-function getElevation(x, y) {
-    return Math.sin(x/400 + geologicEpoch*0.001) * Math.cos(y/400 - geologicEpoch*0.0005) + Math.sin(x/150 + y/150)*0.2;
+
+function getGeoState(epoch) {
+    let cycle = epoch % 70000;
+    if (cycle < 10000) return { name: "Primordial Soup", seaLevel: -0.15, sizeCap: 2.5, radBoost: 15, coldTax: 0, heatTax: 0.1 };
+    if (cycle < 25000) return { name: "Snowball Earth", seaLevel: 0.2, sizeCap: 2.5, radBoost: 0, coldTax: 0.4, heatTax: 0 };
+    if (cycle < 40000) return { name: "Cambrian Bloom", seaLevel: 0, sizeCap: 3.0, radBoost: 0, coldTax: 0.05, heatTax: 0.05 };
+    if (cycle < 55000) return { name: "Carboniferous (High O2)", seaLevel: 0.1, sizeCap: 5.0, radBoost: 0, coldTax: 0, heatTax: 0 };
+    if (cycle < 58000) return { name: "The Great Dying (Permian)", seaLevel: -0.1, sizeCap: 2.0, radBoost: 5, coldTax: 0, heatTax: 0.5 };
+    return { name: "Cenozoic (Modern)", seaLevel: 0, sizeCap: 2.5, radBoost: 0, coldTax: 0.05, heatTax: 0.05 };
 }
+
+function getElevation(x, y) {
+    let state = getGeoState(geologicEpoch);
+    return Math.sin(x/400 + geologicEpoch*0.001) * Math.cos(y/400 - geologicEpoch*0.0005) + Math.sin(x/150 + y/150)*0.2 + state.seaLevel;
+}
+
 let globalEra = 0; // 0: Normal, 1: Ice Age, 2: Greenhouse Drought
 let eraTicks = 0;
-let season = 0; // 0=Spring, 1=Summer, 2=Autumn, 3=Winter
+
+    // Geological Event Triggers
+    let curState = getGeoState(geologicEpoch);
+    if (curState.name === \'The Great Dying (Permian)\' && Math.random() < 0.05) {
+        // Toxic rain converts food to poison rapidly
+        let fIdx = items.findIndex(i => i.active && i.type === 1);
+        if (fIdx !== -1) items[fIdx].type = -1; 
+    }
+    let season = 0; // 0=Spring, 1=Summer, 2=Autumn, 3=Winter
 let seasonTicks = 0;
 
 let creatures = [];
@@ -503,7 +524,7 @@ function tickPhysics() {
                             
                             child.gene_speed = Math.max(0.5, Math.min(4.0, child.gene_speed));
                             child.gene_vision = Math.max(20.0, Math.min(200.0, child.gene_vision));
-                            child.gene_size = Math.max(0.5, Math.min(2.5, child.gene_size));
+                            child.gene_size = Math.max(0.5, Math.min(getGeoState(geologicEpoch).sizeCap, child.gene_size));
                             
                             child.energy = cost1 + cost2;
                         }
@@ -611,7 +632,7 @@ function tickPhysics() {
                 
                 child.gene_speed = Math.max(0.5, Math.min(4.0, child.gene_speed));
                 child.gene_vision = Math.max(20.0, Math.min(200.0, child.gene_vision));
-                child.gene_size = Math.max(0.5, Math.min(2.5, child.gene_size));
+                child.gene_size = Math.max(0.5, Math.min(getGeoState(geologicEpoch).sizeCap, child.gene_size));
                 
                 child.energy = asexualCost; // Strict mass conservation
                 

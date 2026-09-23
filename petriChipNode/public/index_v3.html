@@ -144,9 +144,22 @@
   <script>
     const socket = io();
     
-        function getElevation(x, y, geologicEpoch) {
-            return Math.sin(x/400 + geologicEpoch*0.001) * Math.cos(y/400 - geologicEpoch*0.0005) + Math.sin(x/150 + y/150)*0.2;
+        
+        function getGeoState(epoch) {
+            let cycle = epoch % 70000;
+            if (cycle < 10000) return { name: "Primordial Soup", seaLevel: -0.15 };
+            if (cycle < 25000) return { name: "Snowball Earth", seaLevel: 0.2 };
+            if (cycle < 40000) return { name: "Cambrian Bloom", seaLevel: 0 };
+            if (cycle < 55000) return { name: "Carboniferous (High O2)", seaLevel: 0.1 };
+            if (cycle < 58000) return { name: "The Great Dying (Permian)", seaLevel: -0.1 };
+            return { name: "Cenozoic (Modern)", seaLevel: 0 };
         }
+
+        function getElevation(x, y, geologicEpoch) {
+            let state = getGeoState(geologicEpoch);
+            return Math.sin(x/400 + geologicEpoch*0.001) * Math.cos(y/400 - geologicEpoch*0.0005) + Math.sin(x/150 + y/150)*0.2 + state.seaLevel;
+        }
+
 
         let terrainCanvas = document.createElement('canvas');
         terrainCanvas.width = 3000;
