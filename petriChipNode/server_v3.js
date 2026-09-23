@@ -764,6 +764,7 @@ function broadcastState() {
     let achloro = count ? sumChloro/count : 0;
     let ascav = count ? sumScav/count : 0;
     let acarn = count ? sumCarn/count : 0;
+    let aaquatic = count ? sumAquatic/count : 0;
 
     io.emit('state', {
         e: extinctions, a: count, b: totalBirths, d: totalDeaths,
@@ -785,8 +786,7 @@ function broadcastState() {
     if (forceLog || lastLogTime === 0 || now - lastLogTime >= LOG_INTERVAL_MS) {
         lastLogTime = now;
         forceLog = false; // Reset the flag
-        let aaquatic = (count>0)?sumAquatic/count:0;
-          let csvLine = `${new Date().toISOString()},${extinctions},${count},${totalBirths},${totalDeaths},${foodCount},${poisonCount},${maxLineage},${asz.toFixed(3)},${asp.toFixed(3)},${aconn.toFixed(1)},${maxAge},${maxEnergy.toFixed(1)},${season},${aimm.toFixed(3)},${ains.toFixed(3)},${infectedPop},${achloro.toFixed(3)},${ascav.toFixed(3)},${acarn.toFixed(3)},${globalFertilizer.toFixed(1)},${aaquatic.toFixed(3)}\n`;
+        let csvLine = `${new Date().toISOString()},${extinctions},${count},${totalBirths},${totalDeaths},${foodCount},${poisonCount},${maxLineage},${asz.toFixed(3)},${asp.toFixed(3)},${aconn.toFixed(1)},${maxAge},${maxEnergy.toFixed(1)},${season},${aimm.toFixed(3)},${ains.toFixed(3)},${infectedPop},${achloro.toFixed(3)},${ascav.toFixed(3)},${acarn.toFixed(3)},${globalFertilizer.toFixed(1)},${aaquatic.toFixed(3)}\n`;
         try {
             fs.appendFileSync(LOG_FILE, csvLine);
         } catch(e) {
