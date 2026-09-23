@@ -691,10 +691,8 @@ function tickPhysics() {
                 child.gene_scavenger = Math.max(0.0, Math.min(1.0, c.gene_scavenger + randomFloat(-0.05, 0.05)));
                 child.gene_aquatic = Math.max(0.0, Math.min(1.0, c.gene_aquatic + randomFloat(-0.05, 0.05)));
                             child.gene_parasite = Math.max(0.0, Math.min(1.0, c.gene_parasite + randomFloat(-0.05, 0.05)));
-                child.gene_parasite = Math.max(0.0, Math.min(1.0, (c.gene_parasite + c2.gene_parasite) / 2.0 + randomFloat(-0.05, 0.05)));
-                              child.gene_aquatic = Math.max(0.0, Math.min(1.0, (c.gene_aquatic + c2.gene_aquatic) / 2.0 + randomFloat(-0.05, 0.05)));
-                              child.impregnatedBy = null;
-                              child.parasitePayload = null;
+                child.impregnatedBy = null;
+                child.parasitePayload = null;
                               child.gene_carnivore = Math.max(0.0, Math.min(1.0, c.gene_carnivore + randomFloat(-0.05, 0.05)));
                 
                 let trophicSum = child.gene_chloroplast + child.gene_scavenger + child.gene_carnivore;
