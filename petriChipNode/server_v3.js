@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const fs = require('fs');
+const path = require('path');
 
 // --- LOGGING & AI CONSTANTS ---
 const LOG_FILE = 'evolution_v2_log.csv';
@@ -35,7 +36,7 @@ let lastAiTime = Date.now();
 let lastAiAnalysis = "No AI analysis performed yet. Waiting for enough data (runs every 30 mins).";
 
 if (!fs.existsSync(LOG_FILE)) {
-    fs.writeFileSync(LOG_FILE, 'timestamp,gen,pop,births,deaths,food,poison,max_lineage,avg_size,avg_speed,avg_connects,max_age,max_energy,season,avg_immunity,avg_insulation,infected_pop,avg_chloroplast,avg_scavenger,avg_carnivore,fertilizer\n');
+    fs.writeFileSync(LOG_FILE, 'timestamp,gen,pop,births,deaths,food,poison,max_lineage,avg_size,avg_speed,avg_connects,max_age,max_energy,season,avg_immunity,avg_insulation,infected_pop,avg_chloroplast,avg_scavenger,avg_carnivore,fertilizer,avg_aquatic\n');
 }
 
 // --- SIMULATION CONSTANTS ---
@@ -50,9 +51,9 @@ let totalDeaths = 0;
 let extinctions = 0;
 let aliveCount = 0;
 let epochStartMillis = Date.now();
+let geologicEpoch = 0;
 let envRadiation = getGeoState(geologicEpoch).radBoost;
 let globalFertilizer = 10000.0;
-let geologicEpoch = 0;
 
 function getGeoState(epoch) {
     let cycle = epoch % 70000;
@@ -130,6 +131,10 @@ function initEcosystem() {
             gene_size: randomFloat(0.5, 2.5),
             gene_insulation: randomFloat(0.0, 1.0),
             gene_immunity: randomFloat(0.0, 1.0),
+gene_parasite: randomFloat(0.0, 1.0),
+gene_aquatic: randomFloat(0.0, 1.0),
+impregnatedBy: null,
+parasitePayload: null,
             gene_chloroplast: 0.0, // Start as simple heterotrophs (chemotrophs)
             gene_scavenger: 0.0,
             gene_carnivore: 0.0,
@@ -300,6 +305,13 @@ function getSensors(c) {
 }
 
 function tickPhysics() {
+    // Geological Event Triggers
+    let curState = getGeoState(geologicEpoch);
+    if (curState.name === 'The Great Dying (Permian)' && Math.random() < 0.05) {
+        // Toxic rain converts food to poison rapidly
+        let fIdx = items.findIndex(i => i.active && i.type === 1);
+        if (fIdx !== -1) items[fIdx].type = -1; 
+    }
     // Geological nutrient cycle
     // globalFertilizer += 10.0; // Removed for conservation of mass
     // Removed hard cap on globalFertilizer to preserve total ecosystem mass after extinctions
@@ -382,7 +394,17 @@ function tickPhysics() {
         if (c.hue < 0) c.hue += 360;
 
         // 2. CORDYCEPS MIND CONTROL OVERRIDE
+        
+        let closestCreatIdx = -1;
+        let closestDist = 999999;
+        for(let j = 0; j < creatures.length; j++) {
+            if(j !== i && creatures[j].alive) {
+                let d2 = (creatures[j].x - c.x)*(creatures[j].x - c.x) + (creatures[j].y - c.y)*(creatures[j].y - c.y);
+                if(d2 < closestDist) { closestDist = d2; closestCreatIdx = j; }
+            }
+        }
         if (c.infected && closestCreatIdx !== -1) {
+
             // Parasite hijacks the nervous system, sprinting towards healthy organisms to spread!
             let target = creatures[closestCreatIdx];
             let angleToTarget = Math.atan2(target.y - c.y, target.x - c.x);
@@ -529,7 +551,11 @@ function tickPhysics() {
                             child.gene_immunity = (c.gene_immunity + c2.gene_immunity) / 2.0 + randomFloat(-0.05, 0.05);
                             child.gene_chloroplast = Math.max(0.0, Math.min(1.0, (c.gene_chloroplast + c2.gene_chloroplast) / 2.0 + randomFloat(-0.05, 0.05)));
                             child.gene_scavenger = Math.max(0.0, Math.min(1.0, (c.gene_scavenger + c2.gene_scavenger) / 2.0 + randomFloat(-0.05, 0.05)));
-                            child.gene_carnivore = Math.max(0.0, Math.min(1.0, (c.gene_carnivore + c2.gene_carnivore) / 2.0 + randomFloat(-0.05, 0.05)));
+                            child.gene_parasite = Math.max(0.0, Math.min(1.0, (c.gene_parasite + c2.gene_parasite) / 2.0 + randomFloat(-0.05, 0.05)));
+                              child.gene_aquatic = Math.max(0.0, Math.min(1.0, (c.gene_aquatic + c2.gene_aquatic) / 2.0 + randomFloat(-0.05, 0.05)));
+                              child.impregnatedBy = null;
+                              child.parasitePayload = null;
+                              child.gene_carnivore = Math.max(0.0, Math.min(1.0, (c.gene_carnivore + c2.gene_carnivore) / 2.0 + randomFloat(-0.05, 0.05)));
                             
                             // Trophic Mutual Exclusivity (The Polymath Paradox)
                             let trophicSum = child.gene_chloroplast + child.gene_scavenger + child.gene_carnivore;
@@ -607,8 +633,7 @@ function tickPhysics() {
         // Older and larger organisms have a higher chance of spontaneous heart failure/cancer
         let mortalityChance = 0.000001 * (c.age / 1000.0) * c.gene_size;
         if (Math.random() < mortalityChance) {
-            globalFertilizer += Math.max(0, c.energy); // Return remaining life force to the soil
-            c.energy = -1;
+            c.energy = 0; // Death block will refund it
         }
         
         if (c.energy <= 0) {
@@ -666,7 +691,11 @@ function tickPhysics() {
                 child.gene_scavenger = Math.max(0.0, Math.min(1.0, c.gene_scavenger + randomFloat(-0.05, 0.05)));
                 child.gene_aquatic = Math.max(0.0, Math.min(1.0, c.gene_aquatic + randomFloat(-0.05, 0.05)));
                             child.gene_parasite = Math.max(0.0, Math.min(1.0, c.gene_parasite + randomFloat(-0.05, 0.05)));
-                child.gene_carnivore = Math.max(0.0, Math.min(1.0, c.gene_carnivore + randomFloat(-0.05, 0.05)));
+                child.gene_parasite = Math.max(0.0, Math.min(1.0, (c.gene_parasite + c2.gene_parasite) / 2.0 + randomFloat(-0.05, 0.05)));
+                              child.gene_aquatic = Math.max(0.0, Math.min(1.0, (c.gene_aquatic + c2.gene_aquatic) / 2.0 + randomFloat(-0.05, 0.05)));
+                              child.impregnatedBy = null;
+                              child.parasitePayload = null;
+                              child.gene_carnivore = Math.max(0.0, Math.min(1.0, c.gene_carnivore + randomFloat(-0.05, 0.05)));
                 
                 let trophicSum = child.gene_chloroplast + child.gene_scavenger + child.gene_carnivore;
                 if (trophicSum > 1.0) {

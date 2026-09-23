@@ -373,7 +373,7 @@
         }
         
         // Draw frame directly
-        ctx.clearRect(0, 0, 3000, 3000);
+        ctx.clearRect(0, 0, 3000, 3000);\n        if (data.geoEpoch !== undefined) renderTerrain(data.geoEpoch);\n        ctx.drawImage(terrainCanvas, 0, 0);
         
         // 1. Dynamic Soil Color
         let fert = Math.min(10000, Math.max(0, data.fert || 500));
@@ -521,19 +521,16 @@
             
             ctx.beginPath();
             if (trophic === 1) { 
-                ctx.arc(0, 0, 12, 0, Math.PI * 2);
-            } else if (trophic === 2) { 
-                ctx.moveTo(20, 0);
-                ctx.lineTo(-5, 12);
-                ctx.lineTo(-15, 0);
-                ctx.lineTo(-5, -12);
-            } else if (trophic === 3) { 
-                ctx.rect(-10, -10, 20, 20);
-            } else { 
-                ctx.moveTo(15, 0);
-                ctx.lineTo(-10, 10);
-                ctx.lineTo(-10, -10);
-            }
+                  ctx.arc(0, 0, 12, 0, Math.PI * 2);
+              } else if (trophic === 2 || trophic === 5 || trophic === 0) { 
+                  ctx.moveTo(15, 0);
+                  ctx.lineTo(-10, 10);
+                  ctx.lineTo(-10, -10);
+              } else if (trophic === 3) { 
+                  ctx.rect(-10, -10, 20, 20);
+              } else {
+                  ctx.moveTo(15, 0); ctx.lineTo(-10, 10); ctx.lineTo(-10, -10);
+              }
             ctx.closePath();
             
             ctx.fillStyle = infected ? '#00ff00' : `hsl(${hue}, 100%, 50%)`;
