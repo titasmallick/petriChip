@@ -180,12 +180,15 @@ function processBrain(brain, inputs, mem) {
         newNodes[i] = Math.tanh(newNodes[i]);
     }
     
+    
     return {
         motors: [newNodes[16], newNodes[17]],
         intent: newNodes[18],
         aggression: newNodes[19],
+        mimicry: newNodes[26] || 0.0,
         newMem: newNodes.slice(20, 28)
     };
+
 }
 
 function mutateBrain(brain, rad) {
@@ -372,6 +375,24 @@ function tickPhysics() {
         let inputs = getSensors(c);
         let out = processBrain(c.brain, inputs, c.mem);
         
+        
+        // 1. BIOLUMINESCENT MIMICRY (Active Camouflage)
+        c.hue += out.mimicry * 5.0;
+        if (c.hue > 360) c.hue -= 360; 
+        if (c.hue < 0) c.hue += 360;
+
+        // 2. CORDYCEPS MIND CONTROL OVERRIDE
+        if (c.infected && closestCreatIdx !== -1) {
+            // Parasite hijacks the nervous system, sprinting towards healthy organisms to spread!
+            let target = creatures[closestCreatIdx];
+            let angleToTarget = Math.atan2(target.y - c.y, target.x - c.x);
+            c.angle = angleToTarget;
+            out.motors[0] = 1.0; 
+            out.motors[1] = 1.0;
+            out.aggression = 1.0; // Force them to attack/spread
+            c.energy -= 1.0; // Rapid metabolic burnout
+        }
+
         c.mem = out.newMem; // Save memory state for next tick!
         c.intent = out.intent;
         c.aggression = out.aggression;
@@ -538,12 +559,40 @@ function tickPhysics() {
                     // Predation / Combat (Only if they actively decide to attack via Output 19)
                     if (c.aggression > c2.aggression && c.gene_carnivore > 0.1 && c.gene_size > c2.gene_size * 1.2) {
                         c.energy -= 5; // Cost of attack
-                        let meat = Math.min(Math.max(0, c2.energy), 60.0 * c.gene_carnivore);
-                        c.energy += meat; c2.energy -= meat;
+                        
+                        if (c.gene_parasite > 0.8 && c.energy > 300) {
+                            // 4. XENOMORPH PARASITISM: Impregnate the prey instead of eating it!
+                            c2.impregnatedBy = c.familyId;
+                            c2.parasitePayload = JSON.parse(JSON.stringify({
+                                hue: c.hue, gene_speed: c.gene_speed, gene_vision: c.gene_vision, gene_size: c.gene_size,
+                                gene_insulation: c.gene_insulation, gene_immunity: c.gene_immunity, gene_parasite: c.gene_parasite,
+                                gene_aquatic: c.gene_aquatic, gene_scavenger: c.gene_scavenger, gene_carnivore: c.gene_carnivore,
+                                brain: c.brain
+                            }));
+                            c.energy -= 200; // Cost of laying the egg
+                        } else {
+                            let meat = Math.min(Math.max(0, c2.energy), 60.0 * c.gene_carnivore);
+                            c.energy += meat; c2.energy -= meat;
+                        }
+
                     } else if (c2.aggression > c.aggression && c2.gene_carnivore > 0.1 && c2.gene_size > c.gene_size * 1.2) {
                         c2.energy -= 5; // Cost of attack
-                        let meat = Math.min(Math.max(0, c.energy), 60.0 * c2.gene_carnivore);
-                        c2.energy += meat; c.energy -= meat;
+                        
+                        if (c2.gene_parasite > 0.8 && c2.energy > 300) {
+                            // XENOMORPH PARASITISM
+                            c.impregnatedBy = c2.familyId;
+                            c.parasitePayload = JSON.parse(JSON.stringify({
+                                hue: c2.hue, gene_speed: c2.gene_speed, gene_vision: c2.gene_vision, gene_size: c2.gene_size,
+                                gene_insulation: c2.gene_insulation, gene_immunity: c2.gene_immunity, gene_parasite: c2.gene_parasite,
+                                gene_aquatic: c2.gene_aquatic, gene_scavenger: c2.gene_scavenger, gene_carnivore: c2.gene_carnivore,
+                                brain: c2.brain
+                            }));
+                            c2.energy -= 200;
+                        } else {
+                            let meat = Math.min(Math.max(0, c.energy), 60.0 * c2.gene_carnivore);
+                            c2.energy += meat; c.energy -= meat;
+                        }
+
                     } else {
                         c.energy -= 10; c2.energy -= 10; // Mutual scuffle cost
                         // Viral transmission on contact (Resisted by gene_immunity)
@@ -616,6 +665,7 @@ function tickPhysics() {
                 child.gene_chloroplast = Math.max(0.0, Math.min(1.0, c.gene_chloroplast + randomFloat(-0.05, 0.05)));
                 child.gene_scavenger = Math.max(0.0, Math.min(1.0, c.gene_scavenger + randomFloat(-0.05, 0.05)));
                 child.gene_aquatic = Math.max(0.0, Math.min(1.0, c.gene_aquatic + randomFloat(-0.05, 0.05)));
+                            child.gene_parasite = Math.max(0.0, Math.min(1.0, c.gene_parasite + randomFloat(-0.05, 0.05)));
                 child.gene_carnivore = Math.max(0.0, Math.min(1.0, c.gene_carnivore + randomFloat(-0.05, 0.05)));
                 
                 let trophicSum = child.gene_chloroplast + child.gene_scavenger + child.gene_carnivore;
