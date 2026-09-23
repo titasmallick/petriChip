@@ -10,7 +10,7 @@ WebServer server(80);
 // --- OPEN ECOSYSTEM CONFIG ---
 const int ARENA_SIZE = 800;   // Doubled size (4x area)
 const int MAX_CREATURES = 50; // Increased Population cap
-const int NUM_ITEMS = 100;    // Increased Food + Poison to fill arena
+const int NUM_ITEMS = 150;    // Increased Food + Poison to fill arena
 const float MAX_VISION = 150.0;  
 
 struct Item {
@@ -184,7 +184,7 @@ void tickPhysics() {
       if (d < 10.0) { // Increased eat radius so they don't miss it at high speeds
         items[f].active = false;
         if (items[f].type == 1) {
-           creatures[i].energy += 60.0; // Food provides energy
+           creatures[i].energy += 90.0; // Boosted from 60.0 to 90.0
         } else {
            creatures[i].energy -= 80.0; // Poison is DEADLY
         }
@@ -292,8 +292,8 @@ void tickPhysics() {
          if (hueDiff < 20.0) {
              // KIN SELECTION & MATE CHOICE (Sexual Selection)
              // Organisms now discriminate based on Energy & Body Size! They refuse to mate with starving/tiny runts.
-             float mateThresholdI = 100.0 * creatures[i].gene_size;
-             float mateThresholdJ = 100.0 * creatures[j].gene_size;
+             float mateThresholdI = 70.0 * creatures[i].gene_size;
+             float mateThresholdJ = 70.0 * creatures[j].gene_size;
              
              if (creatures[i].energy > mateThresholdI && creatures[j].energy > mateThresholdJ &&
                  abs(creatures[i].gene_size - creatures[j].gene_size) < 0.5) { // Must be similar size
@@ -412,7 +412,7 @@ void tickPhysics() {
     
     // Mitosis (Asexual Reproduction / Cloning)
     // Asexual reproduction barrier scales with Body Size! Large organisms must hoard massive energy.
-    float mitosis_barrier = 160.0 * creatures[i].gene_size; 
+    float mitosis_barrier = 120.0 * creatures[i].gene_size; 
     
     if (creatures[i].energy > mitosis_barrier) {
        // Find an empty grave slot to spawn the child
@@ -437,8 +437,8 @@ void tickPhysics() {
           totalBirths++;
           
           // WiFi Radiation (Signal Strength) drives mutation rate!
-          int saltationChance = 5 + envRadiation; // Base 5% + Radiation Score
-          if (saltationChance > 100) saltationChance = 100; // Cap at 100% mutation
+          int saltationChance = 3 + (envRadiation / 4); // Scaled down
+          if (saltationChance > 25) saltationChance = 25; // Never wipe more than 25% of weights
           float mutSeverity = 0.1 + (envRadiation * 0.01); // Severity scales with proximity
           
           // Genetic Inheritance & Color Speciation
