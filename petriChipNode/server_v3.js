@@ -768,7 +768,7 @@ function broadcastState() {
     io.emit('state', {
         e: extinctions, a: count, b: totalBirths, d: totalDeaths,
         asz: asz, asp: asp, aconn: aconn,
-        achloro: achloro, ascav: ascav, acarn: acarn, aimm: aimm, ains: ains, fert: globalFertilizer,
+        achloro: achloro, ascav: ascav, acarn: acarn, aimm: aimm, ains: ains, fert: globalFertilizer, aaquatic: aaquatic, geoEpoch: geologicEpoch, geoName: getGeoState(geologicEpoch).name,
         rad: envRadiation, alpha: alphaIndex, age: epochAge,
         mE: maxEnergy, mA: maxAge, mL: maxLineage,
         fC: foodCount, pC: poisonCount,

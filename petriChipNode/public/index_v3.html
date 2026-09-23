@@ -35,6 +35,7 @@
 <body>
   <h1>// THE SILICON PETRI DISH (CLOUD SCALE)</h1>
   <h3>Massive Population Node.js V2 (Seasons & Viruses Edition)</h3>
+    <h2 id="geo-era" style="color: #00ffcc;">Era: Loading...</h2>
   <div style="font-size: 0.85em; color: #a0a4a8; margin-top: -15px; margin-bottom: 15px;">Experiment Started: <span id="start-time" style="color: #fff;">Loading...</span></div>
   
   <div style="width: 100%; display: flex; justify-content: center; gap: 20px; font-size: 0.8em; color: #a0a4a8; margin-bottom: 10px;">
@@ -71,6 +72,7 @@
        <span>Avg Size: <span id="avg-size" class="val">0.00</span></span>
        <span>Avg Speed: <span id="avg-spd" class="val">0.00</span></span>
        <span>Avg Connects: <span id="avg-vis" class="val" style="color: #ff00ff;">0</span></span>
+        <span>Avg Aquatic: <span id="aquatic" class="val" style="color: #00ffff;">0</span></span>
     </div>
   </div>
 
@@ -142,7 +144,10 @@
   </div>
   
   <script>
-    const socket = io();
+      window.onerror = function(msg, url, lineNo, columnNo, error) {
+          alert('Error: ' + msg + ' at line ' + lineNo);
+      };
+      const socket = io();
     
         
         function getGeoState(epoch) {
@@ -208,6 +213,8 @@
         document.getElementById('avg-size').innerText = (data.asz || 0).toFixed(2);
         document.getElementById('avg-spd').innerText = (data.asp || 0).toFixed(2);
         document.getElementById('avg-vis').innerText = Math.floor(data.aconn || 0);
+        if (data.geoName) document.getElementById('geo-era').innerText = 'Era: ' + data.geoName;
+        if (document.getElementById('aquatic')) document.getElementById('aquatic').innerText = (data.aaquatic || 0).toFixed(2);
         
         document.getElementById('food-cnt').innerText = data.fC;
         document.getElementById('poison-cnt').innerText = data.pC;
@@ -373,7 +380,9 @@
         }
         
         // Draw frame directly
-        ctx.clearRect(0, 0, 3000, 3000);\n        if (data.geoEpoch !== undefined) renderTerrain(data.geoEpoch);\n        ctx.drawImage(terrainCanvas, 0, 0);
+        ctx.clearRect(0, 0, 3000, 3000);
+        if (data.geoEpoch !== undefined) renderTerrain(data.geoEpoch);
+        ctx.drawImage(terrainCanvas, 0, 0);
         
         // 1. Dynamic Soil Color
         let fert = Math.min(10000, Math.max(0, data.fert || 500));
