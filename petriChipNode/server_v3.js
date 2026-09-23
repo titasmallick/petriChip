@@ -395,6 +395,20 @@ function tickPhysics() {
 
         // 2. CORDYCEPS MIND CONTROL OVERRIDE
         
+        // Terrain Suffocation (Aquatic vs Terrestrial)
+        let elev = getElevation(c.x, c.y);
+        let inWater = (elev < 0);
+        let isAquatic = (c.gene_aquatic > 0.5);
+        
+        let speedModifier = 1.0;
+        if (inWater && !isAquatic) {
+            c.energy -= 10.0; // Terrestrial drowning
+            speedModifier = 0.3; // Slowed in water
+        } else if (!inWater && isAquatic) {
+            c.energy -= 10.0; // Aquatic suffocating on land
+            speedModifier = 0.1; // Floundering on land
+        }
+
         let closestCreatIdx = -1;
         let closestDist = 999999;
         for(let j = 0; j < creatures.length; j++) {
@@ -426,6 +440,7 @@ function tickPhysics() {
         let omega = (rightMotor - leftMotor) / 10.0;
         
         v *= (1.0 - c.gene_chloroplast); // Producers are rooted/slow
+        v *= (typeof speedModifier !== 'undefined' ? speedModifier : 1.0); // Apply terrain penalty
         c.angle += omega;
         c.x += Math.cos(c.angle) * v;
         c.y += Math.sin(c.angle) * v;
