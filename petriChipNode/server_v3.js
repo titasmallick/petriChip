@@ -75,7 +75,7 @@ let eraTicks = 0;
 
     // Geological Event Triggers
     let curState = getGeoState(geologicEpoch);
-    if (curState.name === \'The Great Dying (Permian)\' && Math.random() < 0.05) {
+    if (curState.name === 'The Great Dying (Permian)' && Math.random() < 0.05) {
         // Toxic rain converts food to poison rapidly
         let fIdx = items.findIndex(i => i.active && i.type === 1);
         if (fIdx !== -1) items[fIdx].type = -1; 
