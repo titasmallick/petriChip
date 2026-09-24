@@ -242,7 +242,16 @@
           </div>
 
           <div class="text-[10px] uppercase tracking-wider text-textMuted mb-2">Constants</div>
-          <div class="grid grid-cols-2 gap-3 mb-6 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
+          <div class="grid grid-cols-2 gap-3 mb-6 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar border border-borderSubtle/50 p-2 rounded">
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">INIT_FERT</label><input type="number" id="inp-fert" value="10000"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">START_ALIVE</label><input type="number" id="inp-start-alive" value="400"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">START_ITEMS</label><input type="number" id="inp-start-items" value="400"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">START_ENERGY</label><input type="number" id="inp-start-energy" value="1000"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">FOOD_SPAWN</label><input type="number" step="0.01" id="inp-food-spawn" value="0.2"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">METAB_MULT</label><input type="number" step="0.1" id="inp-metabolism" value="1.0"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">MUTAT_MULT</label><input type="number" step="0.1" id="inp-mutation" value="1.0"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">MITOS_MULT</label><input type="number" step="0.1" id="inp-mitosis" value="1.0"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">MATE_MULT</label><input type="number" step="0.1" id="inp-mating" value="1.0"></div>
             <div><label class="text-[9px] font-mono text-textMuted block mb-1">FOOD_YIELD</label><input type="number" id="inp-food-yield" value="60"></div>
             <div><label class="text-[9px] font-mono text-textMuted block mb-1">POISON_YIELD</label><input type="number" id="inp-poison-yield" value="-80"></div>
             <div><label class="text-[9px] font-mono text-textMuted block mb-1">CORPSE_YIELD</label><input type="number" id="inp-corpse-yield" value="60"></div>
@@ -251,31 +260,18 @@
             <div><label class="text-[9px] font-mono text-textMuted block mb-1">VISION_COST</label><input type="number" step="0.000001" id="inp-vis-rate" value="0.000001"></div>
             <div><label class="text-[9px] font-mono text-textMuted block mb-1">AGE_TAX</label><input type="number" step="0.00001" id="inp-age-rate" value="0.00001"></div>
             <div><label class="text-[9px] font-mono text-textMuted block mb-1">BRAIN_TAX</label><input type="number" step="0.0001" id="inp-brain-rate" value="0.0001"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">ATK_COST</label><input type="number" id="inp-atk-cost" value="5"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">SCUFFLE_COST</label><input type="number" id="inp-scuffle" value="10"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">SYMBIOSIS</label><input type="number" id="inp-symbiosis" value="2"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">PARASITE</label><input type="number" id="inp-parasite-cost" value="200"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">MIN_SPEED</label><input type="number" step="0.1" id="inp-min-spd" value="0.5"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">MAX_SPEED</label><input type="number" step="0.1" id="inp-max-spd" value="4.0"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">MIN_VIS</label><input type="number" step="1" id="inp-min-vis" value="20"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">MAX_VIS</label><input type="number" step="1" id="inp-max-vis" value="200"></div>
             <div><label class="text-[9px] font-mono text-textMuted block mb-1">MAX_NODES</label><input type="number" id="inp-max-nodes" value="200"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">DROWNING</label><input type="number" step="0.05" id="inp-drown" value="0.1"></div>
             <div><label class="text-[9px] font-mono text-textMuted block mb-1">OVERPOP_CAP</label><input type="number" id="inp-overpop" value="160"></div>
-            
-            <!-- Hidden inputs so JS doesn't break -->
-            <div class="hidden">
-              <input type="number" id="inp-fert" value="10000">
-              <input type="number" id="inp-start-alive" value="400">
-              <input type="number" id="inp-start-items" value="400">
-              <input type="number" id="inp-start-energy" value="1000">
-              <input type="number" step="0.01" id="inp-food-spawn" value="0.2">
-              <input type="number" step="0.1" id="inp-metabolism" value="1.0">
-              <input type="number" step="0.1" id="inp-mutation" value="1.0">
-              <input type="number" step="0.1" id="inp-mitosis" value="1.0">
-              <input type="number" step="0.1" id="inp-mating" value="1.0">
-              <input type="number" id="inp-atk-cost" value="5">
-              <input type="number" id="inp-scuffle" value="10">
-              <input type="number" id="inp-symbiosis" value="2">
-              <input type="number" id="inp-parasite-cost" value="200">
-              <input type="number" step="0.1" id="inp-min-spd" value="0.5">
-              <input type="number" step="0.1" id="inp-max-spd" value="4.0">
-              <input type="number" step="1" id="inp-min-vis" value="20">
-              <input type="number" step="1" id="inp-max-vis" value="200">
-              <input type="number" step="0.05" id="inp-drown" value="0.1">
-              <input type="number" step="0.05" id="inp-chloroplast" value="0.1">
-            </div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">CHLORO_YIELD</label><input type="number" step="0.05" id="inp-chloroplast" value="0.1"></div>
           </div>
           
           <button id="btn-update" class="w-full py-2 bg-limeAcc text-surface text-xs font-semibold rounded-sm mb-2 hover:bg-[#b0f040] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-limeAcc focus-visible:ring-offset-2 focus-visible:ring-offset-appBg">APPLY CONFIGURATION</button>
@@ -307,7 +303,7 @@
     </main>
 
     <!-- NOTIFICATION FOOTER -->
-    <footer class="w-full bg-surface border-t border-borderSubtle p-3 flex justify-between items-center text-xs sticky bottom-0 z-50">
+    <footer class="w-full bg-surface border-t border-borderSubtle p-3 flex justify-between items-center text-xs sticky bottom-0 z-50 mt-6">
       <div class="flex items-center gap-3">
         <span class="w-2 h-2 rounded-full bg-successAcc animate-pulse"></span>
         <span class="text-textMuted mono">SYSTEM NOMINAL</span>
@@ -320,10 +316,873 @@
   </div>
 
   <div class="hidden">
-      <!-- Hidden elements from old UI to prevent JS errors -->
-      <span id="food-cnt"></span><span id="poison-cnt"></span><span id="ai-readout"></span>
+      <!-- Hidden elements from old UI to prevent JS errors during socket updates -->
+      <span id="age"></span>
+      <span id="births"></span>
+      <span id="deaths"></span>
+      <span id="food-cnt"></span>
+      <span id="poison-cnt"></span>
+      <span id="ai-readout"></span>
+      <span id="max-age"></span>
+      <span id="max-lineage"></span>
+      <span id="max-energy"></span>
+      <span id="aquatic"></span>
   </div>
 
-  {script_content}
+  <script>
+      window.onerror = function(msg, url, lineNo, columnNo, error) {
+          alert('Error: ' + msg + ' at line ' + lineNo);
+      };
+      const socket = io();
+    
+        
+        function getGeoState(epoch) {
+            let cycle = epoch % 70000;
+            if (cycle < 10000) return { name: "Primordial Soup", seaLevel: -0.15 };
+            if (cycle < 25000) return { name: "Snowball Earth", seaLevel: 0.2 };
+            if (cycle < 40000) return { name: "Cambrian Bloom", seaLevel: 0 };
+            if (cycle < 55000) return { name: "Carboniferous (High O2)", seaLevel: 0.1 };
+            if (cycle < 58000) return { name: "The Great Dying (Permian)", seaLevel: -0.1 };
+            return { name: "Cenozoic (Modern)", seaLevel: 0 };
+        }
+
+        function getElevation(x, y, geologicEpoch) {
+            let state = getGeoState(geologicEpoch);
+            return Math.sin(x/400 + geologicEpoch*0.001) * Math.cos(y/400 - geologicEpoch*0.0005) + Math.sin(x/150 + y/150)*0.2 + state.seaLevel;
+        }
+
+
+        let terrainCanvas = document.createElement('canvas');
+        terrainCanvas.width = 3000;
+        terrainCanvas.height = 3000;
+        let terrainCtx = terrainCanvas.getContext('2d');
+        let lastGeoEpoch = -1;
+
+        function renderTerrain(geoEpoch) {
+            if (geoEpoch === lastGeoEpoch) return;
+            lastGeoEpoch = geoEpoch;
+            const cellSize = 50;
+            for (let y = 0; y < 3000; y += cellSize) {
+                for (let x = 0; x < 3000; x += cellSize) {
+                    let elev = getElevation(x, y, geoEpoch);
+                    if (elev < 0) { // Sea
+                        let depth = Math.min(1.0, -elev * 1.5);
+                        terrainCtx.fillStyle = `rgba(0, 50, ${100 + depth*155}, 1)`;
+                    } else { // Land
+                        let height = Math.min(1.0, elev * 1.5);
+                        terrainCtx.fillStyle = `rgba(${50 + height*50}, ${100 + height*100}, 50, 1)`;
+                    }
+                    terrainCtx.fillRect(x, y, cellSize, cellSize);
+                }
+            }
+        }
+
+      const canvas = document.getElementById('arena');
+    const ctx = canvas.getContext('2d');
+    
+    const gCanvas = document.getElementById('graph');
+    const gCtx = gCanvas.getContext('2d');
+    
+    // Fill with empty bucket objects so mapping p.total doesn't return NaN
+    let popHistory = new Array(1200).fill(null).map(() => ({ total: 0, r: 0, y: 0, g: 0, c: 0, b: 0, m: 0 }));
+    
+    // Smooth rendering interpolation mapping
+    let creatures = [];
+    let items = [];
+    
+    socket.on('state', (data) => {
+        document.getElementById('alive').innerText = data.a;
+        document.getElementById('exts').innerText = data.e;
+        document.getElementById('age').innerText = data.age + "s";
+        document.getElementById('births').innerText = data.b;
+        document.getElementById('deaths').innerText = data.d;
+        document.getElementById('avg-size').innerText = (data.asz || 0).toFixed(2);
+        document.getElementById('avg-spd').innerText = (data.asp || 0).toFixed(2);
+        document.getElementById('avg-vis').innerText = Math.floor(data.aconn || 0);
+        if (data.geoName) document.getElementById('geo-era').innerText = 'Era: ' + data.geoName;
+        if (document.getElementById('aquatic')) document.getElementById('aquatic').innerText = (data.aaquatic || 0).toFixed(2);
+        
+        document.getElementById('food-cnt').innerText = data.fC;
+        document.getElementById('poison-cnt').innerText = data.pC;
+        document.getElementById('max-energy').innerText = (data.mE || 0).toFixed(0);
+        document.getElementById('max-age').innerText = data.mA || 0;
+        document.getElementById('max-lineage').innerText = data.mL || 0;
+        
+        if (data.startT) {
+            let d = new Date(data.startT);
+            document.getElementById('start-time').innerText = d.toLocaleString();
+        }
+        
+        if (data.era !== undefined) {
+            let eUI = document.getElementById('era-ui');
+            if (data.era === 0) { eUI.innerText = '🌍 EPOCH: Holocene (Normal Climate)'; eUI.style.color = '#aaa'; }
+            if (data.era === 1) { eUI.innerText = '🧊 EPOCH: ICE AGE (Extreme Freezing, 50% Food)'; eUI.style.color = '#00ffff'; }
+            if (data.era === 2) { eUI.innerText = '🔥 EPOCH: GREENHOUSE (Extreme Heatwaves)'; eUI.style.color = '#ff3300'; }
+        }
+        
+        if (data.season !== undefined) {
+            let sUI = document.getElementById('season-ui');
+            if (data.season === 0) { sUI.innerText = '🌸 SPRING (Abundant Food)'; sUI.style.color = '#e9a7ff'; document.body.style.borderTop = '5px solid #e9a7ff'; }
+            if (data.season === 1) { sUI.innerText = '☀️ SUMMER (Overheating)'; sUI.style.color = '#f7c873'; document.body.style.borderTop = '5px solid #f7c873'; }
+            if (data.season === 2) { sUI.innerText = '🍂 AUTUMN (Decay)'; sUI.style.color = '#ff9933'; document.body.style.borderTop = '5px solid #ff9933'; }
+            if (data.season === 3) { sUI.innerText = '❄️ WINTER (Famine & Viruses)'; sUI.style.color = '#99ccff'; document.body.style.borderTop = '5px solid #99ccff'; }
+        }
+        
+        // Update Graph with Color Buckets (Muller Plot)
+        let buckets = { r: 0, y: 0, g: 0, c: 0, b: 0, m: 0 };
+        creatures = data.c;
+        items = data.f;
+        
+        creatures.forEach(c => {
+            let h = c[4]; // Hue
+            if (h >= 330 || h < 30) buckets.r++;
+            else if (h >= 30 && h < 90) buckets.y++;
+            else if (h >= 90 && h < 150) buckets.g++;
+            else if (h >= 150 && h < 210) buckets.c++;
+            else if (h >= 210 && h < 270) buckets.b++;
+            else buckets.m++;
+        });
+        
+
+        // --- TROPHIC & MATRIX LOGIC ---
+        let trophicCounts = { prod: 0, herb: 0, carn: 0, scav: 0, aqua: 0 };
+        let familyMap = {};
+
+        creatures.forEach(c => {
+            let x = c[0], y = c[1], angle = c[2], size = c[3], hue = c[4], infected = c[5], trophic = c[6], vision = c[7] || 50, famId = c[8];
+            
+            // Trophic
+            if (trophic === 1) trophicCounts.prod++;
+            else if (trophic === 4) trophicCounts.carn++;
+            else if (trophic === 3) trophicCounts.scav++;
+            else if (trophic === 5) trophicCounts.aqua++;
+            else trophicCounts.herb++;
+
+            // Matrix
+            if (!familyMap[famId]) familyMap[famId] = { id: famId, pop: 0, sizeSum: 0, maxAge: 0, hue: hue };
+            familyMap[famId].pop++;
+            familyMap[famId].sizeSum += size;
+            // Note: server doesn't send age in compressed array. We use lineage or just size for now.
+        });
+
+        // Update Trophic Chart
+        if (window.trophicChart) {
+            window.trophicChart.data.datasets[0].data = [
+                trophicCounts.prod, trophicCounts.herb, trophicCounts.carn, trophicCounts.scav, trophicCounts.aqua
+            ];
+            window.trophicChart.update();
+        }
+
+        // Update Data Matrix
+        let famArr = Object.values(familyMap).sort((a,b) => b.pop - a.pop).slice(0, 8);
+        let matrixBody = document.getElementById('matrix-body');
+        if (matrixBody) {
+            matrixBody.innerHTML = famArr.map(f => `
+                <tr class="hover:bg-lavender/5 transition-colors border-b border-lavender/5">
+                    <td class="py-2 px-1 font-bold text-lavender/70">#${f.id}</td>
+                    <td class="py-2 px-1"><span class="inline-block w-4 h-4 rounded-full border border-white/20 shadow-lg" style="background: hsl(${f.hue}, 100%, 50%);"></span></td>
+                    <td class="py-2 px-1 font-bold text-white">${f.pop}</td>
+                    <td class="py-2 px-1">${(f.sizeSum / f.pop).toFixed(2)}</td>
+                    <td class="py-2 px-1 text-lavender/30">N/A</td>
+                </tr>
+            `).join('');
+        }
+        
+        // --- END TROPHIC & MATRIX LOGIC ---
+        popHistory.push({ total: data.a, ...buckets });
+        if(popHistory.length > 1200) popHistory.shift();
+        
+        gCtx.clearRect(0, 0, 900, 150);
+        
+        let maxPop = Math.max(...popHistory.map(p => p.total), 50);
+        let barWidth = 900 / 1200;
+        
+        // Draw Stacked Area Columns
+        for(let i=0; i<popHistory.length; i++) {
+            let p = popHistory[i];
+            let x = i * barWidth;
+            let currentY = 150; // Start drawing from the bottom
+            
+            let colorStacks = [
+                { count: p.r, fill: '#e9a7ff' }, // Red
+                { count: p.y, fill: '#f7c873' }, // Yellow
+                { count: p.g, fill: '#86efac' }, // Green
+                { count: p.c, fill: '#33ffff' }, // Cyan
+                { count: p.b, fill: '#3333ff' }, // Blue
+                { count: p.m, fill: '#ff33ff' }  // Magenta
+            ];
+            
+            colorStacks.forEach(col => {
+                if (col.count > 0) {
+                    let h = (col.count / maxPop) * 130;
+                    gCtx.fillStyle = col.fill;
+                    gCtx.fillRect(x, currentY - h, Math.ceil(barWidth), h);
+                    currentY -= h; // Stack the next color on top
+                }
+            });
+        }
+        
+        gCtx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        gCtx.font = "12px monospace";
+        gCtx.fillText("Species Evolution History (Live) - Peak: " + maxPop, 10, 20);
+        
+        // --- Evolutionary Observer Logic ---
+        if (typeof window.lastGen === 'undefined') {
+            window.lastGen = data.e;
+            window.lastDom = "";
+            window.lastLineage = 0;
+            window.lastConn = 4;
+            window.logEvent = function(msg, color="#fff") {
+                let box = document.getElementById('log-box');
+                if (!box) return;
+                let time = new Date().toLocaleTimeString();
+                let entry = document.createElement('div');
+                entry.innerHTML = `<span style="color:#555">[${time}]</span> <span style="color:${color}">${msg}</span>`;
+                box.appendChild(entry);
+                box.scrollTop = box.scrollHeight;
+                if(box.childNodes.length > 50) box.removeChild(box.firstChild);
+            };
+            window.logEvent("Observer Drone online. Monitoring primordial soup...", "#73f4df");
+        }
+        
+        if (data.e > window.lastGen) {
+            window.logEvent(`MASS EXTINCTION EVENT #${data.e}. All life perished. Seeding new primitive ancestors.`, "#e9a7ff");
+            window.lastGen = data.e;
+            window.lastLineage = 0;
+            window.lastConn = 4;
+        }
+        
+        if (data.mL > window.lastLineage + 10) {
+            window.logEvent(`Life is persisting! A lineage has survived ${data.mL} generations deep.`, "#86efac");
+            window.lastLineage = data.mL;
+        }
+        
+        if (data.aconn >= window.lastConn + 2) {
+            window.logEvent(`EVOLUTIONARY LEAP: Average brain complexity grew to ${Math.floor(data.aconn)} connections.`, "#e9a7ff");
+            window.lastConn += 2;
+        }
+        
+        // --- EVOLUTIONARY MILESTONES ---
+        window.milestones = window.milestones || { plant: false, carnivore: false, scavenger: false, immune: false, fur: false };
+        
+        if (data.a > 50) { // Only announce if population is stable
+            if (data.achloro > 0.70 && !window.milestones.plant) {
+                window.logEvent(`🌿 MILESTONE: The ecosystem is now dominated by Autotrophic Plants!`, "#73f4df");
+                window.milestones.plant = true;
+            } else if (data.achloro < 0.50) window.milestones.plant = false;
+            
+            if (data.acarn > 0.70 && !window.milestones.carnivore) {
+                window.logEvent(`🩸 MILESTONE: Apex Predators have taken over the food web!`, "#e9a7ff");
+                window.milestones.carnivore = true;
+            } else if (data.acarn < 0.50) window.milestones.carnivore = false;
+            
+            if (data.ascav > 0.70 && !window.milestones.scavenger) {
+                window.logEvent(`🪲 MILESTONE: A massive population of Decomposers has emerged!`, "#999999");
+                window.milestones.scavenger = true;
+            } else if (data.ascav < 0.50) window.milestones.scavenger = false;
+            
+            if (data.aimm > 0.75 && !window.milestones.immune) {
+                window.logEvent(`🦠 MILESTONE: The population has evolved extreme Viral Immunity!`, "#c7ff56");
+                window.milestones.immune = true;
+            } else if (data.aimm < 0.55) window.milestones.immune = false;
+            
+            if (data.ains > 0.75 && !window.milestones.fur) {
+                window.logEvent(`❄️ MILESTONE: The population has evolved thick fur for Ice Age survival!`, "#ffffff");
+                window.milestones.fur = true;
+            } else if (data.ains < 0.55) window.milestones.fur = false;
+        }
+        
+        // Find current dominant color
+        let currentDom = "None";
+        let maxCount = 0;
+        for (let col in buckets) {
+            if (buckets[col] > maxCount) {
+                maxCount = buckets[col];
+                currentDom = col;
+            }
+        }
+        
+        if (maxCount > 15 && currentDom !== window.lastDom) {
+            let colorNames = { r: "Red", y: "Yellow", g: "Green", c: "Cyan", b: "Blue", m: "Magenta" };
+            let colorHex = { r: "#e9a7ff", y: "#f7c873", g: "#86efac", c: "#33ffff", b: "#3333ff", m: "#ff33ff" };
+            if (window.lastDom !== "") {
+                window.logEvent(`SPECIES SHIFT: The ${colorNames[currentDom]} strain is aggressively taking over the ecosystem!`, colorHex[currentDom]);
+            }
+            window.lastDom = currentDom;
+        }
+        
+        // Draw frame directly
+        ctx.clearRect(0, 0, 3000, 3000);
+        if (data.geoEpoch !== undefined) renderTerrain(data.geoEpoch);
+        ctx.drawImage(terrainCanvas, 0, 0);
+        
+        // 1. Dynamic Soil Color
+        let fert = Math.min(10000, Math.max(0, data.fert || 500));
+        let soilG = Math.floor(34 + (fert / 10000) * 30); // Max 64 (rich green)
+        let soilR = Math.floor(34 - (fert / 10000) * 10);
+        let soilB = Math.floor(34 - (fert / 10000) * 15);
+        document.getElementById('arena').style.backgroundColor = `rgb(${soilR}, ${soilG}, ${soilB})`;
+        
+        // 2. Weather Overlays (Particles)
+        window.weatherParticles = window.weatherParticles || [];
+        let targetCount = 0; let pColor = 'white'; let pSize = 2; let pDrift = 1;
+        if (data.season === 3) { targetCount = 800; pColor = 'rgba(255,255,255,0.8)'; pSize = 3; pDrift = 0; } // Winter Snow
+        else if (data.season === 2) { targetCount = 200; pColor = 'rgba(217, 123, 41, 0.8)'; pSize = 4; pDrift = 2; } // Autumn Leaves
+        
+        while (window.weatherParticles.length < targetCount) {
+            window.weatherParticles.push({ x: Math.random() * 3000, y: Math.random() * 3000, vx: (Math.random() - 0.5) * pDrift, vy: Math.random() * 3 + 1, wobbly: Math.random() * 0.1 });
+        }
+        if (window.weatherParticles.length > targetCount) window.weatherParticles.splice(0, window.weatherParticles.length - targetCount);
+        
+        ctx.fillStyle = pColor;
+        window.weatherParticles.forEach(p => {
+            p.x += p.vx + Math.sin(Date.now() * 0.001 * p.wobbly) * 2;
+            p.y += p.vy;
+            if (p.y > 3000) { p.y = -10; p.x = Math.random() * 3000; }
+            if (p.x > 3000) p.x = 0; else if (p.x < 0) p.x = 3000;
+            ctx.beginPath(); ctx.arc(p.x, p.y, pSize, 0, Math.PI*2); ctx.fill();
+        });
+        
+        if (data.season === 1 && data.era === 2) { // Greenhouse Summer Heatwave
+            ctx.fillStyle = 'rgba(255, 60, 0, 0.05)';
+            ctx.fillRect(0, 0, 3000, 3000);
+        }
+        
+        if (data.rad) { // Radiation Active
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.08)'; // Toxic Green Wash
+            ctx.fillRect(0, 0, 3000, 3000);
+            
+            // Draw a massive glowing green border
+            ctx.strokeStyle = '#c7ff56';
+            ctx.lineWidth = 20;
+            ctx.strokeRect(0, 0, 3000, 3000);
+        }
+        
+        if (window.meteorFlash > 0) {
+            ctx.fillStyle = `rgba(255, 140, 0, ${window.meteorFlash})`;
+            ctx.fillRect(0, 0, 3000, 3000);
+            window.meteorFlash -= 0.05;
+        }
+        
+        // Items & Corpses
+        items.forEach(i => {
+           if (i[2] === 1) { // Food
+               ctx.beginPath();
+               ctx.arc(i[0], i[1], 8, 0, Math.PI*2);
+               ctx.fillStyle = '#73f4df';
+               ctx.fill();
+           } else { // Corpse / Poison
+               // Draw tiny crossed bones
+               ctx.strokeStyle = '#ff0033';
+               ctx.lineWidth = 3;
+               ctx.beginPath();
+               ctx.moveTo(i[0] - 6, i[1] - 6);
+               ctx.lineTo(i[0] + 6, i[1] + 6);
+               ctx.moveTo(i[0] + 6, i[1] - 6);
+               ctx.lineTo(i[0] - 6, i[1] + 6);
+               ctx.stroke();
+           }
+        });
+        
+        // Draw Interaction Lines (Mating & Combat Thunderbolts)
+        ctx.lineWidth = 2;
+        for (let i = 0; i < creatures.length; i++) {
+            for (let j = i + 1; j < creatures.length; j++) {
+                let c1 = creatures[i], c2 = creatures[j];
+                let dx = c1[0] - c2[0], dy = c1[1] - c2[1];
+                let distSq = dx*dx + dy*dy;
+                
+                if (distSq < 1500) { // Touching physically
+                    let h1 = c1[4], h2 = c2[4];
+                    let hueDiff = Math.abs(h1 - h2);
+                    if (hueDiff > 180) hueDiff = 360 - hueDiff;
+                    
+                    if (hueDiff < 20) {
+                        // Kin / Mating
+                        ctx.beginPath();
+                        ctx.moveTo(c1[0], c1[1]);
+                        ctx.lineTo(c2[0], c2[1]);
+                        ctx.strokeStyle = 'rgba(255, 105, 180, 0.7)'; // Pink
+                        ctx.stroke();
+                    } else if (c1[6] === 4 || c2[6] === 4) {
+                        // Combat / Predation (Carnivore involved)
+                        ctx.beginPath();
+                        ctx.moveTo(c1[0], c1[1]);
+                        ctx.lineTo(c1[0] - dx*0.5 + 8, c1[1] - dy*0.5 + 8); // Jagged thunderbolt center
+                        ctx.lineTo(c2[0], c2[1]);
+                        ctx.strokeStyle = 'rgba(255, 30, 30, 0.9)'; // Red lightning
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        // Creatures
+        creatures.forEach((c, index) => {
+            let x = c[0], y = c[1], angle = c[2], size = c[3], hue = c[4], infected = c[5], trophic = c[6], vision = c[7] || 50;
+            
+            // 3. Draw Vision Radar
+            ctx.beginPath();
+            ctx.arc(x, y, vision, 0, Math.PI*2);
+            ctx.fillStyle = `hsla(${hue}, 100%, 50%, 0.03)`;
+            ctx.fill();
+            ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.1)`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            // Highlight selected family lineage
+            if (window.selectedFamilyId !== -1 && c[8] === window.selectedFamilyId) {
+                ctx.beginPath();
+                ctx.arc(x, y, size * 15, 0, Math.PI*2);
+                ctx.strokeStyle = `hsl(${hue}, 100%, 80%)`;
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                
+                // Draw connecting lines to nearby family members
+                for (let j = index + 1; j < creatures.length; j++) {
+                    let kin = creatures[j];
+                    if (kin[8] === window.selectedFamilyId) {
+                        let dist = Math.hypot(x - kin[0], y - kin[1]);
+                        if (dist < 400) {
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            ctx.lineTo(kin[0], kin[1]);
+                            ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.4)`;
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+            
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.scale(size, size);
+            
+            ctx.beginPath();
+            if (trophic === 1) { 
+                  ctx.arc(0, 0, 12, 0, Math.PI * 2);
+              } else if (trophic === 2 || trophic === 5 || trophic === 0) { 
+                  ctx.moveTo(15, 0);
+                  ctx.lineTo(-10, 10);
+                  ctx.lineTo(-10, -10);
+              } else if (trophic === 3) { 
+                  ctx.rect(-10, -10, 20, 20);
+              } else {
+                  ctx.moveTo(15, 0); ctx.lineTo(-10, 10); ctx.lineTo(-10, -10);
+              }
+            ctx.closePath();
+            
+            ctx.fillStyle = infected ? '#c7ff56' : `hsl(${hue}, 100%, 50%)`;
+            if (infected) {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#c7ff56';
+            } else {
+                ctx.shadowBlur = 0;
+            }
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset for other draws
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+            
+            if (index === data.alpha) { // Alpha halo
+                ctx.beginPath();
+                ctx.arc(0, 0, 30, 0, Math.PI*2);
+                ctx.strokeStyle = 'gold';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        });
+    });
+
+    socket.on('ai_analysis', (htmlData) => {
+        let readout = document.getElementById('ai-readout');
+        htmlData = htmlData.replace(/`html/g, '').replace(/`/g, '');
+        if(readout) readout.innerHTML = htmlData;
+    });
+
+    socket.on('radiation_warning', (isActive) => {
+        if (isActive) window.logEvent('☣️ INCOMING: Extreme cosmic radiation burst detected! Genetic mutation rate +500%!', '#c7ff56');
+        else window.logEvent('Shields stabilized. Cosmic radiation levels returned to normal.', '#c7ff56');
+        let btn = document.getElementById('rad-btn');
+        if (isActive) {
+            btn.style.background = 'white';
+            btn.style.color = 'red';
+            btn.innerText = '☢️ RADIATION BURST ACTIVE ☢️';
+        } else {
+            btn.style.background = '#ff0033';
+            btn.style.color = 'white';
+            btn.innerText = '⚠️ TRIGGER RADIATION BURST (10s) ⚠️';
+        }
+    });
+
+    document.getElementById('rad-btn').addEventListener('click', () => {
+        socket.emit('trigger_radiation');
+    });
+    
+    document.getElementById('meteor-btn').addEventListener('click', () => {
+        socket.emit('trigger_meteor');
+    });
+
+    // --- V4 UI LOGIC ---
+    document.getElementById('btn-update').addEventListener('click', () => {
+        socket.emit('update_config', {
+            ARENA_SIZE: document.getElementById('inp-arena').value,
+            MAX_CREATURES: document.getElementById('inp-creatures').value,
+            NUM_ITEMS: document.getElementById('inp-items').value,
+            TICK_RATE_MS: document.getElementById('inp-tick').value,
+            
+            INIT_FERTILIZER: document.getElementById('inp-fert').value,
+            START_ALIVE: document.getElementById('inp-start-alive').value,
+            START_ITEMS: document.getElementById('inp-start-items').value,
+            START_ENERGY: document.getElementById('inp-start-energy').value,
+            BASE_FOOD_SPAWN: document.getElementById('inp-food-spawn').value,
+            METABOLISM_MULT: document.getElementById('inp-metabolism').value,
+                        MUTATION_MULT: document.getElementById('inp-mutation').value,
+            MITOSIS_BARRIER_MULT: document.getElementById('inp-mitosis').value,
+            MATING_COST_MULT: document.getElementById('inp-mating').value,
+            FOOD_ENERGY_YIELD: document.getElementById('inp-food-yield').value,
+            POISON_ENERGY_YIELD: document.getElementById('inp-poison-yield').value,
+            CORPSE_ENERGY_YIELD: document.getElementById('inp-corpse-yield').value,
+            ENABLE_TERRAIN: document.getElementById('chk-terrain').checked,
+            ENABLE_SEASONS: document.getElementById('chk-seasons').checked,
+            ENABLE_ERAS: document.getElementById('chk-eras').checked,
+            ENABLE_VIRUS: document.getElementById('chk-virus').checked,
+            ENABLE_PARASITISM: document.getElementById('chk-parasitism').checked,
+            ENABLE_PREDATION: document.getElementById('chk-predation').checked,
+            ENABLE_PHOTOSYNTHESIS: document.getElementById('chk-photosynthesis').checked,
+                        ENABLE_SCAVENGING: document.getElementById('chk-scavenging').checked,
+            BASE_METABOLISM_RATE: document.getElementById('inp-metab-rate').value,
+            MOVEMENT_COST_RATE: document.getElementById('inp-move-rate').value,
+            VISION_COST_RATE: document.getElementById('inp-vis-rate').value,
+            AGE_TAX_RATE: document.getElementById('inp-age-rate').value,
+            BRAIN_TAX_RATE: document.getElementById('inp-brain-rate').value,
+            ATTACK_COST: document.getElementById('inp-atk-cost').value,
+            SCUFFLE_COST: document.getElementById('inp-scuffle').value,
+            SYMBIOSIS_TAX: document.getElementById('inp-symbiosis').value,
+            PARASITE_EGG_COST: document.getElementById('inp-parasite-cost').value,
+            MIN_SPEED_CAP: document.getElementById('inp-min-spd').value,
+            MAX_SPEED_CAP: document.getElementById('inp-max-spd').value,
+            MIN_VISION_CAP: document.getElementById('inp-min-vis').value,
+            MAX_VISION_CAP: document.getElementById('inp-max-vis').value,
+            MAX_BRAIN_NODES: document.getElementById('inp-max-nodes').value,
+            DROWNING_PENALTY: document.getElementById('inp-drown').value,
+            OVERPOPULATION_CAP: document.getElementById('inp-overpop').value,
+            CHLOROPLAST_YIELD: document.getElementById('inp-chloroplast').value
+
+
+
+        });
+        window.logEvent('Sent new configuration to server.', '#e9a7ff');
+    });
+    document.getElementById('btn-stop').addEventListener('click', () => socket.emit('stop_sim'));
+    document.getElementById('btn-start').addEventListener('click', () => socket.emit('start_sim'));
+    document.getElementById('btn-restart').addEventListener('click', () => socket.emit('restart_sim'));
+
+        socket.on('sim_status', (status) => {
+        let el = document.getElementById('sim-status');
+        let txt = document.getElementById('sim-status-text');
+        let dot = el.querySelector('.bg-green-500');
+        let ping = el.querySelector('.animate-ping');
+        if(txt) txt.innerText = status;
+        else el.innerText = status;
+        
+        if (status === 'Running') {
+            el.className = "flex items-center gap-2 px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30 uppercase tracking-wide shadow-[0_0_10px_rgba(34,197,94,0.3)]";
+            if(dot) dot.className = "relative inline-flex rounded-full h-2 w-2 bg-green-500";
+            if(ping) ping.style.display = "block";
+        } else if (status === 'Stopped') {
+            el.className = "flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-full border border-red-500/30 uppercase tracking-wide shadow-[0_0_10px_rgba(239,68,68,0.3)]";
+            if(dot) dot.className = "relative inline-flex rounded-full h-2 w-2 bg-red-500";
+            if(ping) ping.style.display = "none";
+        } else {
+            el.className = "flex items-center gap-2 px-3 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded-full border border-yellow-500/30 uppercase tracking-wide shadow-[0_0_10px_rgba(234,179,8,0.3)]";
+            if(dot) dot.className = "relative inline-flex rounded-full h-2 w-2 bg-yellow-500";
+            if(ping) ping.style.display = "none";
+        }
+        window.logEvent('Simulation status changed: ' + status, '#e9a7ff');
+    });
+
+
+    // Divine Intervention & Lineage Tracing
+    window.selectedFamilyId = -1;
+
+    // OMNIPOTENCE LOGIC
+    let activeBrush = 'none';
+    document.querySelectorAll('input[name="brush"]').forEach(radio => {
+        radio.addEventListener('change', (e) => { activeBrush = e.target.value; });
+    });
+
+    let isMouseDown = false;
+    canvas.addEventListener('mousedown', () => isMouseDown = true);
+    canvas.addEventListener('mouseup', () => isMouseDown = false);
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isMouseDown || activeBrush === 'none') return;
+        let rect = canvas.getBoundingClientRect();
+        let simX = ((e.clientX - rect.left) / rect.width) * 3000;
+        let simY = ((e.clientY - rect.top) / rect.height) * 3000;
+        socket.emit('paint_brush', { type: activeBrush, x: simX, y: simY, radius: 100 });
+    });
+
+    // Replace old click logic
+    canvas.addEventListener('click', (e) => {
+        if (activeBrush !== 'none') return;
+        let rect = canvas.getBoundingClientRect();
+        let simX = ((e.clientX - rect.left) / rect.width) * 3000;
+        let simY = ((e.clientY - rect.top) / rect.height) * 3000;
+        
+        let found = false;
+        for (let i = 0; i < creatures.length; i++) {
+            let c = creatures[i];
+            let dist = Math.hypot(c[0] - simX, c[1] - simY);
+            if (dist < c[3] * 15) { 
+                window.selectedFamilyId = c[8];
+                let realId = c[9];
+                socket.emit('get_brain', realId);
+                window.logEvent(`🧬 LINEAGE TRACER: Tracking Family Dynasty #${c[8]}! Fetching Brain Data...`, `hsl(${c[4]}, 100%, 50%)`);
+                found = true;
+                break;
+            }
+        }
+        if (!found) window.selectedFamilyId = -1;
+    });
+
+    // Save / Load
+    document.getElementById('btn-save').addEventListener('click', () => { socket.emit('request_save'); });
+    socket.on('save_data', (data) => {
+        let blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = `petrichip_snapshot_${Date.now()}.json`;
+        a.click();
+    });
+
+    document.getElementById('file-load').addEventListener('change', (e) => {
+        let file = e.target.files[0];
+        if(!file) return;
+        let reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                let data = JSON.parse(e.target.result);
+                socket.emit('load_save', data);
+            } catch(err) { alert("Invalid save file"); }
+        };
+        reader.readAsText(file);
+    });
+
+    // Presets
+    document.getElementById('btn-preset-water').addEventListener('click', () => {
+        document.getElementById('chk-terrain').checked = false;
+        document.getElementById('inp-drown').value = 0;
+        document.getElementById('btn-update').click();
+        document.getElementById('btn-restart').click();
+        window.logEvent('🌊 Water World scenario loaded.', '#0055ff');
+    });
+    
+    document.getElementById('btn-preset-dark').addEventListener('click', () => {
+        document.getElementById('inp-max-vis').value = 40;
+        document.getElementById('inp-move-rate').value = 0.001; // Cheap movement
+        document.getElementById('inp-food-spawn').value = 0.05; // Starvation
+        document.getElementById('btn-update').click();
+        document.getElementById('btn-restart').click();
+        window.logEvent('🦇 Dark Forest scenario loaded.', '#777');
+    });
+
+    document.getElementById('btn-preset-eden').addEventListener('click', () => {
+        document.getElementById('inp-food-spawn').value = 1.0;
+        document.getElementById('chk-virus').checked = false;
+        document.getElementById('chk-predation').checked = false;
+        document.getElementById('inp-mutation').value = 0.1;
+        document.getElementById('btn-update').click();
+        document.getElementById('btn-restart').click();
+        window.logEvent('🍎 Garden of Eden scenario loaded.', '#00aa00');
+    });
+
+    // Brain visualizer
+    socket.on('brain_data', (bdata) => {
+        let text = `🧠 Telemetry Acquired (ID: ${bdata.id}) | Energy: ${bdata.energy.toFixed(1)} | Age: ${bdata.age}\n`;
+        text += `Routing Neural Architecture to Visualizer...`;
+        window.logEvent(text, '#ffbbfe');
+        renderBrain(bdata);
+    });
+    // INITIALIZE TROPHIC CHART
+    let ctxTrophic = document.getElementById('trophic-chart');
+    if (ctxTrophic) {
+        window.trophicChart = new Chart(ctxTrophic.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Producers', 'Herbivores', 'Carnivores', 'Scavengers', 'Aquatic'],
+                datasets: [{
+                    data: [0, 0, 0, 0, 0],
+                    backgroundColor: ['#73f4df', '#ffffff', '#e9a7ff', '#999999', '#0055ff'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // RENDER NEURAL NETWORK
+    const bCanvas = document.getElementById('brain-network');
+    const bCtx = bCanvas ? bCanvas.getContext('2d') : null;
+
+    function renderBrain(bdata) {
+        if (!bCtx) return;
+        document.getElementById('brain-overlay').style.display = 'none';
+        bCtx.clearRect(0, 0, 800, 300);
+        
+        let brain = bdata.brain;
+        let conns = brain.conns;
+        
+        // Define node positions
+        // Layer 1: Sensors (0-7), Mem In (8-15) -> X: 100
+        // Layer 2: Hidden (28+) -> X: 400
+        // Layer 3: Motors (16-17), Intent (18), Aggro (19), Mem Out (20-27) -> X: 700
+
+        let nodePos = {};
+        let layerCounts = { 1: 0, 2: 0, 3: 0 };
+        
+        // Calculate max nodes per layer to center them vertically
+        for (let i = 0; i <= brain.maxNode; i++) {
+            if (i < 16) layerCounts[1]++;
+            else if (i >= 16 && i < 28) layerCounts[3]++;
+            else layerCounts[2]++;
+        }
+
+        let currCounts = { 1: 0, 2: 0, 3: 0 };
+        
+        for (let i = 0; i <= brain.maxNode; i++) {
+            let layer, x;
+            if (i < 16) { layer = 1; x = 100; }
+            else if (i >= 16 && i < 28) { layer = 3; x = 700; }
+            else { layer = 2; x = 400; }
+
+            let yOffset = (300 - (layerCounts[layer] * 15)) / 2;
+            let y = yOffset + (currCounts[layer] * 15);
+            nodePos[i] = { x: x, y: y, layer: layer, id: i };
+            currCounts[layer]++;
+        }
+
+        // Draw connections
+        bCtx.lineWidth = 1;
+        conns.forEach(c => {
+            let p1 = nodePos[c.in];
+            let p2 = nodePos[c.out];
+            if (p1 && p2) {
+                bCtx.beginPath();
+                bCtx.moveTo(p1.x, p1.y);
+                // Bezier curve for cool effect
+                bCtx.bezierCurveTo(p1.x + 100, p1.y, p2.x - 100, p2.y, p2.x, p2.y);
+                if (c.w > 0) {
+                    bCtx.strokeStyle = `rgba(0, 255, 204, ${Math.min(1.0, Math.abs(c.w) * 0.2)})`; // Excitory
+                } else {
+                    bCtx.strokeStyle = `rgba(255, 51, 51, ${Math.min(1.0, Math.abs(c.w) * 0.2)})`; // Inhibitory
+                }
+                bCtx.stroke();
+            }
+        });
+
+        // Draw nodes
+        for (let i = 0; i <= brain.maxNode; i++) {
+            let p = nodePos[i];
+            if (p) {
+                bCtx.beginPath();
+                bCtx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                if (p.layer === 1) bCtx.fillStyle = '#fdf800'; // Sensor
+                else if (p.layer === 3) bCtx.fillStyle = '#ffbbfe'; // Motor
+                else bCtx.fillStyle = '#d5d4ff'; // Hidden
+                bCtx.fill();
+                
+                // Labels for key nodes
+                bCtx.fillStyle = 'rgba(255,255,255,0.3)';
+                bCtx.font = '8px monospace';
+                if (p.id === 0) bCtx.fillText('VISION', p.x - 35, p.y + 3);
+                if (p.id === 16) bCtx.fillText('MOVE F', p.x + 10, p.y + 3);
+                if (p.id === 18) bCtx.fillText('MATE', p.x + 10, p.y + 3);
+                if (p.id === 19) bCtx.fillText('BITE', p.x + 10, p.y + 3);
+            }
+        }
+    }
+
+
+
+
+    socket.on('meteor_warning', () => {
+        window.logEvent('☄️ K-T EXTINCTION EVENT: A massive asteroid has struck! 90% of all life and food vaporized!', '#ff8c00');
+        window.meteorFlash = 1.0;
+    });
+
+    // Historical Charting Logic
+    let histChart = null;
+    async function loadHistoricalData() {
+        try {
+            let res = await fetch('/api/history');
+            if(!res.ok) return;
+            let text = await res.text();
+            let lines = text.trim().split('\n');
+            
+            let labels = [], popData = [], sizeData = [], speedData = [], connData = [];
+            
+            for(let i=1; i<lines.length; i++) {
+                let cols = lines[i].split(',');
+                if(cols.length < 11) continue;
+                let date = new Date(cols[0]);
+                labels.push(date.getHours() + ":" + date.getMinutes().toString().padStart(2, '0'));
+                popData.push(parseFloat(cols[2]));
+                sizeData.push(parseFloat(cols[8]));
+                speedData.push(parseFloat(cols[9]));
+                connData.push(parseFloat(cols[10]));
+            }
+            
+            if (labels.length === 0) {
+                // No valid data yet, show placeholder
+                labels.push("Awaiting first 10-min log...");
+                popData.push(0); sizeData.push(0); speedData.push(0); connData.push(0);
+            }
+            
+            let ctxChart = document.getElementById('metricsChart').getContext('2d');
+            if(histChart) histChart.destroy();
+            
+            histChart = new Chart(ctxChart, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Population', data: popData, borderColor: '#fdf800', yAxisID: 'yPop', tension: 0.3, pointRadius: 3, borderWidth: 2 },
+                        { label: 'Avg Size', data: sizeData, borderColor: '#86efac', yAxisID: 'yStats', tension: 0.3, pointRadius: 3, borderWidth: 2 },
+                        { label: 'Avg Speed', data: speedData, borderColor: '#e9a7ff', yAxisID: 'yStats', tension: 0.3, pointRadius: 3, borderWidth: 2 },
+                        { label: 'Avg Connects', data: connData, borderColor: '#e9a7ff', yAxisID: 'yStats', tension: 0.3, pointRadius: 3, borderWidth: 2 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: '#333' } },
+                        yPop: { type: 'linear', position: 'left', grid: { color: '#333' }, title: {display: true, text: 'Population'} },
+                        yStats: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: {display: true, text: 'Phenotype / Neural'} }
+                    },
+                    plugins: { legend: { labels: { color: '#fff' } } }
+                }
+            });
+        } catch(e) { console.error('Chart load error:', e); }
+    }
+    
+    // Refresh historical chart every 5 minutes
+    loadHistoricalData();
+    setInterval(loadHistoricalData, 5 * 60 * 1000);
+
+  </script>
 </body>
 </html>
