@@ -796,7 +796,7 @@ function broadcastState() {
             if (c.gene_chloroplast > 0.5) trophic = 1;
             else if (c.gene_carnivore > 0.5) trophic = 4;
             else if (c.gene_scavenger > 0.5) trophic = 2;
-            payloadCreatures.push([Math.round(c.x), Math.round(c.y), Number(c.angle.toFixed(2)), Number(c.gene_size.toFixed(2)), Math.round(c.hue), c.infected ? 1 : 0, c.gene_aquatic > 0.5 ? 5 : trophic, Math.round(c.gene_vision), c.familyId]);
+            payloadCreatures.push([Math.round(c.x), Math.round(c.y), Number(c.angle.toFixed(2)), Number(c.gene_size.toFixed(2)), Math.round(c.hue), c.infected ? 1 : 0, c.gene_aquatic > 0.5 ? 5 : trophic, Math.round(c.gene_vision), c.familyId, c.id]);
         }
     }
 
@@ -921,7 +921,59 @@ io.on('connection', (socket) => {
     // Send immediate AI state
     socket.emit('ai_analysis', lastAiAnalysis);
     
+
+    // --- V4 OMNIPOTENCE COMMANDS ---
+    socket.on('request_save', () => {
+        socket.emit('save_data', {
+            creatures, items, globalFertilizer, geologicEpoch, season, globalEra,
+            config: { ARENA_SIZE, MAX_CREATURES, NUM_ITEMS }
+        });
+    });
+    
+    socket.on('load_save', (data) => {
+        if (!data || !data.creatures) return;
+        creatures = data.creatures;
+        items = data.items;
+        globalFertilizer = data.globalFertilizer || 10000;
+        geologicEpoch = data.geologicEpoch || 0;
+        season = data.season || 0;
+        globalEra = data.globalEra || 0;
+        aliveCount = creatures.filter(c => c.alive).length;
+        io.emit('sim_status', 'Loaded Save');
+    });
+
+    socket.on('get_brain', (id) => {
+        let c = creatures.find(x => x.id === id);
+        if (c) socket.emit('brain_data', { id: c.id, brain: c.brain, age: c.age, energy: c.energy, mem: c.mem });
+    });
+
+    socket.on('paint_brush', (data) => {
+        let { type, x, y, radius } = data;
+        if (type === 'smite') {
+            for(let i=0; i<creatures.length; i++) {
+                if (creatures[i].alive && Math.hypot(creatures[i].x - x, creatures[i].y - y) < radius) {
+                    creatures[i].energy = 0; // kill
+                }
+            }
+        } else if (type === 'mutate') {
+            for(let i=0; i<creatures.length; i++) {
+                if (creatures[i].alive && Math.hypot(creatures[i].x - x, creatures[i].y - y) < radius) {
+                    creatures[i].brain = mutateBrain(creatures[i].brain, 50.0);
+                    creatures[i].hue = (creatures[i].hue + 180) % 360; // Flip color
+                }
+            }
+        } else if (type === 'food') {
+            for(let j=0; j<5; j++) {
+                let empty = items.findIndex(i => !i.active);
+                if (empty !== -1) {
+                    items[empty] = { x: x + (Math.random()*radius - radius/2), y: y + (Math.random()*radius - radius/2), type: 1, active: true };
+                }
+            }
+        }
+    });
+    
     // --- V4 CONFIG COMMANDS ---
+
     socket.on('update_config', (newConfig) => {
         let oldMaxC = MAX_CREATURES;
         let oldMaxI = NUM_ITEMS;

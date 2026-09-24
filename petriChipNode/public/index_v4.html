@@ -82,6 +82,29 @@
   
   <div style="width: 100%; max-width: 900px; margin: 15px auto; display: flex; gap: 15px; flex-direction: column;">
       
+
+      <!-- OMNIPOTENCE TOOLBAR -->
+      <div style="border: 1px solid #00ffff; border-radius: 4px; background: #1f2833; padding: 15px; text-align: left; color: #c5c6c7; margin-bottom: 15px;">
+          <h3 style="color: #00ffff; margin-top: 0; border-bottom: 1px solid #00ffff; padding-bottom: 5px;">⚡ OMNIPOTENCE TOOLBAR & PRESETS</h3>
+          
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+              <button id="btn-preset-water" style="padding: 8px; background:#0055ff; color:#fff; border:none; border-radius:4px; cursor:pointer;">🌊 Water World</button>
+              <button id="btn-preset-dark" style="padding: 8px; background:#222; color:#fff; border:1px solid #555; border-radius:4px; cursor:pointer;">🦇 Dark Forest</button>
+              <button id="btn-preset-eden" style="padding: 8px; background:#00aa00; color:#fff; border:none; border-radius:4px; cursor:pointer;">🍎 Garden of Eden</button>
+              <div style="width: 2px; background: #555; margin: 0 10px;"></div>
+              <button id="btn-save" style="padding: 8px; background:#aa00aa; color:#fff; border:none; border-radius:4px; cursor:pointer;">💾 Save Ecosystem</button>
+              <button id="btn-load-ui" style="padding: 8px; background:#aa00aa; color:#fff; border:none; border-radius:4px; cursor:pointer;" onclick="document.getElementById('file-load').click()">📂 Load Ecosystem</button>
+              <input type="file" id="file-load" style="display:none;" accept=".json">
+          </div>
+
+          <div style="display: flex; gap: 10px; align-items: center;">
+              <strong>Active God Brush:</strong>
+              <label><input type="radio" name="brush" value="none" checked> None (Trace Lineage)</label>
+              <label style="color:#ff3333;"><input type="radio" name="brush" value="smite"> ⚡ Smite</label>
+              <label style="color:#00ff00;"><input type="radio" name="brush" value="mutate"> ☢️ Force Mutate</label>
+              <label style="color:#00ffff;"><input type="radio" name="brush" value="food"> 🍏 Drop Food</label>
+          </div>
+      </div>
       <!-- Interactive Buttons -->
       <div style="display: flex; justify-content: center; gap: 15px;">
           <button id="rad-btn" style="width:100%; padding: 15px; font-weight:bold; font-size: 1.1em; background:#ff0033; color:white; border:none; border-radius:8px; cursor:pointer; box-shadow: 0 0 10px #ff0033;">⚠️ TRIGGER RADIATION BURST (10s) ⚠️</button>
@@ -757,8 +780,109 @@
 
     // Divine Intervention & Lineage Tracing
     window.selectedFamilyId = -1;
-    canvas.addEventListener('click', (e) => {
+
+    // OMNIPOTENCE LOGIC
+    let activeBrush = 'none';
+    document.querySelectorAll('input[name="brush"]').forEach(radio => {
+        radio.addEventListener('change', (e) => { activeBrush = e.target.value; });
+    });
+
+    let isMouseDown = false;
+    canvas.addEventListener('mousedown', () => isMouseDown = true);
+    canvas.addEventListener('mouseup', () => isMouseDown = false);
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isMouseDown || activeBrush === 'none') return;
         let rect = canvas.getBoundingClientRect();
+        let simX = ((e.clientX - rect.left) / rect.width) * 3000;
+        let simY = ((e.clientY - rect.top) / rect.height) * 3000;
+        socket.emit('paint_brush', { type: activeBrush, x: simX, y: simY, radius: 100 });
+    });
+
+    // Replace old click logic
+    canvas.addEventListener('click', (e) => {
+        if (activeBrush !== 'none') return;
+        let rect = canvas.getBoundingClientRect();
+        let simX = ((e.clientX - rect.left) / rect.width) * 3000;
+        let simY = ((e.clientY - rect.top) / rect.height) * 3000;
+        
+        let found = false;
+        for (let i = 0; i < creatures.length; i++) {
+            let c = creatures[i];
+            let dist = Math.hypot(c[0] - simX, c[1] - simY);
+            if (dist < c[3] * 15) { 
+                window.selectedFamilyId = c[8];
+                let realId = c[9];
+                socket.emit('get_brain', realId);
+                window.logEvent(`🧬 LINEAGE TRACER: Tracking Family Dynasty #${c[8]}! Fetching Brain Data...`, `hsl(${c[4]}, 100%, 50%)`);
+                found = true;
+                break;
+            }
+        }
+        if (!found) window.selectedFamilyId = -1;
+    });
+
+    // Save / Load
+    document.getElementById('btn-save').addEventListener('click', () => { socket.emit('request_save'); });
+    socket.on('save_data', (data) => {
+        let blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = `petrichip_snapshot_${Date.now()}.json`;
+        a.click();
+    });
+
+    document.getElementById('file-load').addEventListener('change', (e) => {
+        let file = e.target.files[0];
+        if(!file) return;
+        let reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                let data = JSON.parse(e.target.result);
+                socket.emit('load_save', data);
+            } catch(err) { alert("Invalid save file"); }
+        };
+        reader.readAsText(file);
+    });
+
+    // Presets
+    document.getElementById('btn-preset-water').addEventListener('click', () => {
+        document.getElementById('chk-terrain').checked = false;
+        document.getElementById('inp-drown').value = 0;
+        document.getElementById('btn-update').click();
+        document.getElementById('btn-restart').click();
+        window.logEvent('🌊 Water World scenario loaded.', '#0055ff');
+    });
+    
+    document.getElementById('btn-preset-dark').addEventListener('click', () => {
+        document.getElementById('inp-max-vis').value = 40;
+        document.getElementById('inp-move-rate').value = 0.001; // Cheap movement
+        document.getElementById('inp-food-spawn').value = 0.05; // Starvation
+        document.getElementById('btn-update').click();
+        document.getElementById('btn-restart').click();
+        window.logEvent('🦇 Dark Forest scenario loaded.', '#777');
+    });
+
+    document.getElementById('btn-preset-eden').addEventListener('click', () => {
+        document.getElementById('inp-food-spawn').value = 1.0;
+        document.getElementById('chk-virus').checked = false;
+        document.getElementById('chk-predation').checked = false;
+        document.getElementById('inp-mutation').value = 0.1;
+        document.getElementById('btn-update').click();
+        document.getElementById('btn-restart').click();
+        window.logEvent('🍎 Garden of Eden scenario loaded.', '#00aa00');
+    });
+
+    // Brain visualizer
+    socket.on('brain_data', (bdata) => {
+        let text = `🧠 Brain Data (ID: ${bdata.id}) | Energy: ${bdata.energy.toFixed(1)} | Age: ${bdata.age}\n`;
+        text += `Nodes: ${bdata.brain.maxNode} | Connections: ${bdata.brain.conns.length}\n`;
+        text += `(Check server console for full dump, or build a node graph here!)`;
+        window.logEvent(text, '#ff00ff');
+    });
+
+    // OLD DIVINE INTERVENTION REMOVAL
+
         let simX = ((e.clientX - rect.left) / rect.width) * 3000;
         let simY = ((e.clientY - rect.top) / rect.height) * 3000;
         
@@ -775,10 +899,7 @@
             }
         }
         
-        if (!found) {
-            window.selectedFamilyId = -1; // Deselect
-            socket.emit('divine_intervention', {x: simX, y: simY});
-        }
+// Handled by brush
     });
 
     socket.on('meteor_warning', () => {
