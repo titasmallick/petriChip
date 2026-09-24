@@ -45,7 +45,13 @@ let MAX_CREATURES = 600;
 let NUM_ITEMS = 1500;
 let TICK_RATE_MS = 5; // 200 ticks per second (10x faster than ESP32!)
 let BROADCAST_RATE_MS = 50;
-let INIT_FERTILIZER = 10000.0; // Update UI 20 times per second
+let INIT_FERTILIZER = 10000.0;
+let START_ALIVE = 400;
+let START_ITEMS = 400;
+let START_ENERGY = 1000.0;
+let BASE_FOOD_SPAWN = 0.20;
+let METABOLISM_MULT = 1.0;
+let MUTATION_MULT = 1.0; // Update UI 20 times per second
 
 let totalBirths = 0;
 let totalDeaths = 0;
@@ -101,7 +107,7 @@ function initEcosystem() {
     // Spawn initial seed of food/poison, leaving plenty of empty slots for corpses and blooms
     items = [];
     for(let i = 0; i < NUM_ITEMS; i++) {
-        let shouldBeActive = (i < 400); // Only seed 400 items so the array isn't instantly full
+        let shouldBeActive = (i < START_ITEMS); // Only seed 400 items so the array isn't instantly full
         items.push({
             x: randomFloat(50, ARENA_SIZE - 50),
             y: randomFloat(50, ARENA_SIZE - 50),
@@ -113,7 +119,7 @@ function initEcosystem() {
     // Genesis Event - 100 random ancestors
     creatures = [];
     for(let i = 0; i < MAX_CREATURES; i++) {
-        let alive = (i < 400); // Increased from 100 to 400
+        let alive = (i < START_ALIVE); // Increased from 100 to 400
         
 
         let c = {
@@ -122,7 +128,7 @@ function initEcosystem() {
             x: alive ? randomFloat(50, ARENA_SIZE - 50) : 0, // Scattered across entire map
             y: alive ? randomFloat(50, ARENA_SIZE - 50) : 0,
             angle: randomFloat(0, Math.PI * 2),
-            energy: 1000.0, // Give them enough time to wander and find food on a massive board
+            energy: START_ENERGY, // Give them enough time to wander and find food on a massive board
             alive: alive,
             hue: Math.floor(Math.random() * 360),
             age: 0,
@@ -199,7 +205,7 @@ function processBrain(brain, inputs, mem) {
 
 function mutateBrain(brain, rad) {
     let b = { maxNode: brain.maxNode, conns: JSON.parse(JSON.stringify(brain.conns)) };
-    let mutSev = 0.1 + (rad * 0.01);
+    let mutSev = (0.1 + (rad * 0.01)) * MUTATION_MULT;
     
     let r = Math.random();
     if (r < 0.5) {
@@ -355,7 +361,7 @@ function tickPhysics() {
         }
     }
     
-    let foodSpawnRate = 0.20;
+    let foodSpawnRate = BASE_FOOD_SPAWN;
     if (globalEra === 1) foodSpawnRate *= 0.5; // Ice age kills global food
     if (globalEra === 2) foodSpawnRate *= 0.8; // Drought reduces food
     if (season === 0) foodSpawnRate = 0.40; // Spring bloom
@@ -490,7 +496,7 @@ function tickPhysics() {
             }
         }
         
-        let totalCost = baselineCost + movementCost + visionCost + ageTax + brainTax + tempPenalty + viralTax;
+        let totalCost = (baselineCost + movementCost + visionCost + ageTax + brainTax + tempPenalty + viralTax) * METABOLISM_MULT;
         c.energy -= totalCost;
         globalFertilizer += totalCost; // Geochemical loop: 100% of burned energy returns to soil (Perfect Conservation)
 
@@ -894,6 +900,13 @@ io.on('connection', (socket) => {
         if (newConfig.BROADCAST_RATE_MS) BROADCAST_RATE_MS = Number(newConfig.BROADCAST_RATE_MS);
         if (newConfig.INIT_FERTILIZER) INIT_FERTILIZER = Number(newConfig.INIT_FERTILIZER);
         
+                if (newConfig.START_ALIVE) START_ALIVE = Number(newConfig.START_ALIVE);
+        if (newConfig.START_ITEMS) START_ITEMS = Number(newConfig.START_ITEMS);
+        if (newConfig.START_ENERGY) START_ENERGY = Number(newConfig.START_ENERGY);
+        if (newConfig.BASE_FOOD_SPAWN) BASE_FOOD_SPAWN = Number(newConfig.BASE_FOOD_SPAWN);
+        if (newConfig.METABOLISM_MULT) METABOLISM_MULT = Number(newConfig.METABOLISM_MULT);
+        if (newConfig.MUTATION_MULT) MUTATION_MULT = Number(newConfig.MUTATION_MULT);
+        
         // Pad arrays if size increased
         if (MAX_CREATURES > oldMaxC) {
             for(let i=oldMaxC; i<MAX_CREATURES; i++) {
@@ -952,6 +965,6 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(3000, () => {
-    console.log('Node.js Petri Chip running wildly on http://localhost:3000');
+server.listen(3004, () => {
+    console.log('Node.js Petri Chip V4 running wildly on http://localhost:3004');
 });
