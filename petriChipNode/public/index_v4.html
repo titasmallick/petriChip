@@ -235,11 +235,11 @@
                 </div>
 
                 <!-- Accordion/Details for advanced config to save space -->
-                <details class="group bg-black/30 rounded-lg border border-lavender/10 mb-6">
-                    <summary class="p-3 text-sm font-semibold text-lavender cursor-pointer select-none">
-                        ▸ Advanced Initializers
-                    </summary>
-                    <div class="p-3 pt-0 grid grid-cols-2 gap-4 border-t border-lavender/10 mt-2 pt-3">
+                <div class="bg-black/30 rounded-lg border border-lavender/10 mb-6">
+                    <div class="p-3 text-sm font-semibold text-lavender border-b border-lavender/10">
+                        Advanced Initializers
+                    </div>
+                    <div class="p-3 grid grid-cols-2 gap-4">
                         <div><label class="text-xs text-lavender/50 mono">START_ALIVE</label><input type="number" id="inp-start-alive" value="400"></div>
                         <div><label class="text-xs text-lavender/50 mono">START_ITEMS</label><input type="number" id="inp-start-items" value="400"></div>
                         <div><label class="text-xs text-lavender/50 mono">START_ENERGY</label><input type="number" id="inp-start-energy" value="1000"></div>
@@ -251,7 +251,7 @@
                         <div><label class="text-xs text-lavender/50 mono">POISON_YIELD</label><input type="number" id="inp-poison-yield" value="-80"></div>
                         <div><label class="text-xs text-lavender/50 mono">CORPSE_YIELD</label><input type="number" id="inp-corpse-yield" value="60"></div>
                     </div>
-                </details>
+                </div>
 
                 <h4 class="text-xs font-semibold text-vibrant uppercase tracking-wider mb-3">Mechanic Toggles</h4>
                 <div class="grid grid-cols-2 gap-2 mb-6 bg-black/30 p-4 rounded-lg border border-lavender/10 text-sm text-lavender/90">
@@ -265,11 +265,11 @@
                     <label class="flex items-center gap-2"><input type="checkbox" id="chk-scavenging" checked> SCAVENGING (V2)</label>
                 </div>
 
-                <details class="group bg-black/30 rounded-lg border border-lavender/10 mb-6">
-                    <summary class="p-3 text-sm font-semibold text-lavender cursor-pointer select-none">
-                        ▸ God-Mode Physics Tuning
-                    </summary>
-                    <div class="p-3 pt-0 grid grid-cols-2 md:grid-cols-3 gap-3 border-t border-lavender/10 mt-2 pt-3">
+                <div class="bg-black/30 rounded-lg border border-lavender/10 mb-6">
+                    <div class="p-3 text-sm font-semibold text-lavender border-b border-lavender/10">
+                        God-Mode Physics Tuning
+                    </div>
+                    <div class="p-3 grid grid-cols-2 md:grid-cols-3 gap-3">
                         <div><label class="text-[10px] text-lavender/50 mono block truncate">METAB_RATE</label><input type="number" step="0.01" id="inp-metab-rate" value="0.05"></div>
                         <div><label class="text-[10px] text-lavender/50 mono block truncate">MOVE_COST</label><input type="number" step="0.001" id="inp-move-rate" value="0.01"></div>
                         <div><label class="text-[10px] text-lavender/50 mono block truncate">VISION_COST</label><input type="number" step="0.000001" id="inp-vis-rate" value="0.000001"></div>
@@ -288,7 +288,7 @@
                         <div><label class="text-[10px] text-lavender/50 mono block truncate">OVERPOP_CAP</label><input type="number" id="inp-overpop" value="160"></div>
                         <div><label class="text-[10px] text-lavender/50 mono block truncate">CHLORO_YIELD</label><input type="number" step="0.05" id="inp-chloroplast" value="0.1"></div>
                     </div>
-                </details>
+                </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                     <button id="btn-update" class="py-2 bg-blush/20 text-blush text-sm font-bold rounded border border-blush/30 hover:bg-blush/30 transition-colors">Apply Config</button>
