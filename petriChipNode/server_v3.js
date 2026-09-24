@@ -305,6 +305,7 @@ function getSensors(c) {
 }
 
 function tickPhysics() {
+    geologicEpoch++;
     // Geological Event Triggers
     let curState = getGeoState(geologicEpoch);
     if (curState.name === 'The Great Dying (Permian)' && Math.random() < 0.05) {
@@ -402,10 +403,10 @@ function tickPhysics() {
         
         let speedModifier = 1.0;
         if (inWater && !isAquatic) {
-            c.energy -= 10.0; // Terrestrial drowning
+            c.energy -= 0.1; // Terrestrial drowning
             speedModifier = 0.3; // Slowed in water
         } else if (!inWater && isAquatic) {
-            c.energy -= 10.0; // Aquatic suffocating on land
+            c.energy -= 0.1; // Aquatic suffocating on land
             speedModifier = 0.1; // Floundering on land
         }
 
