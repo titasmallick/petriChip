@@ -137,8 +137,26 @@
                   <label>MUTATION_MULT:</label><br>
                   <input type="number" step="0.1" id="inp-mutation" value="1.0" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;">
               </div>
+
+              <div><label>MITOSIS_BARRIER_MULT:</label><br><input type="number" step="0.1" id="inp-mitosis" value="1.0" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;"></div>
+              <div><label>MATING_COST_MULT:</label><br><input type="number" step="0.1" id="inp-mating" value="1.0" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;"></div>
+              <div><label>FOOD_YIELD:</label><br><input type="number" id="inp-food-yield" value="60" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;"></div>
+              <div><label>POISON_YIELD:</label><br><input type="number" id="inp-poison-yield" value="-80" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;"></div>
+              <div><label>CORPSE_YIELD:</label><br><input type="number" id="inp-corpse-yield" value="60" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;"></div>
+          </div>
+          <h4 style="color: #ff99cc; margin-top: 5px; margin-bottom: 5px;">🔥 ADVANCED MECHANIC TOGGLES (Check/Uncheck to emulate V1/V2/V3)</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px;">
+              <label><input type="checkbox" id="chk-terrain" checked> ENABLE_TERRAIN (V3)</label>
+              <label><input type="checkbox" id="chk-seasons" checked> ENABLE_SEASONS (V3)</label>
+              <label><input type="checkbox" id="chk-eras" checked> ENABLE_ERAS (V3)</label>
+              <label><input type="checkbox" id="chk-virus" checked> ENABLE_VIRUS (V3)</label>
+              <label><input type="checkbox" id="chk-parasitism" checked> ENABLE_PARASITISM (V3)</label>
+              <label><input type="checkbox" id="chk-predation" checked> ENABLE_PREDATION (V2)</label>
+              <label><input type="checkbox" id="chk-photosynthesis" checked> ENABLE_PHOTOSYNTHESIS (V2)</label>
+              <label><input type="checkbox" id="chk-scavenging" checked> ENABLE_SCAVENGING (V2)</label>
           </div>
           <div style="display: flex; gap: 10px;">
+
               <button id="btn-update" style="padding: 10px; font-weight:bold; background:#ff00ff; color:#fff; border:none; border-radius:4px; cursor:pointer;">Apply Config</button>
               <button id="btn-stop" style="padding: 10px; font-weight:bold; background:#ff3333; color:#fff; border:none; border-radius:4px; cursor:pointer;">Stop</button>
               <button id="btn-start" style="padding: 10px; font-weight:bold; background:#33ff33; color:#111; border:none; border-radius:4px; cursor:pointer;">Start</button>
@@ -669,7 +687,21 @@
             START_ENERGY: document.getElementById('inp-start-energy').value,
             BASE_FOOD_SPAWN: document.getElementById('inp-food-spawn').value,
             METABOLISM_MULT: document.getElementById('inp-metabolism').value,
-            MUTATION_MULT: document.getElementById('inp-mutation').value
+                        MUTATION_MULT: document.getElementById('inp-mutation').value,
+            MITOSIS_BARRIER_MULT: document.getElementById('inp-mitosis').value,
+            MATING_COST_MULT: document.getElementById('inp-mating').value,
+            FOOD_ENERGY_YIELD: document.getElementById('inp-food-yield').value,
+            POISON_ENERGY_YIELD: document.getElementById('inp-poison-yield').value,
+            CORPSE_ENERGY_YIELD: document.getElementById('inp-corpse-yield').value,
+            ENABLE_TERRAIN: document.getElementById('chk-terrain').checked,
+            ENABLE_SEASONS: document.getElementById('chk-seasons').checked,
+            ENABLE_ERAS: document.getElementById('chk-eras').checked,
+            ENABLE_VIRUS: document.getElementById('chk-virus').checked,
+            ENABLE_PARASITISM: document.getElementById('chk-parasitism').checked,
+            ENABLE_PREDATION: document.getElementById('chk-predation').checked,
+            ENABLE_PHOTOSYNTHESIS: document.getElementById('chk-photosynthesis').checked,
+            ENABLE_SCAVENGING: document.getElementById('chk-scavenging').checked
+
 
         });
         window.logEvent('Sent new configuration to server.', '#ff00ff');

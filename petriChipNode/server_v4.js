@@ -51,7 +51,21 @@ let START_ITEMS = 400;
 let START_ENERGY = 1000.0;
 let BASE_FOOD_SPAWN = 0.20;
 let METABOLISM_MULT = 1.0;
-let MUTATION_MULT = 1.0; // Update UI 20 times per second
+let MUTATION_MULT = 1.0;
+// --- ADVANCED TOGGLES (V1/V2/V3 Emulation) ---
+let ENABLE_TERRAIN = true;
+let ENABLE_SEASONS = true;
+let ENABLE_ERAS = true;
+let ENABLE_VIRUS = true;
+let ENABLE_PARASITISM = true;
+let ENABLE_PREDATION = true;
+let ENABLE_PHOTOSYNTHESIS = true;
+let ENABLE_SCAVENGING = true;
+let MITOSIS_BARRIER_MULT = 1.0;
+let MATING_COST_MULT = 1.0;
+let FOOD_ENERGY_YIELD = 60.0;
+let POISON_ENERGY_YIELD = -80.0;
+let CORPSE_ENERGY_YIELD = 60.0; // Update UI 20 times per second
 
 let totalBirths = 0;
 let totalDeaths = 0;
@@ -334,7 +348,7 @@ function tickPhysics() {
     // Food Replenishment
     
     // Season Logic
-    eraTicks++;
+    if(ENABLE_ERAS) eraTicks++;
     if (eraTicks > 36000) { // ~15 minutes real-time for an Epoch shift
         // Milankovitch Cycle (Orbital eccentricity driving predictable climate shifts)
         // Progression: Holocene (0) -> Ice Age (1) -> Holocene (0) -> Greenhouse (2) -> Holocene (0)
@@ -347,12 +361,12 @@ function tickPhysics() {
         eraTicks = 0;
     }
     
-    seasonTicks++;
+    if(ENABLE_SEASONS) seasonTicks++;
     if (seasonTicks > 3000) { // ~2 minutes real time per season
         season = (season + 1) % 4;
         seasonTicks = 0;
         // Trigger a random viral outbreak in Winter
-        if (season === 3 && Math.random() < 0.5) {
+        if (ENABLE_VIRUS && season === 3 && Math.random() < 0.5) {
             let targets = creatures.filter(c => c.alive && !c.infected);
             if (targets.length > 0) {
                 targets[Math.floor(Math.random()*targets.length)].infected = true;
@@ -409,10 +423,10 @@ function tickPhysics() {
         let isAquatic = (c.gene_aquatic > 0.5);
         
         let speedModifier = 1.0;
-        if (inWater && !isAquatic) {
+        if (ENABLE_TERRAIN && inWater && !isAquatic) {
             c.energy -= 0.1; // Terrestrial drowning
             speedModifier = 0.3; // Slowed in water
-        } else if (!inWater && isAquatic) {
+        } else if (ENABLE_TERRAIN && !inWater && isAquatic) {
             c.energy -= 0.1; // Aquatic suffocating on land
             speedModifier = 0.1; // Floundering on land
         }
@@ -454,7 +468,7 @@ function tickPhysics() {
         c.y += Math.sin(c.angle) * v;
         
         if (season === 0 || season === 1) {
-            if (c.gene_chloroplast > 0.2 && globalFertilizer > 0) {
+            if (ENABLE_PHOTOSYNTHESIS && c.gene_chloroplast > 0.2 && globalFertilizer > 0) {
                 let energyGained = c.gene_chloroplast * 0.1;
                 // Strict Conservation of Mass
                 c.energy += energyGained;
@@ -509,11 +523,11 @@ function tickPhysics() {
                 if (dx*dx + dy*dy < mouthSize * mouthSize) {
                     items[f].active = false;
                     if (items[f].type === 1) {
-                        let energyGained = 60.0 * (1.0 - c.gene_carnivore);
+                        let energyGained = FOOD_ENERGY_YIELD * (1.0 - (ENABLE_PREDATION ? c.gene_carnivore : 0.0));
                         c.energy += energyGained;
                         globalFertilizer += (60.0 - energyGained); // Return undigested mass to soil
                     } else {
-                        let energyGained = -80.0 + (140.0 * c.gene_scavenger);
+                        let energyGained = POISON_ENERGY_YIELD + ((POISON_ENERGY_YIELD * -1 + CORPSE_ENERGY_YIELD) * (ENABLE_SCAVENGING ? c.gene_scavenger : 0.0));
                         c.energy += energyGained;
                         globalFertilizer += (60.0 - energyGained); // Conserve corpse mass and poisoned energy loss
                     }
@@ -543,8 +557,8 @@ function tickPhysics() {
                     if (c.energy > mateI && c2.energy > mateJ && Math.abs(c.gene_size - c2.gene_size) < 0.5) {
                         let empty = creatures.findIndex(x => !x.alive);
                         if (empty !== -1) {
-                            let cost1 = 40.0 * c.gene_size;
-                            let cost2 = 40.0 * c2.gene_size;
+                            let cost1 = 40.0 * c.gene_size * MATING_COST_MULT;
+                            let cost2 = 40.0 * c2.gene_size * MATING_COST_MULT;
                             c.energy -= cost1; 
                             c2.energy -= cost2;
                             let child = creatures[empty];
@@ -572,13 +586,13 @@ function tickPhysics() {
                             child.gene_size = (c.gene_size + c2.gene_size) / 2.0 + randomFloat(-0.1, 0.1);
                             child.gene_insulation = (c.gene_insulation + c2.gene_insulation) / 2.0 + randomFloat(-0.05, 0.05);
                             child.gene_immunity = (c.gene_immunity + c2.gene_immunity) / 2.0 + randomFloat(-0.05, 0.05);
-                            child.gene_chloroplast = Math.max(0.0, Math.min(1.0, (c.gene_chloroplast + c2.gene_chloroplast) / 2.0 + randomFloat(-0.05, 0.05)));
-                            child.gene_scavenger = Math.max(0.0, Math.min(1.0, (c.gene_scavenger + c2.gene_scavenger) / 2.0 + randomFloat(-0.05, 0.05)));
+                            child.gene_chloroplast = !ENABLE_PHOTOSYNTHESIS ? 0 : Math.max(0.0, Math.min(1.0, (c.gene_chloroplast + c2.gene_chloroplast) / 2.0 + randomFloat(-0.05, 0.05)));
+                            child.gene_scavenger = !ENABLE_SCAVENGING ? 0 : Math.max(0.0, Math.min(1.0, (c.gene_scavenger + c2.gene_scavenger) / 2.0 + randomFloat(-0.05, 0.05)));
                             child.gene_parasite = Math.max(0.0, Math.min(1.0, (c.gene_parasite + c2.gene_parasite) / 2.0 + randomFloat(-0.05, 0.05)));
                               child.gene_aquatic = Math.max(0.0, Math.min(1.0, (c.gene_aquatic + c2.gene_aquatic) / 2.0 + randomFloat(-0.05, 0.05)));
                               child.impregnatedBy = null;
                               child.parasitePayload = null;
-                              child.gene_carnivore = Math.max(0.0, Math.min(1.0, (c.gene_carnivore + c2.gene_carnivore) / 2.0 + randomFloat(-0.05, 0.05)));
+                              child.gene_carnivore = !ENABLE_PREDATION ? 0 : Math.max(0.0, Math.min(1.0, (c.gene_carnivore + c2.gene_carnivore) / 2.0 + randomFloat(-0.05, 0.05)));
                             
                             // Trophic Mutual Exclusivity (The Polymath Paradox)
                             let trophicSum = child.gene_chloroplast + child.gene_scavenger + child.gene_carnivore;
@@ -606,10 +620,10 @@ function tickPhysics() {
                     }
                 } else if (c.aggression > 0 || c2.aggression > 0) {
                     // Predation / Combat (Only if they actively decide to attack via Output 19)
-                    if (c.aggression > c2.aggression && c.gene_carnivore > 0.1 && c.gene_size > c2.gene_size * 1.2) {
+                    if (ENABLE_PREDATION && c.aggression > c2.aggression && c.gene_carnivore > 0.1 && c.gene_size > c2.gene_size * 1.2) {
                         c.energy -= 5; // Cost of attack
                         
-                        if (c.gene_parasite > 0.8 && c.energy > 300) {
+                        if (ENABLE_PARASITISM && c.gene_parasite > 0.8 && c.energy > 300) {
                             // 4. XENOMORPH PARASITISM: Impregnate the prey instead of eating it!
                             c2.impregnatedBy = c.familyId;
                             c2.parasitePayload = JSON.parse(JSON.stringify({
@@ -624,10 +638,10 @@ function tickPhysics() {
                             c.energy += meat; c2.energy -= meat;
                         }
 
-                    } else if (c2.aggression > c.aggression && c2.gene_carnivore > 0.1 && c2.gene_size > c.gene_size * 1.2) {
+                    } else if (ENABLE_PREDATION && c2.aggression > c.aggression && c2.gene_carnivore > 0.1 && c2.gene_size > c.gene_size * 1.2) {
                         c2.energy -= 5; // Cost of attack
                         
-                        if (c2.gene_parasite > 0.8 && c2.energy > 300) {
+                        if (ENABLE_PARASITISM && c2.gene_parasite > 0.8 && c2.energy > 300) {
                             // XENOMORPH PARASITISM
                             c.impregnatedBy = c2.familyId;
                             c.parasitePayload = JSON.parse(JSON.stringify({
@@ -683,7 +697,7 @@ function tickPhysics() {
         }
 
         // Mitosis
-        let mitosis_barrier = 300.0 * c.gene_size; // Raised to slow down explosive cloning
+        let mitosis_barrier = 300.0 * c.gene_size * MITOSIS_BARRIER_MULT; // Raised to slow down explosive cloning
         if (c.energy > mitosis_barrier) {
             let empty = creatures.findIndex(x => !x.alive);
             if (empty !== -1) {
@@ -695,7 +709,7 @@ function tickPhysics() {
                             child.intent = 0.0; child.aggression = 0.0; // Clear memory at birth!
                 child.familyId = c.familyId; // Inherit family
                 child.lineage = c.lineage + 1;
-                let asexualCost = 200.0 * c.gene_size; c.energy -= asexualCost;
+                let asexualCost = 200.0 * c.gene_size * MITOSIS_BARRIER_MULT; c.energy -= asexualCost;
                 child.alive = true;
                 aliveCount++; totalBirths++;
                 
@@ -710,13 +724,13 @@ function tickPhysics() {
                 child.gene_size = c.gene_size + randomFloat(-0.1, 0.1);
                 child.gene_insulation = c.gene_insulation + randomFloat(-0.05, 0.05);
                 child.gene_immunity = c.gene_immunity + randomFloat(-0.05, 0.05);
-                child.gene_chloroplast = Math.max(0.0, Math.min(1.0, c.gene_chloroplast + randomFloat(-0.05, 0.05)));
-                child.gene_scavenger = Math.max(0.0, Math.min(1.0, c.gene_scavenger + randomFloat(-0.05, 0.05)));
+                child.gene_chloroplast = !ENABLE_PHOTOSYNTHESIS ? 0 : Math.max(0.0, Math.min(1.0, c.gene_chloroplast + randomFloat(-0.05, 0.05)));
+                child.gene_scavenger = !ENABLE_SCAVENGING ? 0 : Math.max(0.0, Math.min(1.0, c.gene_scavenger + randomFloat(-0.05, 0.05)));
                 child.gene_aquatic = Math.max(0.0, Math.min(1.0, c.gene_aquatic + randomFloat(-0.05, 0.05)));
                             child.gene_parasite = Math.max(0.0, Math.min(1.0, c.gene_parasite + randomFloat(-0.05, 0.05)));
                 child.impregnatedBy = null;
                 child.parasitePayload = null;
-                              child.gene_carnivore = Math.max(0.0, Math.min(1.0, c.gene_carnivore + randomFloat(-0.05, 0.05)));
+                              child.gene_carnivore = !ENABLE_PREDATION ? 0 : Math.max(0.0, Math.min(1.0, c.gene_carnivore + randomFloat(-0.05, 0.05)));
                 
                 let trophicSum = child.gene_chloroplast + child.gene_scavenger + child.gene_carnivore;
                 if (trophicSum > 1.0) {
@@ -905,7 +919,22 @@ io.on('connection', (socket) => {
         if (newConfig.START_ENERGY) START_ENERGY = Number(newConfig.START_ENERGY);
         if (newConfig.BASE_FOOD_SPAWN) BASE_FOOD_SPAWN = Number(newConfig.BASE_FOOD_SPAWN);
         if (newConfig.METABOLISM_MULT) METABOLISM_MULT = Number(newConfig.METABOLISM_MULT);
-        if (newConfig.MUTATION_MULT) MUTATION_MULT = Number(newConfig.MUTATION_MULT);
+        if (newConfig.MUTATION_MULT !== undefined) MUTATION_MULT = Number(newConfig.MUTATION_MULT);
+        
+        // Advanced Toggles
+        if (newConfig.ENABLE_TERRAIN !== undefined) ENABLE_TERRAIN = newConfig.ENABLE_TERRAIN;
+        if (newConfig.ENABLE_SEASONS !== undefined) ENABLE_SEASONS = newConfig.ENABLE_SEASONS;
+        if (newConfig.ENABLE_ERAS !== undefined) ENABLE_ERAS = newConfig.ENABLE_ERAS;
+        if (newConfig.ENABLE_VIRUS !== undefined) ENABLE_VIRUS = newConfig.ENABLE_VIRUS;
+        if (newConfig.ENABLE_PARASITISM !== undefined) ENABLE_PARASITISM = newConfig.ENABLE_PARASITISM;
+        if (newConfig.ENABLE_PREDATION !== undefined) ENABLE_PREDATION = newConfig.ENABLE_PREDATION;
+        if (newConfig.ENABLE_PHOTOSYNTHESIS !== undefined) ENABLE_PHOTOSYNTHESIS = newConfig.ENABLE_PHOTOSYNTHESIS;
+        if (newConfig.ENABLE_SCAVENGING !== undefined) ENABLE_SCAVENGING = newConfig.ENABLE_SCAVENGING;
+        if (newConfig.MITOSIS_BARRIER_MULT !== undefined) MITOSIS_BARRIER_MULT = Number(newConfig.MITOSIS_BARRIER_MULT);
+        if (newConfig.MATING_COST_MULT !== undefined) MATING_COST_MULT = Number(newConfig.MATING_COST_MULT);
+        if (newConfig.FOOD_ENERGY_YIELD !== undefined) FOOD_ENERGY_YIELD = Number(newConfig.FOOD_ENERGY_YIELD);
+        if (newConfig.POISON_ENERGY_YIELD !== undefined) POISON_ENERGY_YIELD = Number(newConfig.POISON_ENERGY_YIELD);
+        if (newConfig.CORPSE_ENERGY_YIELD !== undefined) CORPSE_ENERGY_YIELD = Number(newConfig.CORPSE_ENERGY_YIELD);
         
         // Pad arrays if size increased
         if (MAX_CREATURES > oldMaxC) {
