@@ -1,268 +1,271 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <title>Silicon Petri Dish: Node.js Cloud Edition</title>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-    body { background-color: #0b0c10; color: #c5c6c7; font-family: 'Share Tech Mono', monospace; padding: 10px; text-align: center; margin: 0; }
-    h1 { color: #fdf800; font-size: 1.8rem; text-shadow: 0 0 10px rgba(253,248,0,0.5); margin: 15px 0 5px 0;}
-    h3 { color: #ff007f; margin-top: 0; font-size: 1rem; font-weight: normal; margin-bottom: 20px; }
-    .stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; font-size: 1.1rem; margin-bottom: 15px; max-width: 1000px; margin: 0 auto 15px auto; }
-    .val { color: #fff; font-weight: bold; }
-    
-    canvas { 
-        background: #1f2833; 
-        border: 2px solid #fdf800; 
-        border-radius: 8px; 
-        width: 100%; 
-        max-width: 900px; 
-        height: auto;
-        aspect-ratio: 1 / 1;
-        display: block;
-        margin: 0 auto;
-        box-shadow: 0 0 25px rgba(253,248,0,0.1);
-    }
-    #ai-readout, #ai-readout * {
-        color: #fff !important;
-        background-color: transparent !important;
-        background: transparent !important;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Silicon Petri Dish: Research Terminal</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        lavender: '#d5d4ff',
+                        blush: '#ffbbfe',
+                        vibrant: '#fdf800',
+                        glass: 'rgba(20, 20, 35, 0.7)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #07070b; color: #e2e8f0; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        .glass-panel { background: rgba(20, 20, 35, 0.4); backdrop-filter: blur(16px); border: 1px solid rgba(213, 212, 255, 0.1); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); }
+        
+        input[type="number"] { background: rgba(0,0,0,0.6); border: 1px solid rgba(213, 212, 255, 0.2); color: #fff; padding: 6px 12px; border-radius: 6px; width: 100%; outline: none; transition: border 0.2s; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
+        input[type="number"]:focus { border-color: #ffbbfe; box-shadow: 0 0 10px rgba(255, 187, 254, 0.2); }
+        input[type="checkbox"] { accent-color: #ffbbfe; width: 18px; height: 18px; cursor: pointer; }
+        
+        .stat-box { display: flex; flex-direction: column; justify-content: center; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 10px; border: 1px solid rgba(213, 212, 255, 0.05); }
+        .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
+        .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-top: 4px; }
+        
+        canvas#arena { 
+            background: #0d0d14; 
+            border: 1px solid #d5d4ff; 
+            border-radius: 16px; 
+            width: 100%; 
+            height: auto;
+            aspect-ratio: 1 / 1;
+            box-shadow: 0 0 50px rgba(213, 212, 255, 0.05);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(213, 212, 255, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 187, 254, 0.5); }
+    </style>
 </head>
-<body>
-  <h1>// THE SILICON PETRI DISH (CLOUD SCALE)</h1>
-  <h3>Massive Population Node.js V4 (Dynamic Controls) (Geology, Memetics & Xenomorphs Edition)</h3>
-    <h2 id="geo-era" style="color: #00ffcc;">Era: Loading...</h2>
-  <div style="font-size: 0.85em; color: #a0a4a8; margin-top: -15px; margin-bottom: 15px;">Experiment Started: <span id="start-time" style="color: #fff;">Loading...</span></div>
-  
-  <div style="width: 100%; display: flex; justify-content: center; gap: 20px; font-size: 0.8em; color: #a0a4a8; margin-bottom: 10px;">
-      <span>🟢 Producers (Circles)</span>
-      <span>🔺 Herbivores (Triangles)</span>
-      <span>♦️ Carnivores (Spikes)</span>
-      <span>🔲 Scavengers (Squares)</span>
-  </div>
-  
-  <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 5px;">
-      <span style="font-size: 1.0em; font-weight: bold; color: #aaa;" id="era-ui">🌍 EPOCH: Holocene (Normal Climate)</span>
-  </div>
-  
-  <div style="width: 100%; display: flex; justify-content: center; margin-bottom: 15px;">
-      <span style="font-size: 1.2em; font-weight: bold; padding: 5px 15px; border-radius: 20px; background: rgba(255,255,255,0.1);" id="season-ui">🌸 SPRING</span>
-  </div>
-  
-  <div class="stats">
-    <div style="width: 100%; display: flex; justify-content: center; gap: 15px; font-size: 0.9em; flex-wrap: wrap;">
-        <div>Pop: <span id="alive" class="val">0</span> / 600</div>
-        <div>Gen: <span id="exts" class="val">0</span></div>
-        <div>Age: <span id="age" class="val">0s</span></div>
-        <div>Births: <span id="births" class="val" style="color: #00ffcc;">0</span></div>
-        <div>Deaths: <span id="deaths" class="val" style="color: #ff0033;">0</span></div>
-    </div>
-    <div style="width: 100%; display: flex; justify-content: center; gap: 15px; font-size: 0.9em; flex-wrap: wrap; background: rgba(31,40,51,0.5); padding: 5px; border-radius: 4px;">
-       <span>Food: <span id="food-cnt" class="val" style="color: #00ffcc;">0</span></span>
-       <span>Poison: <span id="poison-cnt" class="val" style="color: #ff0033;">0</span></span>
-       <span>Alpha Energy: <span id="max-energy" class="val" style="color: gold;">0</span></span>
-       <span>Oldest: <span id="max-age" class="val">0</span>t</span>
-       <span>Max Lineage: <span id="max-lineage" class="val" style="color: #ff007f;">0</span></span>
-    </div>
-    <div style="width: 100%; display: flex; justify-content: center; gap: 20px; font-size: 0.9em; background: rgba(31,40,51,0.5); padding: 5px; border-radius: 4px; margin-top: -10px;">
-       <span>Avg Size: <span id="avg-size" class="val">0.00</span></span>
-       <span>Avg Speed: <span id="avg-spd" class="val">0.00</span></span>
-       <span>Avg Connects: <span id="avg-vis" class="val" style="color: #ff00ff;">0</span></span>
-        <span>Avg Aquatic: <span id="aquatic" class="val" style="color: #00ffff;">0</span></span>
-    </div>
-  </div>
+<body class="min-h-screen p-4 lg:p-8 flex flex-col items-center overflow-x-hidden">
 
-  
-  <canvas id="arena" width="3000" height="3000"></canvas>
-  <canvas id="graph" width="900" height="150" style="width: 100%; max-width: 900px; height: auto; aspect-ratio: 6 / 1; display: block; margin: 15px auto; border: 2px solid #333; border-radius: 8px; background: #0b0c10;"></canvas>
-  
-  <div style="width: 100%; max-width: 900px; margin: 15px auto; display: flex; gap: 15px; flex-direction: column;">
-      
+    <!-- HEADER -->
+    <header class="w-full max-w-7xl flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-white flex items-center gap-3">
+                <span class="text-vibrant">⌬</span> SILICON PETRI DISH
+            </h1>
+            <p class="text-lavender/70 text-sm mt-1 mono">NODE.JS V4 RESEARCH TERMINAL // GEOLOGY & MEMETICS EDITION</p>
+        </div>
+        <div class="flex items-center gap-4 text-right">
+            <div class="flex flex-col items-end">
+                <span id="geo-era" class="text-blush font-bold tracking-wide uppercase text-sm">Era: Loading...</span>
+                <span id="era-ui" class="text-xs text-lavender/50">🌍 EPOCH: Holocene</span>
+            </div>
+            <div class="h-10 w-px bg-lavender/20"></div>
+            <div class="flex flex-col items-start">
+                <span id="season-ui" class="text-vibrant font-bold tracking-wide uppercase text-sm">🌸 SPRING</span>
+                <span class="text-xs text-lavender/50 mono">T= <span id="start-time">Loading...</span></span>
+            </div>
+        </div>
+    </header>
 
-      <!-- OMNIPOTENCE TOOLBAR -->
-      <div style="border: 1px solid #00ffff; border-radius: 4px; background: #1f2833; padding: 15px; text-align: left; color: #c5c6c7; margin-bottom: 15px;">
-          <h3 style="color: #00ffff; margin-top: 0; border-bottom: 1px solid #00ffff; padding-bottom: 5px;">⚡ OMNIPOTENCE TOOLBAR & PRESETS</h3>
-          
-          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-              <button id="btn-preset-water" style="padding: 8px; background:#0055ff; color:#fff; border:none; border-radius:4px; cursor:pointer;">🌊 Water World</button>
-              <button id="btn-preset-dark" style="padding: 8px; background:#222; color:#fff; border:1px solid #555; border-radius:4px; cursor:pointer;">🦇 Dark Forest</button>
-              <button id="btn-preset-eden" style="padding: 8px; background:#00aa00; color:#fff; border:none; border-radius:4px; cursor:pointer;">🍎 Garden of Eden</button>
-              <div style="width: 2px; background: #555; margin: 0 10px;"></div>
-              <button id="btn-save" style="padding: 8px; background:#aa00aa; color:#fff; border:none; border-radius:4px; cursor:pointer;">💾 Save Ecosystem</button>
-              <button id="btn-load-ui" style="padding: 8px; background:#aa00aa; color:#fff; border:none; border-radius:4px; cursor:pointer;" onclick="document.getElementById('file-load').click()">📂 Load Ecosystem</button>
-              <input type="file" id="file-load" style="display:none;" accept=".json">
-          </div>
+    <!-- MAIN GRID -->
+    <main class="w-full max-w-[1600px] grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+        
+        <!-- LEFT PANEL: CANVAS & LIVE DATA (Col span 7 or 8) -->
+        <div class="xl:col-span-7 flex flex-col gap-6">
+            
+            <!-- CORE METRICS BAR -->
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <div class="stat-box"><span id="alive" class="stat-val text-white">0</span><span class="stat-label">Population</span></div>
+                <div class="stat-box"><span id="avg-size" class="stat-val text-lavender">0.00</span><span class="stat-label">Avg Size</span></div>
+                <div class="stat-box"><span id="avg-spd" class="stat-val text-vibrant">0.00</span><span class="stat-label">Avg Speed</span></div>
+                <div class="stat-box"><span id="avg-vis" class="stat-val text-blush">0</span><span class="stat-label">Avg Synapses</span></div>
+                <div class="stat-box hidden lg:flex"><span id="exts" class="stat-val text-white">0</span><span class="stat-label">Generations</span></div>
+            </div>
 
-          <div style="display: flex; gap: 10px; align-items: center;">
-              <strong>Active God Brush:</strong>
-              <label><input type="radio" name="brush" value="none" checked> None (Trace Lineage)</label>
-              <label style="color:#ff3333;"><input type="radio" name="brush" value="smite"> ⚡ Smite</label>
-              <label style="color:#00ff00;"><input type="radio" name="brush" value="mutate"> ☢️ Force Mutate</label>
-              <label style="color:#00ffff;"><input type="radio" name="brush" value="food"> 🍏 Drop Food</label>
-          </div>
-      </div>
-      <!-- Interactive Buttons -->
-      <div style="display: flex; justify-content: center; gap: 15px;">
-          <button id="rad-btn" style="width:100%; padding: 15px; font-weight:bold; font-size: 1.1em; background:#ff0033; color:white; border:none; border-radius:8px; cursor:pointer; box-shadow: 0 0 10px #ff0033;">⚠️ TRIGGER RADIATION BURST (10s) ⚠️</button>
-          <button id="meteor-btn" style="width:100%; padding: 15px; font-weight:bold; font-size: 1.1em; background:#ff8c00; color:white; border:none; border-radius:8px; cursor:pointer; box-shadow: 0 0 10px #ff8c00;">☄️ TRIGGER METEOR STRIKE ☄️</button>
-      </div>
+            <!-- CANVAS -->
+            <div class="relative w-full">
+                <!-- Legend Overlay -->
+                <div class="absolute top-4 left-4 glass-panel p-3 text-xs mono text-lavender/80 flex flex-col gap-1 z-10 pointer-events-none">
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#00ffcc] inline-block"></span> Producers</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-white inline-block clip-triangle" style="clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></span> Herbivores</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-red-500 inline-block clip-star" style="clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);"></span> Carnivores</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-gray-400 inline-block"></span> Scavengers</div>
+                </div>
+                <canvas id="arena" width="3000" height="3000"></canvas>
+            </div>
 
-      <!-- V4 Control Panel -->
-      <div style="border: 1px solid #ff00ff; border-radius: 4px; background: #1f2833; padding: 15px; text-align: left; color: #c5c6c7;">
-          <h3 style="color: #ff00ff; margin-top: 0; border-bottom: 1px solid #ff00ff; padding-bottom: 5px;">⚙️ SIMULATION CONTROLS</h3>
-          <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
-              <div>
-                  <label>ARENA_SIZE:</label><br>
-                  <input type="number" id="inp-arena" value="3000" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;">
-              </div>
-              <div>
-                  <label>MAX_CREATURES:</label><br>
-                  <input type="number" id="inp-creatures" value="600" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;">
-              </div>
-              <div>
-                  <label>NUM_ITEMS:</label><br>
-                  <input type="number" id="inp-items" value="1500" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;">
-              </div>
-              <div>
-                  <label>TICK_RATE_MS:</label><br>
-                  <input type="number" id="inp-tick" value="5" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;">
-              </div>
-              <div>
-                  <label>INIT_FERTILIZER:</label><br>
-                  <input type="number" id="inp-fert" value="10000" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;">
-              </div>
+            <!-- SECONDARY METRICS -->
+            <div class="glass-panel p-4 grid grid-cols-3 md:grid-cols-6 gap-4 text-center">
+                <div><div class="text-xs text-lavender/50 uppercase">Births</div><div id="births" class="mono text-[#00ffcc] font-bold">0</div></div>
+                <div><div class="text-xs text-lavender/50 uppercase">Deaths</div><div id="deaths" class="mono text-[#ff3333] font-bold">0</div></div>
+                <div><div class="text-xs text-lavender/50 uppercase">Food</div><div id="food-cnt" class="mono text-[#00ffcc] font-bold">0</div></div>
+                <div><div class="text-xs text-lavender/50 uppercase">Poison</div><div id="poison-cnt" class="mono text-[#ff3333] font-bold">0</div></div>
+                <div><div class="text-xs text-lavender/50 uppercase">Max Age</div><div id="max-age" class="mono text-white font-bold">0</div></div>
+                <div><div class="text-xs text-lavender/50 uppercase">Max Lineage</div><div id="max-lineage" class="mono text-blush font-bold">0</div></div>
+                
+                <!-- Hidden variables required by JS -->
+                <div class="hidden"><span id="age"></span><span id="max-energy"></span><span id="aquatic"></span></div>
+            </div>
 
-              <div>
-                  <label>START_ALIVE:</label><br>
-                  <input type="number" id="inp-start-alive" value="400" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;">
-              </div>
-              <div>
-                  <label>START_ITEMS:</label><br>
-                  <input type="number" id="inp-start-items" value="400" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;">
-              </div>
-              <div>
-                  <label>START_ENERGY:</label><br>
-                  <input type="number" id="inp-start-energy" value="1000" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;">
-              </div>
-              <div>
-                  <label>BASE_FOOD_SPAWN:</label><br>
-                  <input type="number" step="0.01" id="inp-food-spawn" value="0.2" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;">
-              </div>
-              <div>
-                  <label>METABOLISM_MULT:</label><br>
-                  <input type="number" step="0.1" id="inp-metabolism" value="1.0" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;">
-              </div>
-              <div>
-                  <label>MUTATION_MULT:</label><br>
-                  <input type="number" step="0.1" id="inp-mutation" value="1.0" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;">
-              </div>
+            <!-- CHART & OBSERVER LOG -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass-panel p-5 flex flex-col h-64">
+                    <h3 class="text-sm font-semibold text-vibrant mb-3 uppercase tracking-wider">Evolutionary Trajectory</h3>
+                    <div class="relative w-full flex-grow">
+                        <canvas id="metricsChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass-panel p-5 flex flex-col h-64">
+                    <h3 class="text-sm font-semibold text-lavender mb-3 uppercase tracking-wider">Observer Drone Logs</h3>
+                    <div id="log-box" class="flex-grow overflow-y-auto text-xs mono space-y-1 pr-2"></div>
+                </div>
+            </div>
+            
+            <div class="glass-panel p-5 mb-8">
+                <h3 class="text-sm font-semibold text-blush mb-3 uppercase tracking-wider">Muller Plot (Species Demographics)</h3>
+                <canvas id="graph" width="900" height="150" class="w-full h-auto bg-black/50 rounded-lg border border-lavender/20"></canvas>
+            </div>
+        </div>
 
-              <div><label>MITOSIS_BARRIER_MULT:</label><br><input type="number" step="0.1" id="inp-mitosis" value="1.0" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;"></div>
-              <div><label>MATING_COST_MULT:</label><br><input type="number" step="0.1" id="inp-mating" value="1.0" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;"></div>
-              <div><label>FOOD_YIELD:</label><br><input type="number" id="inp-food-yield" value="60" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;"></div>
-              <div><label>POISON_YIELD:</label><br><input type="number" id="inp-poison-yield" value="-80" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;"></div>
-              <div><label>CORPSE_YIELD:</label><br><input type="number" id="inp-corpse-yield" value="60" style="background:#0b0c10; color:#fff; border:1px solid #ff00ff; padding:5px;"></div>
-          </div>
-          <h4 style="color: #ff99cc; margin-top: 5px; margin-bottom: 5px;">🔥 ADVANCED MECHANIC TOGGLES (Check/Uncheck to emulate V1/V2/V3)</h4>
-          <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px;">
-              <label><input type="checkbox" id="chk-terrain" checked> ENABLE_TERRAIN (V3)</label>
-              <label><input type="checkbox" id="chk-seasons" checked> ENABLE_SEASONS (V3)</label>
-              <label><input type="checkbox" id="chk-eras" checked> ENABLE_ERAS (V3)</label>
-              <label><input type="checkbox" id="chk-virus" checked> ENABLE_VIRUS (V3)</label>
-              <label><input type="checkbox" id="chk-parasitism" checked> ENABLE_PARASITISM (V3)</label>
-              <label><input type="checkbox" id="chk-predation" checked> ENABLE_PREDATION (V2)</label>
-              <label><input type="checkbox" id="chk-photosynthesis" checked> ENABLE_PHOTOSYNTHESIS (V2)</label>
-              <label><input type="checkbox" id="chk-scavenging" checked> ENABLE_SCAVENGING (V2)</label>
-          </div>
-          <h4 style="color: #ff99cc; margin-top: 5px; margin-bottom: 5px;">🧬 GOD-MODE ENGINE TUNING (Metabolism, Limits & Combat)</h4>
-          <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
-              <div><label>BASE_METABOLISM_RATE:</label><br><input type="number" step="0.01" id="inp-metab-rate" value="0.05" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:70px;"></div>
-              <div><label>MOVEMENT_COST_RATE:</label><br><input type="number" step="0.001" id="inp-move-rate" value="0.01" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:70px;"></div>
-              <div><label>VISION_COST_RATE:</label><br><input type="number" step="0.000001" id="inp-vis-rate" value="0.000001" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:80px;"></div>
-              <div><label>AGE_TAX_RATE:</label><br><input type="number" step="0.00001" id="inp-age-rate" value="0.00001" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:70px;"></div>
-              <div><label>BRAIN_TAX_RATE:</label><br><input type="number" step="0.0001" id="inp-brain-rate" value="0.0001" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:70px;"></div>
-              <div><label>ATTACK_COST:</label><br><input type="number" id="inp-atk-cost" value="5" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
-              <div><label>SCUFFLE_COST:</label><br><input type="number" id="inp-scuffle" value="10" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
-              <div><label>SYMBIOSIS_TAX:</label><br><input type="number" id="inp-symbiosis" value="2" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
-              <div><label>PARASITE_EGG_COST:</label><br><input type="number" id="inp-parasite-cost" value="200" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
-              <div><label>MIN/MAX_SPEED:</label><br><input type="number" step="0.1" id="inp-min-spd" value="0.5" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:40px;">-<input type="number" step="0.1" id="inp-max-spd" value="4.0" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:40px;"></div>
-              <div><label>MIN/MAX_VISION:</label><br><input type="number" step="1" id="inp-min-vis" value="20" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:40px;">-<input type="number" step="1" id="inp-max-vis" value="200" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:40px;"></div>
-              <div><label>MAX_BRAIN_NODES:</label><br><input type="number" id="inp-max-nodes" value="200" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
-              <div><label>DROWNING_PENALTY:</label><br><input type="number" step="0.05" id="inp-drown" value="0.1" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
-              <div><label>OVERPOPULATION_CAP:</label><br><input type="number" id="inp-overpop" value="160" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
-              <div><label>CHLOROPLAST_YIELD:</label><br><input type="number" step="0.05" id="inp-chloroplast" value="0.1" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
-          </div>
-          <div style="display: flex; gap: 10px;">
+        <!-- RIGHT PANEL: CONTROLS & GOD MODE (Col span 5 or 4) -->
+        <div class="xl:col-span-5 flex flex-col gap-6">
+            
+            <!-- OMNIPOTENCE TOOLBAR -->
+            <div class="glass-panel p-6 border-t-2 border-t-vibrant">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="text-vibrant">⚡</span> Divine Intervention
+                </h3>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                    <button id="btn-preset-water" class="py-2 px-3 bg-blue-900/50 hover:bg-blue-800 text-blue-200 text-sm font-semibold rounded border border-blue-500/30 transition-colors">🌊 Water World</button>
+                    <button id="btn-preset-dark" class="py-2 px-3 bg-gray-900/80 hover:bg-gray-800 text-gray-300 text-sm font-semibold rounded border border-gray-600 transition-colors">🦇 Dark Forest</button>
+                    <button id="btn-preset-eden" class="py-2 px-3 bg-emerald-900/50 hover:bg-emerald-800 text-emerald-200 text-sm font-semibold rounded border border-emerald-500/30 transition-colors">🍎 Garden of Eden</button>
+                </div>
+                
+                <div class="flex gap-3 mb-6">
+                    <button id="btn-save" class="flex-1 py-2 bg-blush/20 hover:bg-blush/30 text-blush text-sm font-semibold rounded border border-blush/50 transition-colors">💾 Snapshot</button>
+                    <button id="btn-load-ui" class="flex-1 py-2 bg-lavender/10 hover:bg-lavender/20 text-lavender text-sm font-semibold rounded border border-lavender/30 transition-colors" onclick="document.getElementById('file-load').click()">📂 Restore</button>
+                    <input type="file" id="file-load" class="hidden" accept=".json">
+                </div>
 
+                <div class="bg-black/40 rounded-lg p-4 border border-lavender/10">
+                    <div class="text-xs text-lavender/70 uppercase mb-3 font-semibold tracking-wider">Active God Brush</div>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <label class="flex items-center gap-2 cursor-pointer text-white/80 hover:text-white transition-colors"><input type="radio" name="brush" value="none" checked> <span>Lineage Trace</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer text-red-400 hover:text-red-300 transition-colors"><input type="radio" name="brush" value="smite"> <span>⚡ Smite</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer text-green-400 hover:text-green-300 transition-colors"><input type="radio" name="brush" value="mutate"> <span>☢️ Mutate</span></label>
+                        <label class="flex items-center gap-2 cursor-pointer text-cyan-400 hover:text-cyan-300 transition-colors"><input type="radio" name="brush" value="food"> <span>🍏 Drop Food</span></label>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-5">
+                    <button id="rad-btn" class="flex-1 py-3 bg-red-600/80 hover:bg-red-500 text-white text-xs font-bold rounded uppercase tracking-wider shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all">☢️ Rad Burst</button>
+                    <button id="meteor-btn" class="flex-1 py-3 bg-orange-600/80 hover:bg-orange-500 text-white text-xs font-bold rounded uppercase tracking-wider shadow-[0_0_15px_rgba(234,88,12,0.5)] transition-all">☄️ Meteor</button>
+                </div>
+            </div>
 
-              <button id="btn-update" style="padding: 10px; font-weight:bold; background:#ff00ff; color:#fff; border:none; border-radius:4px; cursor:pointer;">Apply Config</button>
-              <button id="btn-stop" style="padding: 10px; font-weight:bold; background:#ff3333; color:#fff; border:none; border-radius:4px; cursor:pointer;">Stop</button>
-              <button id="btn-start" style="padding: 10px; font-weight:bold; background:#33ff33; color:#111; border:none; border-radius:4px; cursor:pointer;">Start</button>
-              <button id="btn-restart" style="padding: 10px; font-weight:bold; background:#ffcc00; color:#111; border:none; border-radius:4px; cursor:pointer;">Restart Sim</button>
-              <span id="sim-status" style="padding: 10px; font-weight:bold; color: #33ff33;">Running</span>
-          </div>
-      </div>
+            <!-- SIMULATION ENGINE -->
+            <div class="glass-panel p-6">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span class="text-blush">⚙️</span> Engine Core
+                    </h3>
+                    <span id="sim-status" class="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30 uppercase tracking-wide">Running</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div><label class="text-xs text-lavender/70 mono">ARENA_SIZE</label><input type="number" id="inp-arena" value="3000"></div>
+                    <div><label class="text-xs text-lavender/70 mono">MAX_CREATURES</label><input type="number" id="inp-creatures" value="600"></div>
+                    <div><label class="text-xs text-lavender/70 mono">NUM_ITEMS</label><input type="number" id="inp-items" value="1500"></div>
+                    <div><label class="text-xs text-lavender/70 mono">TICK_RATE_MS</label><input type="number" id="inp-tick" value="5"></div>
+                    <div><label class="text-xs text-lavender/70 mono">INIT_FERTILIZER</label><input type="number" id="inp-fert" value="10000"></div>
+                    <div><label class="text-xs text-lavender/70 mono">BASE_FOOD_SPAWN</label><input type="number" step="0.01" id="inp-food-spawn" value="0.2"></div>
+                </div>
 
-      <!-- VISUAL LEGEND -->
-      <div style="border: 1px solid #45a29e; border-radius: 4px; background: #1f2833; padding: 15px; text-align: left; color: #c5c6c7; font-size: 0.95rem;">
-          <h3 style="color: #45a29e; margin-top: 0; border-bottom: 1px solid #45a29e; padding-bottom: 5px;">🎨 VISUAL LEGEND (What are you looking at?)</h3>
-          <ul style="margin:0; padding-left: 20px; line-height: 1.6;">
-              <li><strong>Triangles:</strong> Living organisms. The triangle always points in the direction they are moving.</li>
-              <li><strong>Size/Shape:</strong> Varies by <code>gene_size</code>. Massive triangles are K-strategist Predators (strong but slow/hungry). Tiny triangles are r-strategist Scavengers (weak but fast/efficient).</li>
-              <li><strong>Color (Hue):</strong> Denotes distinct Species. Only organisms of the same color (kin) can mate.</li>
-              <li><strong>Cyan Dots:</strong> Food/Plant matter (+60 energy).</li>
-              <li><strong>Red Crossed Bones:</strong> Toxic Corpses. Left behind when an organism dies. Decomposers eat these!</li>
-              <li><strong style="color: #00ffcc;">White Glowing Rings:</strong> <code>gene_vision</code> radar radius. The organism can only 'see' food/predators inside this ring!</li>
-              <li><strong style="color: #33ff33;">Green Glowing Aura:</strong> Actively infected by the Winter Virus. They will drain energy and spread it!</li>
-              <li><strong style="color: #ff3333;">Red Jagged Lines:</strong> Carnivore Combat! A predator is actively attacking another species.</li>
-              <li><strong style="color: #ff99cc;">Pink Lines:</strong> Mating event! Two kin have found each other and spawned a child.</li>
-              <li><strong style="color: #aaa;">Clicking an Organism:</strong> Traces its entire family lineage, drawing thick glowing lines between all relatives!</li>
-          </ul>
-      </div>
-      <div id="log-box" style="height: 120px; background: #0b0c10; border: 1px solid #45a29e; border-radius: 4px; padding: 10px; font-size: 0.9rem; text-align: left; overflow-y: scroll; display: flex; flex-direction: column; gap: 4px;"></div>
-      
-      <div style="border: 1px solid #fdf800; border-radius: 4px; background: #1f2833; padding: 15px; text-align: left;">
-          <h3 style="color: #fdf800; margin-top: 0; border-bottom: 1px solid #fdf800; padding-bottom: 5px;">🧬 AI EVOLUTIONARY ANALYSIS (Updates every 30m)</h3>
-          <div id="ai-readout" style="font-size: 0.95rem; line-height: 1.5; color: #fff;">Awaiting connection...</div>
-      </div>
-      
-      <div style="border: 1px solid #33ff33; border-radius: 4px; background: #1f2833; padding: 15px; text-align: left;">
-          <h3 style="color: #33ff33; margin-top: 0; border-bottom: 1px solid #33ff33; padding-bottom: 5px;">📈 HISTORICAL DATA VISUALIZATION</h3>
-          <div style="position: relative; height: 250px; width: 100%;">
-              <canvas id="metricsChart" style="background: #0b0c10; border-radius: 4px;"></canvas>
-          </div>
-      </div>
-      
-      <div style="border: 1px solid #45a29e; border-radius: 4px; background: #0b0c10; padding: 15px; text-align: left; color: #c5c6c7; font-size: 0.9rem; line-height: 1.6;">
-          <h3 style="color: #45a29e; margin-top: 0; border-bottom: 1px solid #45a29e; padding-bottom: 5px;">📖 SYSTEM ARCHIVE: COMPREHENSIVE BIOLOGICAL PHENOMENA</h3>
-          <p>You are observing a high-speed Artificial Life simulation running entirely on Node.js. Every triangle is an independent agent powered by its own mutating Neural Network. There is no central artificial objective—they must mathematically learn to survive. Here are the precise evolutionary dynamics playing out live:</p>
-          <ul style="padding-left: 20px;">
-              <li><strong style="color: #fff;">Natural Selection & Poison Avoidance:</strong> Cyan dots (+60 energy) are food. Red dots (-80 energy) are poison. Early generations have random brain wirings and will eat poison and die. Only those that randomly mutate a "Turn Away From Poison" reflex survive.</li>
-              <li><strong style="color: #fff;">Bacterial Toxicity:</strong> Dead organisms lyse and release toxic metabolic waste. When an organism dies, its corpse leaves a Red Poison dot, permanently polluting the environment.</li>
-              <li><strong style="color: #fff;">Evolvable Morphology (r/K Strategy):</strong> Organisms evolve bodies, not just brains. They have genes for Speed, Vision, and Body Size. Size dictates life strategy: massive organisms (K-selection) have high predation power but move slower and burn massive calories. Tiny organisms (r-selection) are weak but breed rapidly on scraps. This often leads to <em>Insular Dwarfism</em> (shrinking to conserve energy).</li>
-              <li><strong style="color: #fff;">The Red Queen Hypothesis (Arms Race):</strong> As food becomes scarce, the agents must evolve to be faster (Avg Speed) just to beat their siblings to the remaining food. They are forced to run at maximum speed simply to avoid extinction.</li>
-              <li><strong style="color: #fff;">Rapid Encephalization:</strong> The environment's penalty for stupidity (eating poison) is so lethal that the survival benefit of a highly complex brain vastly outweighs its high metabolic cost, leading to rapid brain growth (Avg Connects).</li>
-              <li><strong style="color: #fff;">Senescence (Aging) & Mortality:</strong> Organisms are not immortal. As they age, their metabolic efficiency decays, forcing them to hunt faster before time runs out. There is also a constant stochastic mortality rate (random death via disease/accidents).</li>
-              <li><strong style="color: #fff;">Speciation via Assortative Mating:</strong> When two organisms of a similar genetic color (Kin) bump into each other, they mate, spawning a child that inherits a genetic crossover. Mating costs 40 energy. They practice <em>Mate Choice</em>, refusing to mate with starving runts or vastly differently sized organisms. Over time, they naturally segregate into distinct, color-coded species.</li>
-              <li><strong style="color: #fff;">Mitosis (Asexual Reproduction):</strong> An organism can clone itself asexually, but it is brutally expensive (cost: 120 energy). They must hoard massive amounts of food to survive the process.</li>
-              <li><strong style="color: #fff;">Asymmetric Predation:</strong> When different species (alien colors) collide, the stronger organism—calculated by multiplying its energy by its evolved Speed and Body Size—physically overpowers the weaker species and steals its energy.</li>
-              <li><strong style="color: #fff;">True Pathogens & Immunology:</strong> Winter triggers viral outbreaks. Viruses drain energy and spread on contact (green glowing aura). Survival requires evolving a massive Immune System (<code>gene_immunity</code>), but maintaining high immunity costs permanent passive energy, triggering an auto-immune calorie trap.</li>
-              <li><strong style="color: #fff;">Biogeochemical Nutrient Cycling:</strong> There are no more infinite food spawns. Food requires <strong>Fertilizer</strong> in the soil. The environment demands Trophic Levels:
-                <ul>
-                    <li>🌱 <strong>Producers:</strong> Can evolve <code>gene_chloroplast</code> to passively generate energy from the Sun, but it makes them heavy and completely immobile.</li>
-                    <li>🥩 <strong>Carnivores:</strong> Can evolve <code>gene_carnivore</code> to steal massive energy from hunting others, but it permanently breaks their ability to digest plant matter.</li>
-                    <li>🍄 <strong>Decomposers (Scavengers):</strong> Corpses are toxic poison to most, but creatures can evolve <code>gene_scavenger</code> to digest the dead. Eating corpses is the ONLY way to return Fertilizer back to the global soil to spawn more plants, closing the nutrient loop!</li>
-                </ul>
-              </li>
-          <p style="margin-bottom: 0; color: #ff0033;"><em>Warning: The "Radiation Burst" button floods the arena with extreme radiation, severely damaging DNA. If they reproduce while irradiated, they spawn drastically mutated children with entirely new colors, instantly creating new species. Use it to shatter stagnant ecosystems!</em></p>
-      </div>
-  </div>
-  
-  <script>
+                <!-- Accordion/Details for advanced config to save space -->
+                <details class="group bg-black/30 rounded-lg border border-lavender/10 mb-6">
+                    <summary class="p-3 text-sm font-semibold text-lavender cursor-pointer select-none">
+                        ▸ Advanced Initializers
+                    </summary>
+                    <div class="p-3 pt-0 grid grid-cols-2 gap-4 border-t border-lavender/10 mt-2 pt-3">
+                        <div><label class="text-xs text-lavender/50 mono">START_ALIVE</label><input type="number" id="inp-start-alive" value="400"></div>
+                        <div><label class="text-xs text-lavender/50 mono">START_ITEMS</label><input type="number" id="inp-start-items" value="400"></div>
+                        <div><label class="text-xs text-lavender/50 mono">START_ENERGY</label><input type="number" id="inp-start-energy" value="1000"></div>
+                        <div><label class="text-xs text-lavender/50 mono">METABOLISM_MULT</label><input type="number" step="0.1" id="inp-metabolism" value="1.0"></div>
+                        <div><label class="text-xs text-lavender/50 mono">MUTATION_MULT</label><input type="number" step="0.1" id="inp-mutation" value="1.0"></div>
+                        <div><label class="text-xs text-lavender/50 mono">MITOSIS_MULT</label><input type="number" step="0.1" id="inp-mitosis" value="1.0"></div>
+                        <div><label class="text-xs text-lavender/50 mono">MATING_MULT</label><input type="number" step="0.1" id="inp-mating" value="1.0"></div>
+                        <div><label class="text-xs text-lavender/50 mono">FOOD_YIELD</label><input type="number" id="inp-food-yield" value="60"></div>
+                        <div><label class="text-xs text-lavender/50 mono">POISON_YIELD</label><input type="number" id="inp-poison-yield" value="-80"></div>
+                        <div><label class="text-xs text-lavender/50 mono">CORPSE_YIELD</label><input type="number" id="inp-corpse-yield" value="60"></div>
+                    </div>
+                </details>
+
+                <h4 class="text-xs font-semibold text-vibrant uppercase tracking-wider mb-3">Mechanic Toggles</h4>
+                <div class="grid grid-cols-2 gap-2 mb-6 bg-black/30 p-4 rounded-lg border border-lavender/10 text-sm text-lavender/90">
+                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-terrain" checked> TERRAIN (V3)</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-seasons" checked> SEASONS (V3)</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-eras" checked> ERAS (V3)</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-virus" checked> VIRUS (V3)</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-parasitism" checked> PARASITISM (V3)</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-predation" checked> PREDATION (V2)</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-photosynthesis" checked> FLORA (V2)</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-scavenging" checked> SCAVENGING (V2)</label>
+                </div>
+
+                <details class="group bg-black/30 rounded-lg border border-lavender/10 mb-6">
+                    <summary class="p-3 text-sm font-semibold text-lavender cursor-pointer select-none">
+                        ▸ God-Mode Physics Tuning
+                    </summary>
+                    <div class="p-3 pt-0 grid grid-cols-2 md:grid-cols-3 gap-3 border-t border-lavender/10 mt-2 pt-3">
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">METAB_RATE</label><input type="number" step="0.01" id="inp-metab-rate" value="0.05"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">MOVE_COST</label><input type="number" step="0.001" id="inp-move-rate" value="0.01"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">VISION_COST</label><input type="number" step="0.000001" id="inp-vis-rate" value="0.000001"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">AGE_TAX</label><input type="number" step="0.00001" id="inp-age-rate" value="0.00001"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">BRAIN_TAX</label><input type="number" step="0.0001" id="inp-brain-rate" value="0.0001"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">ATK_COST</label><input type="number" id="inp-atk-cost" value="5"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">SCUFFLE_COST</label><input type="number" id="inp-scuffle" value="10"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">SYMBIOSIS_TAX</label><input type="number" id="inp-symbiosis" value="2"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">EGG_COST</label><input type="number" id="inp-parasite-cost" value="200"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">MIN_SPEED</label><input type="number" step="0.1" id="inp-min-spd" value="0.5"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">MAX_SPEED</label><input type="number" step="0.1" id="inp-max-spd" value="4.0"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">MIN_VIS</label><input type="number" step="1" id="inp-min-vis" value="20"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">MAX_VIS</label><input type="number" step="1" id="inp-max-vis" value="200"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">MAX_NODES</label><input type="number" id="inp-max-nodes" value="200"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">DROWNING</label><input type="number" step="0.05" id="inp-drown" value="0.1"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">OVERPOP_CAP</label><input type="number" id="inp-overpop" value="160"></div>
+                        <div><label class="text-[10px] text-lavender/50 mono block truncate">CHLORO_YIELD</label><input type="number" step="0.05" id="inp-chloroplast" value="0.1"></div>
+                    </div>
+                </details>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <button id="btn-update" class="py-2 bg-blush/20 text-blush text-sm font-bold rounded border border-blush/30 hover:bg-blush/30 transition-colors">Apply Config</button>
+                    <button id="btn-restart" class="py-2 bg-vibrant/20 text-vibrant text-sm font-bold rounded border border-vibrant/30 hover:bg-vibrant/30 transition-colors">Restart Sim</button>
+                    <button id="btn-start" class="py-2 bg-green-500/20 text-green-400 text-sm font-bold rounded border border-green-500/30 hover:bg-green-500/30 transition-colors">Start</button>
+                    <button id="btn-stop" class="py-2 bg-red-500/20 text-red-400 text-sm font-bold rounded border border-red-500/30 hover:bg-red-500/30 transition-colors">Stop</button>
+                </div>
+            </div>
+
+            <!-- AI ANALYSIS -->
+            <div class="glass-panel p-6 border-t-2 border-t-lavender">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="text-lavender">🧠</span> AI Evolutionary Analysis
+                </h3>
+                <div id="ai-readout" class="text-sm text-lavender/80 leading-relaxed font-mono whitespace-pre-wrap">Awaiting temporal milestones...</div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
       window.onerror = function(msg, url, lineNo, columnNo, error) {
           alert('Error: ' + msg + ' at line ' + lineNo);
       };
