@@ -115,6 +115,50 @@
                 <div class="hidden"><span id="age"></span><span id="max-energy"></span><span id="aquatic"></span></div>
             </div>
 
+
+            <!-- NEW: LIVE DATA MATRIX & ECOSYSTEM PIE -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Ecosystem Composition -->
+                <div class="glass-panel p-5 flex flex-col items-center">
+                    <h3 class="text-sm font-semibold text-vibrant mb-3 uppercase tracking-wider w-full text-left">Ecosystem Composition</h3>
+                    <div class="relative w-full max-w-[200px] aspect-square">
+                        <canvas id="trophic-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Dynasties Matrix -->
+                <div class="glass-panel p-5 overflow-hidden flex flex-col">
+                    <h3 class="text-sm font-semibold text-vibrant mb-3 uppercase tracking-wider">Apex Dynasties (Data Matrix)</h3>
+                    <div class="overflow-y-auto flex-grow pr-2 custom-scrollbar">
+                        <table class="w-full text-left text-xs mono text-lavender/80">
+                            <thead class="sticky top-0 bg-[#07070b]/90 backdrop-blur text-white/50 pb-2">
+                                <tr>
+                                    <th class="py-1">Fam ID</th>
+                                    <th>Color</th>
+                                    <th>Pop</th>
+                                    <th>Avg Size</th>
+                                    <th>Max Age</th>
+                                </tr>
+                            </thead>
+                            <tbody id="matrix-body" class="divide-y divide-lavender/10">
+                                <tr><td colspan="5" class="py-2 text-center">Loading Data Matrix...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEW: NEURAL ARCHITECTURE VISUALIZER -->
+            <div class="glass-panel p-5">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-semibold text-blush uppercase tracking-wider">Realtime Neural Architecture</h3>
+                    <span class="text-[10px] text-lavender/50 mono bg-black/30 px-2 py-1 rounded">Select organism with Lineage Trace</span>
+                </div>
+                <div class="w-full bg-[#050508] border border-lavender/10 rounded-lg relative overflow-hidden flex justify-center items-center" style="height: 300px;">
+                    <canvas id="brain-network" width="800" height="300" class="absolute w-full h-full object-contain"></canvas>
+                    <div id="brain-overlay" class="absolute pointer-events-none text-lavender/30 text-sm mono">Awaiting telemetry...</div>
+                </div>
+            </div>
             <!-- CHART & OBSERVER LOG -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="glass-panel p-5 flex flex-col h-64">
@@ -379,6 +423,52 @@
             else buckets.m++;
         });
         
+
+        // --- TROPHIC & MATRIX LOGIC ---
+        let trophicCounts = { prod: 0, herb: 0, carn: 0, scav: 0, aqua: 0 };
+        let familyMap = {};
+
+        creatures.forEach(c => {
+            let x = c[0], y = c[1], angle = c[2], size = c[3], hue = c[4], infected = c[5], trophic = c[6], vision = c[7] || 50, famId = c[8];
+            
+            // Trophic
+            if (trophic === 1) trophicCounts.prod++;
+            else if (trophic === 4) trophicCounts.carn++;
+            else if (trophic === 3) trophicCounts.scav++;
+            else if (trophic === 5) trophicCounts.aqua++;
+            else trophicCounts.herb++;
+
+            // Matrix
+            if (!familyMap[famId]) familyMap[famId] = { id: famId, pop: 0, sizeSum: 0, maxAge: 0, hue: hue };
+            familyMap[famId].pop++;
+            familyMap[famId].sizeSum += size;
+            // Note: server doesn't send age in compressed array. We use lineage or just size for now.
+        });
+
+        // Update Trophic Chart
+        if (window.trophicChart) {
+            window.trophicChart.data.datasets[0].data = [
+                trophicCounts.prod, trophicCounts.herb, trophicCounts.carn, trophicCounts.scav, trophicCounts.aqua
+            ];
+            window.trophicChart.update();
+        }
+
+        // Update Data Matrix
+        let famArr = Object.values(familyMap).sort((a,b) => b.pop - a.pop).slice(0, 8);
+        let matrixBody = document.getElementById('matrix-body');
+        if (matrixBody) {
+            matrixBody.innerHTML = famArr.map(f => `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-1">#${f.id}</td>
+                    <td><span class="inline-block w-3 h-3 rounded-full" style="background: hsl(${f.hue}, 100%, 50%);"></span></td>
+                    <td class="font-bold text-white">${f.pop}</td>
+                    <td>${(f.sizeSum / f.pop).toFixed(2)}</td>
+                    <td>N/A</td>
+                </tr>
+            `).join('');
+        }
+        
+        // --- END TROPHIC & MATRIX LOGIC ---
         popHistory.push({ total: data.a, ...buckets });
         if(popHistory.length > 1200) popHistory.shift();
         
@@ -878,11 +968,116 @@
 
     // Brain visualizer
     socket.on('brain_data', (bdata) => {
-        let text = `🧠 Brain Data (ID: ${bdata.id}) | Energy: ${bdata.energy.toFixed(1)} | Age: ${bdata.age}\n`;
-        text += `Nodes: ${bdata.brain.maxNode} | Connections: ${bdata.brain.conns.length}\n`;
-        text += `(Check server console for full dump, or build a node graph here!)`;
-        window.logEvent(text, '#ff00ff');
+        let text = `🧠 Telemetry Acquired (ID: ${bdata.id}) | Energy: ${bdata.energy.toFixed(1)} | Age: ${bdata.age}\n`;
+        text += `Routing Neural Architecture to Visualizer...`;
+        window.logEvent(text, '#ffbbfe');
+        renderBrain(bdata);
     });
+    // INITIALIZE TROPHIC CHART
+    let ctxTrophic = document.getElementById('trophic-chart');
+    if (ctxTrophic) {
+        window.trophicChart = new Chart(ctxTrophic.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Producers', 'Herbivores', 'Carnivores', 'Scavengers', 'Aquatic'],
+                datasets: [{
+                    data: [0, 0, 0, 0, 0],
+                    backgroundColor: ['#00ffcc', '#ffffff', '#ff3333', '#999999', '#0055ff'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // RENDER NEURAL NETWORK
+    const bCanvas = document.getElementById('brain-network');
+    const bCtx = bCanvas ? bCanvas.getContext('2d') : null;
+
+    function renderBrain(bdata) {
+        if (!bCtx) return;
+        document.getElementById('brain-overlay').style.display = 'none';
+        bCtx.clearRect(0, 0, 800, 300);
+        
+        let brain = bdata.brain;
+        let conns = brain.conns;
+        
+        // Define node positions
+        // Layer 1: Sensors (0-7), Mem In (8-15) -> X: 100
+        // Layer 2: Hidden (28+) -> X: 400
+        // Layer 3: Motors (16-17), Intent (18), Aggro (19), Mem Out (20-27) -> X: 700
+
+        let nodePos = {};
+        let layerCounts = { 1: 0, 2: 0, 3: 0 };
+        
+        // Calculate max nodes per layer to center them vertically
+        for (let i = 0; i <= brain.maxNode; i++) {
+            if (i < 16) layerCounts[1]++;
+            else if (i >= 16 && i < 28) layerCounts[3]++;
+            else layerCounts[2]++;
+        }
+
+        let currCounts = { 1: 0, 2: 0, 3: 0 };
+        
+        for (let i = 0; i <= brain.maxNode; i++) {
+            let layer, x;
+            if (i < 16) { layer = 1; x = 100; }
+            else if (i >= 16 && i < 28) { layer = 3; x = 700; }
+            else { layer = 2; x = 400; }
+
+            let yOffset = (300 - (layerCounts[layer] * 15)) / 2;
+            let y = yOffset + (currCounts[layer] * 15);
+            nodePos[i] = { x: x, y: y, layer: layer, id: i };
+            currCounts[layer]++;
+        }
+
+        // Draw connections
+        bCtx.lineWidth = 1;
+        conns.forEach(c => {
+            let p1 = nodePos[c.in];
+            let p2 = nodePos[c.out];
+            if (p1 && p2) {
+                bCtx.beginPath();
+                bCtx.moveTo(p1.x, p1.y);
+                // Bezier curve for cool effect
+                bCtx.bezierCurveTo(p1.x + 100, p1.y, p2.x - 100, p2.y, p2.x, p2.y);
+                if (c.w > 0) {
+                    bCtx.strokeStyle = `rgba(0, 255, 204, ${Math.min(1.0, Math.abs(c.w) * 0.2)})`; // Excitory
+                } else {
+                    bCtx.strokeStyle = `rgba(255, 51, 51, ${Math.min(1.0, Math.abs(c.w) * 0.2)})`; // Inhibitory
+                }
+                bCtx.stroke();
+            }
+        });
+
+        // Draw nodes
+        for (let i = 0; i <= brain.maxNode; i++) {
+            let p = nodePos[i];
+            if (p) {
+                bCtx.beginPath();
+                bCtx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                if (p.layer === 1) bCtx.fillStyle = '#fdf800'; // Sensor
+                else if (p.layer === 3) bCtx.fillStyle = '#ffbbfe'; // Motor
+                else bCtx.fillStyle = '#d5d4ff'; // Hidden
+                bCtx.fill();
+                
+                // Labels for key nodes
+                bCtx.fillStyle = 'rgba(255,255,255,0.3)';
+                bCtx.font = '8px monospace';
+                if (p.id === 0) bCtx.fillText('VISION', p.x - 35, p.y + 3);
+                if (p.id === 16) bCtx.fillText('MOVE F', p.x + 10, p.y + 3);
+                if (p.id === 18) bCtx.fillText('MATE', p.x + 10, p.y + 3);
+                if (p.id === 19) bCtx.fillText('BITE', p.x + 10, p.y + 3);
+            }
+        }
+    }
+
 
 
 
