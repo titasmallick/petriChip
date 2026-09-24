@@ -83,11 +83,31 @@
             
             <!-- CORE METRICS BAR -->
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                <div class="stat-box"><span id="alive" class="stat-val text-white">0</span><span class="stat-label">Population</span></div>
-                <div class="stat-box"><span id="avg-size" class="stat-val text-lavender">0.00</span><span class="stat-label">Avg Size</span></div>
-                <div class="stat-box"><span id="avg-spd" class="stat-val text-vibrant">0.00</span><span class="stat-label">Avg Speed</span></div>
-                <div class="stat-box"><span id="avg-vis" class="stat-val text-blush">0</span><span class="stat-label">Avg Synapses</span></div>
-                <div class="stat-box hidden lg:flex"><span id="exts" class="stat-val text-white">0</span><span class="stat-label">Generations</span></div>
+                <div class="stat-box relative overflow-hidden group">
+                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity text-5xl text-white">◬</div>
+                    <span id="alive" class="stat-val text-white relative z-10">0</span>
+                    <span class="stat-label relative z-10 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-white"></span> Population</span>
+                </div>
+                <div class="stat-box relative overflow-hidden group">
+                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity text-5xl text-lavender">⚖</div>
+                    <span id="avg-size" class="stat-val text-lavender relative z-10">0.00</span>
+                    <span class="stat-label relative z-10 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-lavender"></span> Avg Size</span>
+                </div>
+                <div class="stat-box relative overflow-hidden group">
+                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity text-5xl text-vibrant">⚡</div>
+                    <span id="avg-spd" class="stat-val text-vibrant relative z-10">0.00</span>
+                    <span class="stat-label relative z-10 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-vibrant"></span> Avg Speed</span>
+                </div>
+                <div class="stat-box relative overflow-hidden group">
+                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity text-5xl text-blush">⚄</div>
+                    <span id="avg-vis" class="stat-val text-blush relative z-10">0</span>
+                    <span class="stat-label relative z-10 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blush"></span> Avg Synapses</span>
+                </div>
+                <div class="stat-box relative overflow-hidden group hidden lg:flex">
+                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity text-5xl text-white">⏳</div>
+                    <span id="exts" class="stat-val text-white relative z-10">0</span>
+                    <span class="stat-label relative z-10 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-gray-400"></span> Generations</span>
+                </div>
             </div>
 
             <!-- CANVAS -->
@@ -131,13 +151,13 @@
                     <h3 class="text-sm font-semibold text-vibrant mb-3 uppercase tracking-wider">Apex Dynasties (Data Matrix)</h3>
                     <div class="overflow-y-auto flex-grow pr-2 custom-scrollbar">
                         <table class="w-full text-left text-xs mono text-lavender/80">
-                            <thead class="sticky top-0 bg-[#07070b]/90 backdrop-blur text-white/50 pb-2">
+                            <thead class="sticky top-0 bg-[#07070b]/95 backdrop-blur text-vibrant/70 border-b border-lavender/20 pb-2">
                                 <tr>
-                                    <th class="py-1">Fam ID</th>
-                                    <th>Color</th>
-                                    <th>Pop</th>
-                                    <th>Avg Size</th>
-                                    <th>Max Age</th>
+                                    <th class="py-2 px-1">Fam ID</th>
+                                    <th class="py-2 px-1">DNA</th>
+                                    <th class="py-2 px-1">Pop</th>
+                                    <th class="py-2 px-1">Avg Size</th>
+                                    <th class="py-2 px-1">Max Age</th>
                                 </tr>
                             </thead>
                             <tbody id="matrix-body" class="divide-y divide-lavender/10">
@@ -222,7 +242,13 @@
                     <h3 class="text-lg font-bold text-white flex items-center gap-2">
                         <span class="text-blush">⚙️</span> Engine Core
                     </h3>
-                    <span id="sim-status" class="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30 uppercase tracking-wide">Running</span>
+                    <span id="sim-status" class="flex items-center gap-2 px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30 uppercase tracking-wide shadow-[0_0_10px_rgba(34,197,94,0.3)]">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+        </span>
+        <span id="sim-status-text">Running</span>
+    </span>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4 mb-6">
@@ -458,12 +484,12 @@
         let matrixBody = document.getElementById('matrix-body');
         if (matrixBody) {
             matrixBody.innerHTML = famArr.map(f => `
-                <tr class="hover:bg-white/5 transition-colors">
-                    <td class="py-1">#${f.id}</td>
-                    <td><span class="inline-block w-3 h-3 rounded-full" style="background: hsl(${f.hue}, 100%, 50%);"></span></td>
-                    <td class="font-bold text-white">${f.pop}</td>
-                    <td>${(f.sizeSum / f.pop).toFixed(2)}</td>
-                    <td>N/A</td>
+                <tr class="hover:bg-lavender/5 transition-colors border-b border-lavender/5">
+                    <td class="py-2 px-1 font-bold text-lavender/70">#${f.id}</td>
+                    <td class="py-2 px-1"><span class="inline-block w-4 h-4 rounded-full border border-white/20 shadow-lg" style="background: hsl(${f.hue}, 100%, 50%);"></span></td>
+                    <td class="py-2 px-1 font-bold text-white">${f.pop}</td>
+                    <td class="py-2 px-1">${(f.sizeSum / f.pop).toFixed(2)}</td>
+                    <td class="py-2 px-1 text-lavender/30">N/A</td>
                 </tr>
             `).join('');
         }
@@ -863,10 +889,27 @@
     document.getElementById('btn-start').addEventListener('click', () => socket.emit('start_sim'));
     document.getElementById('btn-restart').addEventListener('click', () => socket.emit('restart_sim'));
 
-    socket.on('sim_status', (status) => {
+        socket.on('sim_status', (status) => {
         let el = document.getElementById('sim-status');
-        el.innerText = status;
-        el.style.color = status === 'Running' ? '#33ff33' : (status === 'Stopped' ? '#ff3333' : '#ffcc00');
+        let txt = document.getElementById('sim-status-text');
+        let dot = el.querySelector('.bg-green-500');
+        let ping = el.querySelector('.animate-ping');
+        if(txt) txt.innerText = status;
+        else el.innerText = status;
+        
+        if (status === 'Running') {
+            el.className = "flex items-center gap-2 px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30 uppercase tracking-wide shadow-[0_0_10px_rgba(34,197,94,0.3)]";
+            if(dot) dot.className = "relative inline-flex rounded-full h-2 w-2 bg-green-500";
+            if(ping) ping.style.display = "block";
+        } else if (status === 'Stopped') {
+            el.className = "flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-full border border-red-500/30 uppercase tracking-wide shadow-[0_0_10px_rgba(239,68,68,0.3)]";
+            if(dot) dot.className = "relative inline-flex rounded-full h-2 w-2 bg-red-500";
+            if(ping) ping.style.display = "none";
+        } else {
+            el.className = "flex items-center gap-2 px-3 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded-full border border-yellow-500/30 uppercase tracking-wide shadow-[0_0_10px_rgba(234,179,8,0.3)]";
+            if(dot) dot.className = "relative inline-flex rounded-full h-2 w-2 bg-yellow-500";
+            if(ping) ping.style.display = "none";
+        }
         window.logEvent('Simulation status changed: ' + status, '#ff00ff');
     });
 
