@@ -613,8 +613,10 @@
         
         // Draw frame directly
         ctx.clearRect(0, 0, 3000, 3000);
-        if (data.geoEpoch !== undefined) renderTerrain(data.geoEpoch);
-        ctx.drawImage(terrainCanvas, 0, 0);
+        if (data.terrOn) {
+            if (data.geoEpoch !== undefined) renderTerrain(data.geoEpoch);
+            ctx.drawImage(terrainCanvas, 0, 0);
+        }
         
         // 1. Dynamic Soil Color
         let fert = Math.min(10000, Math.max(0, data.fert || 500));
