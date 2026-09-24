@@ -65,7 +65,25 @@ let MITOSIS_BARRIER_MULT = 1.0;
 let MATING_COST_MULT = 1.0;
 let FOOD_ENERGY_YIELD = 60.0;
 let POISON_ENERGY_YIELD = -80.0;
-let CORPSE_ENERGY_YIELD = 60.0; // Update UI 20 times per second
+let CORPSE_ENERGY_YIELD = 60.0;
+// --- EXTREME GOD-MODE TUNING ---
+let BASE_METABOLISM_RATE = 0.05;
+let MOVEMENT_COST_RATE = 0.01;
+let VISION_COST_RATE = 0.000001;
+let AGE_TAX_RATE = 0.00001;
+let BRAIN_TAX_RATE = 0.0001;
+let ATTACK_COST = 5.0;
+let SCUFFLE_COST = 10.0;
+let SYMBIOSIS_TAX = 2.0;
+let PARASITE_EGG_COST = 200.0;
+let MAX_SPEED_CAP = 4.0;
+let MIN_SPEED_CAP = 0.5;
+let MAX_VISION_CAP = 200.0;
+let MIN_VISION_CAP = 20.0;
+let MAX_BRAIN_NODES = 200;
+let DROWNING_PENALTY = 0.1;
+let OVERPOPULATION_CAP = 160.0;
+let CHLOROPLAST_YIELD = 0.1; // Update UI 20 times per second
 
 let totalBirths = 0;
 let totalDeaths = 0;
@@ -234,7 +252,7 @@ function mutateBrain(brain, rad) {
         // DELETE CONNECTION (Pruning - 20% chance)
         let cIdx = Math.floor(Math.random() * b.conns.length);
         b.conns.splice(cIdx, 1);
-    } else if (r < 0.85 && b.conns.length > 0 && b.maxNode < 200) {
+    } else if (r < 0.85 && b.conns.length > 0 && b.maxNode < MAX_BRAIN_NODES) {
         // ADD NODE (Split a wire - 15% chance, capped at 200 nodes for memory safety)
         let cIdx = Math.floor(Math.random() * b.conns.length);
         let oldC = b.conns[cIdx];
@@ -424,10 +442,10 @@ function tickPhysics() {
         
         let speedModifier = 1.0;
         if (ENABLE_TERRAIN && inWater && !isAquatic) {
-            c.energy -= 0.1; // Terrestrial drowning
+            c.energy -= DROWNING_PENALTY; // Terrestrial drowning
             speedModifier = 0.3; // Slowed in water
         } else if (ENABLE_TERRAIN && !inWater && isAquatic) {
-            c.energy -= 0.1; // Aquatic suffocating on land
+            c.energy -= DROWNING_PENALTY; // Aquatic suffocating on land
             speedModifier = 0.1; // Floundering on land
         }
 
@@ -469,7 +487,7 @@ function tickPhysics() {
         
         if (season === 0 || season === 1) {
             if (ENABLE_PHOTOSYNTHESIS && c.gene_chloroplast > 0.2 && globalFertilizer > 0) {
-                let energyGained = c.gene_chloroplast * 0.1;
+                let energyGained = c.gene_chloroplast * CHLOROPLAST_YIELD;
                 // Strict Conservation of Mass
                 c.energy += energyGained;
                 globalFertilizer -= energyGained; 
@@ -482,12 +500,12 @@ function tickPhysics() {
         if (c.y > ARENA_SIZE) { c.y = ARENA_SIZE; c.angle += Math.PI; }
         
         // Metabolism (Kleiber's Law Allometric Scaling)
-        let baselineCost = 0.05 * Math.pow(c.gene_size, 0.75); // S^0.75 basal metabolic rate
+        let baselineCost = BASE_METABOLISM_RATE * Math.pow(c.gene_size, 0.75); // S^0.75 basal metabolic rate
         let actualV = Math.abs(v);
-        let movementCost = c.gene_size * actualV * actualV * 0.01; // S * v^2 kinetic energy drag
-        let visionCost = (c.gene_vision * c.gene_vision) * 0.000001;
-        let ageTax = c.age * 0.00001; 
-        let brainTax = c.brain.conns.length * 0.0001; 
+        let movementCost = c.gene_size * actualV * actualV * MOVEMENT_COST_RATE; // S * v^2 kinetic energy drag
+        let visionCost = (c.gene_vision * c.gene_vision) * VISION_COST_RATE;
+        let ageTax = c.age * AGE_TAX_RATE; 
+        let brainTax = c.brain.conns.length * BRAIN_TAX_RATE; 
         
         let heatMultiplier = (globalEra === 2) ? 2.0 : (globalEra === 1 ? 0.5 : 1.0);
         let freezeMultiplier = (globalEra === 1) ? 2.0 : (globalEra === 2 ? 0.5 : 1.0);
@@ -606,8 +624,8 @@ function tickPhysics() {
                             child.gene_immunity = Math.max(0.0, Math.min(1.0, child.gene_immunity));
                             child.infected = false; child.viralLoad = 0;
                             
-                            child.gene_speed = Math.max(0.5, Math.min(4.0, child.gene_speed));
-                            child.gene_vision = Math.max(20.0, Math.min(200.0, child.gene_vision));
+                            child.gene_speed = Math.max(MIN_SPEED_CAP, Math.min(MAX_SPEED_CAP, child.gene_speed));
+                            child.gene_vision = Math.max(MIN_VISION_CAP, Math.min(MAX_VISION_CAP, child.gene_vision));
                             child.gene_size = Math.max(0.5, Math.min(getGeoState(geologicEpoch).sizeCap, child.gene_size));
                             
                             child.energy = cost1 + cost2;
@@ -616,12 +634,12 @@ function tickPhysics() {
                         // Symbiosis & Crowding Penalty
                         let total = c.energy + c2.energy;
                         c.energy = total/2; c2.energy = total/2;
-                        c.energy -= 2.0; c2.energy -= 2.0; 
+                        c.energy -= SYMBIOSIS_TAX; c2.energy -= SYMBIOSIS_TAX; 
                     }
                 } else if (c.aggression > 0 || c2.aggression > 0) {
                     // Predation / Combat (Only if they actively decide to attack via Output 19)
                     if (ENABLE_PREDATION && c.aggression > c2.aggression && c.gene_carnivore > 0.1 && c.gene_size > c2.gene_size * 1.2) {
-                        c.energy -= 5; // Cost of attack
+                        c.energy -= ATTACK_COST; // Cost of attack
                         
                         if (ENABLE_PARASITISM && c.gene_parasite > 0.8 && c.energy > 300) {
                             // 4. XENOMORPH PARASITISM: Impregnate the prey instead of eating it!
@@ -632,14 +650,14 @@ function tickPhysics() {
                                 gene_aquatic: c.gene_aquatic, gene_scavenger: c.gene_scavenger, gene_carnivore: c.gene_carnivore,
                                 brain: c.brain
                             }));
-                            c.energy -= 200; // Cost of laying the egg
+                            c.energy -= PARASITE_EGG_COST; // Cost of laying the egg
                         } else {
                             let meat = Math.min(Math.max(0, c2.energy), 60.0 * c.gene_carnivore);
                             c.energy += meat; c2.energy -= meat;
                         }
 
                     } else if (ENABLE_PREDATION && c2.aggression > c.aggression && c2.gene_carnivore > 0.1 && c2.gene_size > c.gene_size * 1.2) {
-                        c2.energy -= 5; // Cost of attack
+                        c2.energy -= ATTACK_COST; // Cost of attack
                         
                         if (ENABLE_PARASITISM && c2.gene_parasite > 0.8 && c2.energy > 300) {
                             // XENOMORPH PARASITISM
@@ -650,14 +668,14 @@ function tickPhysics() {
                                 gene_aquatic: c2.gene_aquatic, gene_scavenger: c2.gene_scavenger, gene_carnivore: c2.gene_carnivore,
                                 brain: c2.brain
                             }));
-                            c2.energy -= 200;
+                            c2.energy -= PARASITE_EGG_COST;
                         } else {
                             let meat = Math.min(Math.max(0, c.energy), 60.0 * c2.gene_carnivore);
                             c2.energy += meat; c.energy -= meat;
                         }
 
                     } else {
-                        c.energy -= 10; c2.energy -= 10; // Mutual scuffle cost
+                        c.energy -= SCUFFLE_COST; c2.energy -= SCUFFLE_COST; // Mutual scuffle cost
                         // Viral transmission on contact (Resisted by gene_immunity)
                         if (c.infected && Math.random() < c.viralLoad * (1.0 - c2.gene_immunity)) c2.infected = true;
                         if (c2.infected && Math.random() < c2.viralLoad * (1.0 - c.gene_immunity)) c.infected = true;
@@ -744,8 +762,8 @@ function tickPhysics() {
                 child.infected = false; child.viralLoad = 0;
 
                 
-                child.gene_speed = Math.max(0.5, Math.min(4.0, child.gene_speed));
-                child.gene_vision = Math.max(20.0, Math.min(200.0, child.gene_vision));
+                child.gene_speed = Math.max(MIN_SPEED_CAP, Math.min(MAX_SPEED_CAP, child.gene_speed));
+                child.gene_vision = Math.max(MIN_VISION_CAP, Math.min(MAX_VISION_CAP, child.gene_vision));
                 child.gene_size = Math.max(0.5, Math.min(getGeoState(geologicEpoch).sizeCap, child.gene_size));
                 
                 child.energy = asexualCost; // Strict mass conservation
@@ -753,7 +771,7 @@ function tickPhysics() {
                 child.brain = mutateBrain(c.brain, envRadiation);
                 if(Math.random() < saltChance) child.brain = buildBrain(); // Saltation restarts brain
             } else {
-                c.energy = 160; // Cap energy if world is overpopulated
+                c.energy = OVERPOPULATION_CAP; // Cap energy if world is overpopulated
             }
         }
     }
@@ -935,6 +953,25 @@ io.on('connection', (socket) => {
         if (newConfig.FOOD_ENERGY_YIELD !== undefined) FOOD_ENERGY_YIELD = Number(newConfig.FOOD_ENERGY_YIELD);
         if (newConfig.POISON_ENERGY_YIELD !== undefined) POISON_ENERGY_YIELD = Number(newConfig.POISON_ENERGY_YIELD);
         if (newConfig.CORPSE_ENERGY_YIELD !== undefined) CORPSE_ENERGY_YIELD = Number(newConfig.CORPSE_ENERGY_YIELD);
+        
+        // God-mode
+        if (newConfig.BASE_METABOLISM_RATE !== undefined) BASE_METABOLISM_RATE = Number(newConfig.BASE_METABOLISM_RATE);
+        if (newConfig.MOVEMENT_COST_RATE !== undefined) MOVEMENT_COST_RATE = Number(newConfig.MOVEMENT_COST_RATE);
+        if (newConfig.VISION_COST_RATE !== undefined) VISION_COST_RATE = Number(newConfig.VISION_COST_RATE);
+        if (newConfig.AGE_TAX_RATE !== undefined) AGE_TAX_RATE = Number(newConfig.AGE_TAX_RATE);
+        if (newConfig.BRAIN_TAX_RATE !== undefined) BRAIN_TAX_RATE = Number(newConfig.BRAIN_TAX_RATE);
+        if (newConfig.ATTACK_COST !== undefined) ATTACK_COST = Number(newConfig.ATTACK_COST);
+        if (newConfig.SCUFFLE_COST !== undefined) SCUFFLE_COST = Number(newConfig.SCUFFLE_COST);
+        if (newConfig.SYMBIOSIS_TAX !== undefined) SYMBIOSIS_TAX = Number(newConfig.SYMBIOSIS_TAX);
+        if (newConfig.PARASITE_EGG_COST !== undefined) PARASITE_EGG_COST = Number(newConfig.PARASITE_EGG_COST);
+        if (newConfig.MAX_SPEED_CAP !== undefined) MAX_SPEED_CAP = Number(newConfig.MAX_SPEED_CAP);
+        if (newConfig.MIN_SPEED_CAP !== undefined) MIN_SPEED_CAP = Number(newConfig.MIN_SPEED_CAP);
+        if (newConfig.MAX_VISION_CAP !== undefined) MAX_VISION_CAP = Number(newConfig.MAX_VISION_CAP);
+        if (newConfig.MIN_VISION_CAP !== undefined) MIN_VISION_CAP = Number(newConfig.MIN_VISION_CAP);
+        if (newConfig.MAX_BRAIN_NODES !== undefined) MAX_BRAIN_NODES = Number(newConfig.MAX_BRAIN_NODES);
+        if (newConfig.DROWNING_PENALTY !== undefined) DROWNING_PENALTY = Number(newConfig.DROWNING_PENALTY);
+        if (newConfig.OVERPOPULATION_CAP !== undefined) OVERPOPULATION_CAP = Number(newConfig.OVERPOPULATION_CAP);
+        if (newConfig.CHLOROPLAST_YIELD !== undefined) CHLOROPLAST_YIELD = Number(newConfig.CHLOROPLAST_YIELD);
         
         // Pad arrays if size increased
         if (MAX_CREATURES > oldMaxC) {

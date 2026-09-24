@@ -155,7 +155,26 @@
               <label><input type="checkbox" id="chk-photosynthesis" checked> ENABLE_PHOTOSYNTHESIS (V2)</label>
               <label><input type="checkbox" id="chk-scavenging" checked> ENABLE_SCAVENGING (V2)</label>
           </div>
+          <h4 style="color: #ff99cc; margin-top: 5px; margin-bottom: 5px;">🧬 GOD-MODE ENGINE TUNING (Metabolism, Limits & Combat)</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+              <div><label>BASE_METABOLISM_RATE:</label><br><input type="number" step="0.01" id="inp-metab-rate" value="0.05" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:70px;"></div>
+              <div><label>MOVEMENT_COST_RATE:</label><br><input type="number" step="0.001" id="inp-move-rate" value="0.01" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:70px;"></div>
+              <div><label>VISION_COST_RATE:</label><br><input type="number" step="0.000001" id="inp-vis-rate" value="0.000001" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:80px;"></div>
+              <div><label>AGE_TAX_RATE:</label><br><input type="number" step="0.00001" id="inp-age-rate" value="0.00001" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:70px;"></div>
+              <div><label>BRAIN_TAX_RATE:</label><br><input type="number" step="0.0001" id="inp-brain-rate" value="0.0001" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:70px;"></div>
+              <div><label>ATTACK_COST:</label><br><input type="number" id="inp-atk-cost" value="5" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
+              <div><label>SCUFFLE_COST:</label><br><input type="number" id="inp-scuffle" value="10" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
+              <div><label>SYMBIOSIS_TAX:</label><br><input type="number" id="inp-symbiosis" value="2" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
+              <div><label>PARASITE_EGG_COST:</label><br><input type="number" id="inp-parasite-cost" value="200" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
+              <div><label>MIN/MAX_SPEED:</label><br><input type="number" step="0.1" id="inp-min-spd" value="0.5" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:40px;">-<input type="number" step="0.1" id="inp-max-spd" value="4.0" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:40px;"></div>
+              <div><label>MIN/MAX_VISION:</label><br><input type="number" step="1" id="inp-min-vis" value="20" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:40px;">-<input type="number" step="1" id="inp-max-vis" value="200" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:40px;"></div>
+              <div><label>MAX_BRAIN_NODES:</label><br><input type="number" id="inp-max-nodes" value="200" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
+              <div><label>DROWNING_PENALTY:</label><br><input type="number" step="0.05" id="inp-drown" value="0.1" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
+              <div><label>OVERPOPULATION_CAP:</label><br><input type="number" id="inp-overpop" value="160" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
+              <div><label>CHLOROPLAST_YIELD:</label><br><input type="number" step="0.05" id="inp-chloroplast" value="0.1" style="background:#0b0c10; color:#fff; border:1px solid #ff99cc; padding:5px; width:60px;"></div>
+          </div>
           <div style="display: flex; gap: 10px;">
+
 
               <button id="btn-update" style="padding: 10px; font-weight:bold; background:#ff00ff; color:#fff; border:none; border-radius:4px; cursor:pointer;">Apply Config</button>
               <button id="btn-stop" style="padding: 10px; font-weight:bold; background:#ff3333; color:#fff; border:none; border-radius:4px; cursor:pointer;">Stop</button>
@@ -700,7 +719,25 @@
             ENABLE_PARASITISM: document.getElementById('chk-parasitism').checked,
             ENABLE_PREDATION: document.getElementById('chk-predation').checked,
             ENABLE_PHOTOSYNTHESIS: document.getElementById('chk-photosynthesis').checked,
-            ENABLE_SCAVENGING: document.getElementById('chk-scavenging').checked
+                        ENABLE_SCAVENGING: document.getElementById('chk-scavenging').checked,
+            BASE_METABOLISM_RATE: document.getElementById('inp-metab-rate').value,
+            MOVEMENT_COST_RATE: document.getElementById('inp-move-rate').value,
+            VISION_COST_RATE: document.getElementById('inp-vis-rate').value,
+            AGE_TAX_RATE: document.getElementById('inp-age-rate').value,
+            BRAIN_TAX_RATE: document.getElementById('inp-brain-rate').value,
+            ATTACK_COST: document.getElementById('inp-atk-cost').value,
+            SCUFFLE_COST: document.getElementById('inp-scuffle').value,
+            SYMBIOSIS_TAX: document.getElementById('inp-symbiosis').value,
+            PARASITE_EGG_COST: document.getElementById('inp-parasite-cost').value,
+            MIN_SPEED_CAP: document.getElementById('inp-min-spd').value,
+            MAX_SPEED_CAP: document.getElementById('inp-max-spd').value,
+            MIN_VISION_CAP: document.getElementById('inp-min-vis').value,
+            MAX_VISION_CAP: document.getElementById('inp-max-vis').value,
+            MAX_BRAIN_NODES: document.getElementById('inp-max-nodes').value,
+            DROWNING_PENALTY: document.getElementById('inp-drown').value,
+            OVERPOPULATION_CAP: document.getElementById('inp-overpop').value,
+            CHLOROPLAST_YIELD: document.getElementById('inp-chloroplast').value
+
 
 
         });
