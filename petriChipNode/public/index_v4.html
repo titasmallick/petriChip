@@ -1,1194 +1,329 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <title>Silicon Petri Dish: Research Terminal</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        lavender: '#d5d4ff',
-                        blush: '#ffbbfe',
-                        vibrant: '#fdf800',
-                        glass: 'rgba(20, 20, 35, 0.7)',
-                    }
-                }
-            }
+  <meta charset="UTF-8">
+  <title>Silicon Petri Dish: Research Terminal</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            appBg: '#08090c',
+            surface: '#0b1114',
+            surfaceMuted: 'rgba(255, 255, 255, 0.035)',
+            borderSubtle: 'rgba(255, 255, 255, 0.10)',
+            textMain: '#f8fafc',
+            textMuted: '#94a3b8',
+            cyanAcc: '#73f4df',
+            limeAcc: '#c7ff56',
+            fuchsiaAcc: '#e9a7ff',
+            amberAcc: '#f7c873',
+            successAcc: '#86efac'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
         }
-    </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #07070b; color: #e2e8f0; }
-        .mono { font-family: 'JetBrains Mono', monospace; }
-        
-        .glass-panel { background: rgba(20, 20, 35, 0.4); backdrop-filter: blur(16px); border: 1px solid rgba(213, 212, 255, 0.1); border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); }
-        
-        input[type="number"] { background: rgba(0,0,0,0.6); border: 1px solid rgba(213, 212, 255, 0.2); color: #fff; padding: 6px 12px; border-radius: 6px; width: 100%; outline: none; transition: border 0.2s; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; }
-        input[type="number"]:focus { border-color: #ffbbfe; box-shadow: 0 0 10px rgba(255, 187, 254, 0.2); }
-        input[type="checkbox"] { accent-color: #ffbbfe; width: 18px; height: 18px; cursor: pointer; }
-        
-        .stat-box { display: flex; flex-direction: column; justify-content: center; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 10px; border: 1px solid rgba(213, 212, 255, 0.05); }
-        .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
-        .stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-top: 4px; }
-        
-        canvas#arena { 
-            background: #0d0d14; 
-            border: 1px solid #d5d4ff; 
-            border-radius: 16px; 
-            width: 100%; 
-            height: auto;
-            aspect-ratio: 1 / 1;
-            box-shadow: 0 0 50px rgba(213, 212, 255, 0.05);
-        }
-        
-        /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: rgba(213, 212, 255, 0.2); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 187, 254, 0.5); }
-    </style>
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+    body { background-color: #08090c; color: #f8fafc; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    
+    .panel { background-color: #0b1114; border: 1px solid rgba(255,255,255,0.10); border-radius: 4px; }
+    .panel-muted { background-color: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.10); border-radius: 4px; }
+    
+    input[type="number"], input[type="text"] { 
+        background: rgba(255,255,255,0.035); 
+        border: 1px solid rgba(255,255,255,0.10); 
+        color: #f8fafc; 
+        padding: 6px 8px; 
+        border-radius: 2px; 
+        width: 100%; 
+        outline: none; 
+        transition: border 0.2s; 
+        font-family: 'JetBrains Mono', monospace; 
+        font-size: 0.8rem; 
+    }
+    input[type="number"]:focus { border-color: #c7ff56; box-shadow: 0 0 0 1px #c7ff56; }
+    input[type="checkbox"] { accent-color: #c7ff56; width: 14px; height: 14px; cursor: pointer; }
+    
+    /* Segmented buttons */
+    .seg-btn { background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.10); color: #94a3b8; transition: all 0.2s; cursor: pointer; }
+    .seg-btn:hover { background: rgba(255,255,255,0.08); color: #f8fafc; }
+    .seg-btn:focus-visible { outline: 2px solid #c7ff56; outline-offset: -2px; }
+    
+    .brush-label { border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.035); transition: all 0.2s; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    input[type="radio"]:checked + .brush-label { border-color: #73f4df; background: rgba(115,244,223,0.1); color: #73f4df; }
+    
+    canvas#arena { 
+        background: #0b1114; 
+        border: 1px solid rgba(255,255,255,0.10); 
+        border-radius: 4px; 
+        width: 100%; 
+        height: auto;
+        aspect-ratio: 1 / 1;
+    }
+    
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.20); }
+  </style>
 </head>
-<body class="min-h-screen p-4 lg:p-8 flex flex-col items-center overflow-x-hidden">
+<body class="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col items-center overflow-x-hidden">
 
+  <div class="w-full max-w-[1440px] flex flex-col gap-6">
+    
     <!-- HEADER -->
-    <header class="w-full max-w-7xl flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-        <div>
-            <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-white flex items-center gap-3">
-                <span class="text-vibrant">⌬</span> SILICON PETRI DISH
-            </h1>
-            <p class="text-lavender/70 text-sm mt-1 mono">NODE.JS V4 RESEARCH TERMINAL // GEOLOGY & MEMETICS EDITION</p>
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-borderSubtle pb-4">
+      <div>
+        <div class="text-[9px] uppercase tracking-[0.2em] text-textMuted mono mb-2">Research Terminal / Node.js Cluster</div>
+        <h1 class="text-2xl font-medium tracking-tight text-textMain">Silicon Petri Dish</h1>
+        <p class="text-sm text-textMuted mt-1">Autonomous evolutionary physics engine</p>
+      </div>
+      <div class="flex flex-col items-start md:items-end gap-1">
+        <div class="flex items-center gap-3">
+          <span id="geo-era" class="text-amberAcc font-medium text-sm">Era: Loading...</span>
+          <span class="w-1 h-1 rounded-full bg-borderSubtle"></span>
+          <span id="season-ui" class="text-cyanAcc font-medium text-sm">SPRING</span>
         </div>
-        <div class="flex items-center gap-4 text-right">
-            <div class="flex flex-col items-end">
-                <span id="geo-era" class="text-blush font-bold tracking-wide uppercase text-sm">Era: Loading...</span>
-                <span id="era-ui" class="text-xs text-lavender/50">🌍 EPOCH: Holocene</span>
-            </div>
-            <div class="h-10 w-px bg-lavender/20"></div>
-            <div class="flex flex-col items-start">
-                <span id="season-ui" class="text-vibrant font-bold tracking-wide uppercase text-sm">🌸 SPRING</span>
-                <span class="text-xs text-lavender/50 mono">T= <span id="start-time">Loading...</span></span>
-            </div>
+        <div class="text-xs text-textMuted mono mt-1">
+          <span id="era-ui">EPOCH: Holocene</span> | T= <span id="start-time">...</span>
         </div>
+      </div>
     </header>
 
-    <!-- MAIN GRID -->
-    <main class="w-full max-w-[1600px] grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+    <!-- METRICS STRIP -->
+    <section class="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div class="panel-muted p-4 flex flex-col group hover:border-borderSubtle/50 transition-colors">
+        <div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 bg-successAcc rounded-full"></span><span class="text-[10px] uppercase tracking-wider text-textMuted">Population</span></div>
+        <span id="alive" class="text-2xl mono text-textMain">0</span>
+      </div>
+      <div class="panel-muted p-4 flex flex-col group hover:border-borderSubtle/50 transition-colors">
+        <div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 bg-cyanAcc rounded-full"></span><span class="text-[10px] uppercase tracking-wider text-textMuted">Avg Size</span></div>
+        <span id="avg-size" class="text-2xl mono text-textMain">0.00</span>
+      </div>
+      <div class="panel-muted p-4 flex flex-col group hover:border-borderSubtle/50 transition-colors">
+        <div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 bg-amberAcc rounded-full"></span><span class="text-[10px] uppercase tracking-wider text-textMuted">Avg Speed</span></div>
+        <span id="avg-spd" class="text-2xl mono text-textMain">0.00</span>
+      </div>
+      <div class="panel-muted p-4 flex flex-col group hover:border-borderSubtle/50 transition-colors">
+        <div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 bg-fuchsiaAcc rounded-full"></span><span class="text-[10px] uppercase tracking-wider text-textMuted">Synapses</span></div>
+        <span id="avg-vis" class="text-2xl mono text-textMain">0</span>
+      </div>
+      <div class="panel-muted p-4 flex flex-col group hover:border-borderSubtle/50 transition-colors hidden md:flex">
+        <div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 bg-textMuted rounded-full"></span><span class="text-[10px] uppercase tracking-wider text-textMuted">Generations</span></div>
+        <span id="exts" class="text-2xl mono text-textMain">0</span>
+      </div>
+    </section>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6 items-start">
+      
+      <!-- LEFT: VISUALIZATIONS -->
+      <div class="flex flex-col gap-6">
         
-        <!-- LEFT PANEL: CANVAS & LIVE DATA (Col span 7 or 8) -->
-        <div class="xl:col-span-7 flex flex-col gap-6">
-            
-            <!-- CORE METRICS BAR -->
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                <div class="stat-box relative overflow-hidden group">
-                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity text-5xl text-white">◬</div>
-                    <span id="alive" class="stat-val text-white relative z-10">0</span>
-                    <span class="stat-label relative z-10 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-white"></span> Population</span>
-                </div>
-                <div class="stat-box relative overflow-hidden group">
-                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity text-5xl text-lavender">⚖</div>
-                    <span id="avg-size" class="stat-val text-lavender relative z-10">0.00</span>
-                    <span class="stat-label relative z-10 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-lavender"></span> Avg Size</span>
-                </div>
-                <div class="stat-box relative overflow-hidden group">
-                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity text-5xl text-vibrant">⚡</div>
-                    <span id="avg-spd" class="stat-val text-vibrant relative z-10">0.00</span>
-                    <span class="stat-label relative z-10 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-vibrant"></span> Avg Speed</span>
-                </div>
-                <div class="stat-box relative overflow-hidden group">
-                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity text-5xl text-blush">⚄</div>
-                    <span id="avg-vis" class="stat-val text-blush relative z-10">0</span>
-                    <span class="stat-label relative z-10 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blush"></span> Avg Synapses</span>
-                </div>
-                <div class="stat-box relative overflow-hidden group hidden lg:flex">
-                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity text-5xl text-white">⏳</div>
-                    <span id="exts" class="stat-val text-white relative z-10">0</span>
-                    <span class="stat-label relative z-10 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-gray-400"></span> Generations</span>
-                </div>
-            </div>
-
-            <!-- CANVAS -->
-            <div class="relative w-full">
-                <!-- Legend Overlay -->
-                <div class="absolute top-4 left-4 glass-panel p-3 text-xs mono text-lavender/80 flex flex-col gap-1 z-10 pointer-events-none">
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#00ffcc] inline-block"></span> Producers</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-white inline-block clip-triangle" style="clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></span> Herbivores</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-red-500 inline-block clip-star" style="clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);"></span> Carnivores</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-gray-400 inline-block"></span> Scavengers</div>
-                </div>
-                <canvas id="arena" width="3000" height="3000"></canvas>
-            </div>
-
-            <!-- SECONDARY METRICS -->
-            <div class="glass-panel p-4 grid grid-cols-3 md:grid-cols-6 gap-4 text-center">
-                <div><div class="text-xs text-lavender/50 uppercase">Births</div><div id="births" class="mono text-[#00ffcc] font-bold">0</div></div>
-                <div><div class="text-xs text-lavender/50 uppercase">Deaths</div><div id="deaths" class="mono text-[#ff3333] font-bold">0</div></div>
-                <div><div class="text-xs text-lavender/50 uppercase">Food</div><div id="food-cnt" class="mono text-[#00ffcc] font-bold">0</div></div>
-                <div><div class="text-xs text-lavender/50 uppercase">Poison</div><div id="poison-cnt" class="mono text-[#ff3333] font-bold">0</div></div>
-                <div><div class="text-xs text-lavender/50 uppercase">Max Age</div><div id="max-age" class="mono text-white font-bold">0</div></div>
-                <div><div class="text-xs text-lavender/50 uppercase">Max Lineage</div><div id="max-lineage" class="mono text-blush font-bold">0</div></div>
-                
-                <!-- Hidden variables required by JS -->
-                <div class="hidden"><span id="age"></span><span id="max-energy"></span><span id="aquatic"></span></div>
-            </div>
-
-
-            <!-- NEW: LIVE DATA MATRIX & ECOSYSTEM PIE -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Ecosystem Composition -->
-                <div class="glass-panel p-5 flex flex-col items-center">
-                    <h3 class="text-sm font-semibold text-vibrant mb-3 uppercase tracking-wider w-full text-left">Ecosystem Composition</h3>
-                    <div class="relative w-full max-w-[200px] aspect-square">
-                        <canvas id="trophic-chart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Top Dynasties Matrix -->
-                <div class="glass-panel p-5 overflow-hidden flex flex-col">
-                    <h3 class="text-sm font-semibold text-vibrant mb-3 uppercase tracking-wider">Apex Dynasties (Data Matrix)</h3>
-                    <div class="overflow-y-auto flex-grow pr-2 custom-scrollbar">
-                        <table class="w-full text-left text-xs mono text-lavender/80">
-                            <thead class="sticky top-0 bg-[#07070b]/95 backdrop-blur text-vibrant/70 border-b border-lavender/20 pb-2">
-                                <tr>
-                                    <th class="py-2 px-1">Fam ID</th>
-                                    <th class="py-2 px-1">DNA</th>
-                                    <th class="py-2 px-1">Pop</th>
-                                    <th class="py-2 px-1">Avg Size</th>
-                                    <th class="py-2 px-1">Max Age</th>
-                                </tr>
-                            </thead>
-                            <tbody id="matrix-body" class="divide-y divide-lavender/10">
-                                <tr><td colspan="5" class="py-2 text-center">Loading Data Matrix...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- NEW: NEURAL ARCHITECTURE VISUALIZER -->
-            <div class="glass-panel p-5">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-sm font-semibold text-blush uppercase tracking-wider">Realtime Neural Architecture</h3>
-                    <span class="text-[10px] text-lavender/50 mono bg-black/30 px-2 py-1 rounded">Select organism with Lineage Trace</span>
-                </div>
-                <div class="w-full bg-[#050508] border border-lavender/10 rounded-lg relative overflow-hidden flex justify-center items-center" style="height: 300px;">
-                    <canvas id="brain-network" width="800" height="300" class="absolute w-full h-full object-contain"></canvas>
-                    <div id="brain-overlay" class="absolute pointer-events-none text-lavender/30 text-sm mono">Awaiting telemetry...</div>
-                </div>
-            </div>
-            <!-- CHART & OBSERVER LOG -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="glass-panel p-5 flex flex-col h-64">
-                    <h3 class="text-sm font-semibold text-vibrant mb-3 uppercase tracking-wider">Evolutionary Trajectory</h3>
-                    <div class="relative w-full flex-grow">
-                        <canvas id="metricsChart"></canvas>
-                    </div>
-                </div>
-                <div class="glass-panel p-5 flex flex-col h-64">
-                    <h3 class="text-sm font-semibold text-lavender mb-3 uppercase tracking-wider">Observer Drone Logs</h3>
-                    <div id="log-box" class="flex-grow overflow-y-auto text-xs mono space-y-1 pr-2"></div>
-                </div>
-            </div>
-            
-            <div class="glass-panel p-5 mb-8">
-                <h3 class="text-sm font-semibold text-blush mb-3 uppercase tracking-wider">Muller Plot (Species Demographics)</h3>
-                <canvas id="graph" width="900" height="150" class="w-full h-auto bg-black/50 rounded-lg border border-lavender/20"></canvas>
-            </div>
+        <!-- CANVAS -->
+        <div class="relative w-full">
+          <div class="absolute top-4 left-4 panel-muted p-3 text-[10px] mono text-textMuted flex flex-col gap-2 z-10 pointer-events-none">
+            <div class="flex items-center gap-2"><span class="w-2 h-2 bg-cyanAcc rounded-full"></span> Producers</div>
+            <div class="flex items-center gap-2"><span class="w-2 h-2 bg-textMain rounded-none" style="clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></span> Herbivores</div>
+            <div class="flex items-center gap-2"><span class="w-2 h-2 bg-fuchsiaAcc rounded-none" style="clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);"></span> Carnivores</div>
+            <div class="flex items-center gap-2"><span class="w-2 h-2 bg-amberAcc rounded-none"></span> Scavengers</div>
+          </div>
+          <canvas id="arena" width="3000" height="3000"></canvas>
         </div>
 
-        <!-- RIGHT PANEL: CONTROLS & GOD MODE (Col span 5 or 4) -->
-        <div class="xl:col-span-5 flex flex-col gap-6">
-            
-            <!-- OMNIPOTENCE TOOLBAR -->
-            <div class="glass-panel p-6 border-t-2 border-t-vibrant">
-                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <span class="text-vibrant">⚡</span> Divine Intervention
-                </h3>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-                    <button id="btn-preset-water" class="py-2 px-3 bg-blue-900/50 hover:bg-blue-800 text-blue-200 text-sm font-semibold rounded border border-blue-500/30 transition-colors">🌊 Water World</button>
-                    <button id="btn-preset-dark" class="py-2 px-3 bg-gray-900/80 hover:bg-gray-800 text-gray-300 text-sm font-semibold rounded border border-gray-600 transition-colors">🦇 Dark Forest</button>
-                    <button id="btn-preset-eden" class="py-2 px-3 bg-emerald-900/50 hover:bg-emerald-800 text-emerald-200 text-sm font-semibold rounded border border-emerald-500/30 transition-colors">🍎 Garden of Eden</button>
-                </div>
-                
-                <div class="flex gap-3 mb-6">
-                    <button id="btn-save" class="flex-1 py-2 bg-blush/20 hover:bg-blush/30 text-blush text-sm font-semibold rounded border border-blush/50 transition-colors">💾 Snapshot</button>
-                    <button id="btn-load-ui" class="flex-1 py-2 bg-lavender/10 hover:bg-lavender/20 text-lavender text-sm font-semibold rounded border border-lavender/30 transition-colors" onclick="document.getElementById('file-load').click()">📂 Restore</button>
-                    <input type="file" id="file-load" class="hidden" accept=".json">
-                </div>
-
-                <div class="bg-black/40 rounded-lg p-4 border border-lavender/10">
-                    <div class="text-xs text-lavender/70 uppercase mb-3 font-semibold tracking-wider">Active God Brush</div>
-                    <div class="grid grid-cols-2 gap-3 text-sm">
-                        <label class="flex items-center gap-2 cursor-pointer text-white/80 hover:text-white transition-colors"><input type="radio" name="brush" value="none" checked> <span>Lineage Trace</span></label>
-                        <label class="flex items-center gap-2 cursor-pointer text-red-400 hover:text-red-300 transition-colors"><input type="radio" name="brush" value="smite"> <span>⚡ Smite</span></label>
-                        <label class="flex items-center gap-2 cursor-pointer text-green-400 hover:text-green-300 transition-colors"><input type="radio" name="brush" value="mutate"> <span>☢️ Mutate</span></label>
-                        <label class="flex items-center gap-2 cursor-pointer text-cyan-400 hover:text-cyan-300 transition-colors"><input type="radio" name="brush" value="food"> <span>🍏 Drop Food</span></label>
-                    </div>
-                </div>
-                
-                <div class="flex gap-3 mt-5">
-                    <button id="rad-btn" class="flex-1 py-3 bg-red-600/80 hover:bg-red-500 text-white text-xs font-bold rounded uppercase tracking-wider shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all">☢️ Rad Burst</button>
-                    <button id="meteor-btn" class="flex-1 py-3 bg-orange-600/80 hover:bg-orange-500 text-white text-xs font-bold rounded uppercase tracking-wider shadow-[0_0_15px_rgba(234,88,12,0.5)] transition-all">☄️ Meteor</button>
-                </div>
+        <!-- SECONDARY PANELS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="panel p-5 flex flex-col h-[280px]">
+            <h3 class="text-xs font-medium text-textMain mb-4">Lineage Dynamics</h3>
+            <div class="relative w-full flex-grow">
+              <canvas id="metricsChart"></canvas>
             </div>
-
-            <!-- SIMULATION ENGINE -->
-            <div class="glass-panel p-6">
-                <div class="flex justify-between items-center mb-5">
-                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                        <span class="text-blush">⚙️</span> Engine Core
-                    </h3>
-                    <span id="sim-status" class="flex items-center gap-2 px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30 uppercase tracking-wide shadow-[0_0_10px_rgba(34,197,94,0.3)]">
-        <span class="relative flex h-2 w-2">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-        </span>
-        <span id="sim-status-text">Running</span>
-    </span>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <div><label class="text-xs text-lavender/70 mono">ARENA_SIZE</label><input type="number" id="inp-arena" value="3000"></div>
-                    <div><label class="text-xs text-lavender/70 mono">MAX_CREATURES</label><input type="number" id="inp-creatures" value="600"></div>
-                    <div><label class="text-xs text-lavender/70 mono">NUM_ITEMS</label><input type="number" id="inp-items" value="1500"></div>
-                    <div><label class="text-xs text-lavender/70 mono">TICK_RATE_MS</label><input type="number" id="inp-tick" value="5"></div>
-                    <div><label class="text-xs text-lavender/70 mono">INIT_FERTILIZER</label><input type="number" id="inp-fert" value="10000"></div>
-                    <div><label class="text-xs text-lavender/70 mono">BASE_FOOD_SPAWN</label><input type="number" step="0.01" id="inp-food-spawn" value="0.2"></div>
-                </div>
-
-                <!-- Accordion/Details for advanced config to save space -->
-                <div class="bg-black/30 rounded-lg border border-lavender/10 mb-6">
-                    <div class="p-3 text-sm font-semibold text-lavender border-b border-lavender/10">
-                        Advanced Initializers
-                    </div>
-                    <div class="p-3 grid grid-cols-2 gap-4">
-                        <div><label class="text-xs text-lavender/50 mono">START_ALIVE</label><input type="number" id="inp-start-alive" value="400"></div>
-                        <div><label class="text-xs text-lavender/50 mono">START_ITEMS</label><input type="number" id="inp-start-items" value="400"></div>
-                        <div><label class="text-xs text-lavender/50 mono">START_ENERGY</label><input type="number" id="inp-start-energy" value="1000"></div>
-                        <div><label class="text-xs text-lavender/50 mono">METABOLISM_MULT</label><input type="number" step="0.1" id="inp-metabolism" value="1.0"></div>
-                        <div><label class="text-xs text-lavender/50 mono">MUTATION_MULT</label><input type="number" step="0.1" id="inp-mutation" value="1.0"></div>
-                        <div><label class="text-xs text-lavender/50 mono">MITOSIS_MULT</label><input type="number" step="0.1" id="inp-mitosis" value="1.0"></div>
-                        <div><label class="text-xs text-lavender/50 mono">MATING_MULT</label><input type="number" step="0.1" id="inp-mating" value="1.0"></div>
-                        <div><label class="text-xs text-lavender/50 mono">FOOD_YIELD</label><input type="number" id="inp-food-yield" value="60"></div>
-                        <div><label class="text-xs text-lavender/50 mono">POISON_YIELD</label><input type="number" id="inp-poison-yield" value="-80"></div>
-                        <div><label class="text-xs text-lavender/50 mono">CORPSE_YIELD</label><input type="number" id="inp-corpse-yield" value="60"></div>
-                    </div>
-                </div>
-
-                <h4 class="text-xs font-semibold text-vibrant uppercase tracking-wider mb-3">Mechanic Toggles</h4>
-                <div class="grid grid-cols-2 gap-2 mb-6 bg-black/30 p-4 rounded-lg border border-lavender/10 text-sm text-lavender/90">
-                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-terrain" checked> TERRAIN (V3)</label>
-                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-seasons" checked> SEASONS (V3)</label>
-                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-eras" checked> ERAS (V3)</label>
-                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-virus" checked> VIRUS (V3)</label>
-                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-parasitism" checked> PARASITISM (V3)</label>
-                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-predation" checked> PREDATION (V2)</label>
-                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-photosynthesis" checked> FLORA (V2)</label>
-                    <label class="flex items-center gap-2"><input type="checkbox" id="chk-scavenging" checked> SCAVENGING (V2)</label>
-                </div>
-
-                <div class="bg-black/30 rounded-lg border border-lavender/10 mb-6">
-                    <div class="p-3 text-sm font-semibold text-lavender border-b border-lavender/10">
-                        God-Mode Physics Tuning
-                    </div>
-                    <div class="p-3 grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">METAB_RATE</label><input type="number" step="0.01" id="inp-metab-rate" value="0.05"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">MOVE_COST</label><input type="number" step="0.001" id="inp-move-rate" value="0.01"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">VISION_COST</label><input type="number" step="0.000001" id="inp-vis-rate" value="0.000001"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">AGE_TAX</label><input type="number" step="0.00001" id="inp-age-rate" value="0.00001"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">BRAIN_TAX</label><input type="number" step="0.0001" id="inp-brain-rate" value="0.0001"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">ATK_COST</label><input type="number" id="inp-atk-cost" value="5"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">SCUFFLE_COST</label><input type="number" id="inp-scuffle" value="10"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">SYMBIOSIS_TAX</label><input type="number" id="inp-symbiosis" value="2"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">EGG_COST</label><input type="number" id="inp-parasite-cost" value="200"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">MIN_SPEED</label><input type="number" step="0.1" id="inp-min-spd" value="0.5"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">MAX_SPEED</label><input type="number" step="0.1" id="inp-max-spd" value="4.0"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">MIN_VIS</label><input type="number" step="1" id="inp-min-vis" value="20"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">MAX_VIS</label><input type="number" step="1" id="inp-max-vis" value="200"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">MAX_NODES</label><input type="number" id="inp-max-nodes" value="200"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">DROWNING</label><input type="number" step="0.05" id="inp-drown" value="0.1"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">OVERPOP_CAP</label><input type="number" id="inp-overpop" value="160"></div>
-                        <div><label class="text-[10px] text-lavender/50 mono block truncate">CHLORO_YIELD</label><input type="number" step="0.05" id="inp-chloroplast" value="0.1"></div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <button id="btn-update" class="py-2 bg-blush/20 text-blush text-sm font-bold rounded border border-blush/30 hover:bg-blush/30 transition-colors">Apply Config</button>
-                    <button id="btn-restart" class="py-2 bg-vibrant/20 text-vibrant text-sm font-bold rounded border border-vibrant/30 hover:bg-vibrant/30 transition-colors">Restart Sim</button>
-                    <button id="btn-start" class="py-2 bg-green-500/20 text-green-400 text-sm font-bold rounded border border-green-500/30 hover:bg-green-500/30 transition-colors">Start</button>
-                    <button id="btn-stop" class="py-2 bg-red-500/20 text-red-400 text-sm font-bold rounded border border-red-500/30 hover:bg-red-500/30 transition-colors">Stop</button>
-                </div>
-            </div>
-
-            <!-- AI ANALYSIS -->
-            <div class="glass-panel p-6 border-t-2 border-t-lavender">
-                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <span class="text-lavender">🧠</span> AI Evolutionary Analysis
-                </h3>
-                <div id="ai-readout" class="text-sm text-lavender/80 leading-relaxed font-mono whitespace-pre-wrap">Awaiting temporal milestones...</div>
-            </div>
-
+          </div>
+          <div class="panel p-5 flex flex-col h-[280px]">
+            <h3 class="text-xs font-medium text-textMain mb-4">Observer Log</h3>
+            <div id="log-box" class="flex-grow overflow-y-auto text-[11px] mono space-y-2 pr-2 text-textMuted leading-relaxed"></div>
+          </div>
         </div>
+
+        <!-- MULLER PLOT -->
+        <div class="panel p-5">
+          <h3 class="text-xs font-medium text-textMain mb-4">Species Demographics</h3>
+          <canvas id="graph" width="900" height="120" class="w-full h-auto border border-borderSubtle bg-appBg rounded"></canvas>
+        </div>
+        
+        <!-- APEX DYNASTIES -->
+        <div class="panel p-5 overflow-hidden flex flex-col">
+          <h3 class="text-xs font-medium text-textMain mb-4">Lineage Leaders (Data Matrix)</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs mono text-textMuted min-w-[500px]">
+              <thead class="border-b border-borderSubtle">
+                <tr>
+                  <th class="pb-3 font-normal">ID</th>
+                  <th class="pb-3 font-normal">Genetic Marker</th>
+                  <th class="pb-3 font-normal">Population</th>
+                  <th class="pb-3 font-normal">Avg Size</th>
+                  <th class="pb-3 font-normal">Max Age</th>
+                </tr>
+              </thead>
+              <tbody id="matrix-body" class="divide-y divide-borderSubtle/50">
+                <tr><td colspan="5" class="py-4 text-center">Awaiting telemetry...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: CONTROLS & RAIL -->
+      <aside class="flex flex-col gap-6 xl:sticky xl:top-6">
+        
+        <!-- DIVINE INTERVENTION -->
+        <section class="panel p-5">
+          <h3 class="text-xs font-medium text-fuchsiaAcc mb-4">Intervention Tools</h3>
+          
+          <div class="text-[10px] uppercase tracking-wider text-textMuted mb-2">Presets</div>
+          <div class="flex bg-surfaceMuted p-1 rounded-sm border border-borderSubtle mb-5">
+            <button id="btn-preset-water" class="flex-1 seg-btn text-xs py-1.5 rounded-sm">Water</button>
+            <button id="btn-preset-dark" class="flex-1 seg-btn text-xs py-1.5 rounded-sm mx-1">Dark</button>
+            <button id="btn-preset-eden" class="flex-1 seg-btn text-xs py-1.5 rounded-sm">Eden</button>
+          </div>
+
+          <div class="text-[10px] uppercase tracking-wider text-textMuted mb-2">Active Brush</div>
+          <div class="grid grid-cols-2 gap-2 mb-5">
+            <label class="relative"><input type="radio" name="brush" value="none" checked class="peer sr-only"><div class="brush-label text-xs py-2 rounded-sm peer-focus-visible:ring-2 peer-focus-visible:ring-limeAcc">Trace</div></label>
+            <label class="relative"><input type="radio" name="brush" value="smite" class="peer sr-only"><div class="brush-label text-xs py-2 rounded-sm peer-focus-visible:ring-2 peer-focus-visible:ring-limeAcc">Smite</div></label>
+            <label class="relative"><input type="radio" name="brush" value="mutate" class="peer sr-only"><div class="brush-label text-xs py-2 rounded-sm peer-focus-visible:ring-2 peer-focus-visible:ring-limeAcc">Mutate</div></label>
+            <label class="relative"><input type="radio" name="brush" value="food" class="peer sr-only"><div class="brush-label text-xs py-2 rounded-sm peer-focus-visible:ring-2 peer-focus-visible:ring-limeAcc">Food</div></label>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button id="rad-btn" class="bg-surfaceMuted hover:bg-borderSubtle border border-amberAcc/50 text-amberAcc text-[10px] font-mono py-2 rounded-sm transition-colors">RAD BURST</button>
+            <button id="meteor-btn" class="bg-surfaceMuted hover:bg-borderSubtle border border-fuchsiaAcc/50 text-fuchsiaAcc text-[10px] font-mono py-2 rounded-sm transition-colors">METEOR</button>
+          </div>
+        </section>
+
+        <!-- ENGINE CORE -->
+        <section class="panel p-5">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xs font-medium text-limeAcc">Simulation Parameters</h3>
+            <span id="sim-status" class="flex items-center gap-2 text-[10px] font-mono text-textMuted">
+              <span class="w-2 h-2 rounded-full bg-successAcc relative"><span class="animate-ping absolute inset-0 rounded-full bg-successAcc opacity-75"></span></span>
+              <span id="sim-status-text">RUNNING</span>
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 mb-5">
+            <div><label class="text-[9px] uppercase tracking-wider text-textMuted block mb-1">Arena Size</label><input type="number" id="inp-arena" value="3000" aria-label="Arena Size"></div>
+            <div><label class="text-[9px] uppercase tracking-wider text-textMuted block mb-1">Max Pop</label><input type="number" id="inp-creatures" value="600" aria-label="Max Population"></div>
+            <div><label class="text-[9px] uppercase tracking-wider text-textMuted block mb-1">Items</label><input type="number" id="inp-items" value="1500" aria-label="Items"></div>
+            <div><label class="text-[9px] uppercase tracking-wider text-textMuted block mb-1">Tick (ms)</label><input type="number" id="inp-tick" value="5" aria-label="Tick rate"></div>
+          </div>
+
+          <div class="text-[10px] uppercase tracking-wider text-textMuted mb-2">Mechanic Toggles</div>
+          <div class="grid grid-cols-2 gap-2 mb-5">
+            <label class="flex items-center gap-2 text-[11px] text-textMain cursor-pointer"><input type="checkbox" id="chk-terrain" checked> Terrain</label>
+            <label class="flex items-center gap-2 text-[11px] text-textMain cursor-pointer"><input type="checkbox" id="chk-seasons" checked> Seasons</label>
+            <label class="flex items-center gap-2 text-[11px] text-textMain cursor-pointer"><input type="checkbox" id="chk-eras" checked> Eras</label>
+            <label class="flex items-center gap-2 text-[11px] text-textMain cursor-pointer"><input type="checkbox" id="chk-virus" checked> Virus</label>
+            <label class="flex items-center gap-2 text-[11px] text-textMain cursor-pointer"><input type="checkbox" id="chk-parasitism" checked> Parasites</label>
+            <label class="flex items-center gap-2 text-[11px] text-textMain cursor-pointer"><input type="checkbox" id="chk-predation" checked> Predation</label>
+            <label class="flex items-center gap-2 text-[11px] text-textMain cursor-pointer"><input type="checkbox" id="chk-photosynthesis" checked> Flora</label>
+            <label class="flex items-center gap-2 text-[11px] text-textMain cursor-pointer"><input type="checkbox" id="chk-scavenging" checked> Scavenging</label>
+          </div>
+
+          <div class="text-[10px] uppercase tracking-wider text-textMuted mb-2">Constants</div>
+          <div class="grid grid-cols-2 gap-3 mb-6 max-h-[160px] overflow-y-auto pr-2 custom-scrollbar">
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">FOOD_YIELD</label><input type="number" id="inp-food-yield" value="60"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">POISON_YIELD</label><input type="number" id="inp-poison-yield" value="-80"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">CORPSE_YIELD</label><input type="number" id="inp-corpse-yield" value="60"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">METAB_RATE</label><input type="number" step="0.01" id="inp-metab-rate" value="0.05"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">MOVE_COST</label><input type="number" step="0.001" id="inp-move-rate" value="0.01"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">VISION_COST</label><input type="number" step="0.000001" id="inp-vis-rate" value="0.000001"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">AGE_TAX</label><input type="number" step="0.00001" id="inp-age-rate" value="0.00001"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">BRAIN_TAX</label><input type="number" step="0.0001" id="inp-brain-rate" value="0.0001"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">MAX_NODES</label><input type="number" id="inp-max-nodes" value="200"></div>
+            <div><label class="text-[9px] font-mono text-textMuted block mb-1">OVERPOP_CAP</label><input type="number" id="inp-overpop" value="160"></div>
+            
+            <!-- Hidden inputs so JS doesn't break -->
+            <div class="hidden">
+              <input type="number" id="inp-fert" value="10000">
+              <input type="number" id="inp-start-alive" value="400">
+              <input type="number" id="inp-start-items" value="400">
+              <input type="number" id="inp-start-energy" value="1000">
+              <input type="number" step="0.01" id="inp-food-spawn" value="0.2">
+              <input type="number" step="0.1" id="inp-metabolism" value="1.0">
+              <input type="number" step="0.1" id="inp-mutation" value="1.0">
+              <input type="number" step="0.1" id="inp-mitosis" value="1.0">
+              <input type="number" step="0.1" id="inp-mating" value="1.0">
+              <input type="number" id="inp-atk-cost" value="5">
+              <input type="number" id="inp-scuffle" value="10">
+              <input type="number" id="inp-symbiosis" value="2">
+              <input type="number" id="inp-parasite-cost" value="200">
+              <input type="number" step="0.1" id="inp-min-spd" value="0.5">
+              <input type="number" step="0.1" id="inp-max-spd" value="4.0">
+              <input type="number" step="1" id="inp-min-vis" value="20">
+              <input type="number" step="1" id="inp-max-vis" value="200">
+              <input type="number" step="0.05" id="inp-drown" value="0.1">
+              <input type="number" step="0.05" id="inp-chloroplast" value="0.1">
+            </div>
+          </div>
+          
+          <button id="btn-update" class="w-full py-2 bg-limeAcc text-surface text-xs font-semibold rounded-sm mb-2 hover:bg-[#b0f040] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-limeAcc focus-visible:ring-offset-2 focus-visible:ring-offset-appBg">APPLY CONFIGURATION</button>
+          <div class="flex gap-2">
+            <button id="btn-start" class="flex-1 py-1.5 bg-surfaceMuted border border-borderSubtle text-textMain hover:bg-borderSubtle text-xs rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-limeAcc">▶</button>
+            <button id="btn-stop" class="flex-1 py-1.5 bg-surfaceMuted border border-borderSubtle text-textMain hover:bg-borderSubtle text-xs rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-limeAcc">⏸</button>
+            <button id="btn-restart" class="flex-[2] py-1.5 bg-surfaceMuted border border-borderSubtle text-textMain hover:bg-borderSubtle text-xs rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-limeAcc">RESTART</button>
+          </div>
+        </section>
+
+        <!-- NEURAL ARCHITECTURE -->
+        <section class="panel p-5">
+          <h3 class="text-xs font-medium text-textMain mb-4">Neural Architecture</h3>
+          <div class="w-full bg-appBg border border-borderSubtle rounded relative overflow-hidden flex justify-center items-center h-[180px]">
+            <canvas id="brain-network" width="300" height="180" class="absolute w-full h-full object-contain"></canvas>
+            <div id="brain-overlay" class="absolute pointer-events-none text-textMuted text-[10px] mono">Select organism to inspect</div>
+          </div>
+        </section>
+        
+        <!-- ECOSYSTEM COMPOSITION -->
+        <section class="panel p-5">
+          <h3 class="text-xs font-medium text-textMain mb-4">Trophic Distribution</h3>
+          <div class="relative w-full aspect-square max-h-[160px] mx-auto">
+            <canvas id="trophic-chart"></canvas>
+          </div>
+        </section>
+
+      </aside>
     </main>
 
-    <script>
-      window.onerror = function(msg, url, lineNo, columnNo, error) {
-          alert('Error: ' + msg + ' at line ' + lineNo);
-      };
-      const socket = io();
-    
-        
-        function getGeoState(epoch) {
-            let cycle = epoch % 70000;
-            if (cycle < 10000) return { name: "Primordial Soup", seaLevel: -0.15 };
-            if (cycle < 25000) return { name: "Snowball Earth", seaLevel: 0.2 };
-            if (cycle < 40000) return { name: "Cambrian Bloom", seaLevel: 0 };
-            if (cycle < 55000) return { name: "Carboniferous (High O2)", seaLevel: 0.1 };
-            if (cycle < 58000) return { name: "The Great Dying (Permian)", seaLevel: -0.1 };
-            return { name: "Cenozoic (Modern)", seaLevel: 0 };
-        }
+    <!-- NOTIFICATION FOOTER -->
+    <footer class="w-full bg-surface border-t border-borderSubtle p-3 flex justify-between items-center text-xs sticky bottom-0 z-50">
+      <div class="flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-successAcc animate-pulse"></span>
+        <span class="text-textMuted mono">SYSTEM NOMINAL</span>
+      </div>
+      <div class="flex gap-4">
+        <button id="btn-save" class="text-textMuted hover:text-textMain transition-colors flex items-center gap-1"><span class="text-sm">💾</span> <span class="hidden sm:inline">Save</span></button>
+        <button id="btn-load-ui" class="text-textMuted hover:text-textMain transition-colors flex items-center gap-1" onclick="document.getElementById('file-load').click()"><span class="text-sm">📂</span> <span class="hidden sm:inline">Load</span></button>
+      </div>
+    </footer>
+  </div>
 
-        function getElevation(x, y, geologicEpoch) {
-            let state = getGeoState(geologicEpoch);
-            return Math.sin(x/400 + geologicEpoch*0.001) * Math.cos(y/400 - geologicEpoch*0.0005) + Math.sin(x/150 + y/150)*0.2 + state.seaLevel;
-        }
+  <div class="hidden">
+      <!-- Hidden elements from old UI to prevent JS errors -->
+      <span id="food-cnt"></span><span id="poison-cnt"></span><span id="ai-readout"></span>
+  </div>
 
-
-        let terrainCanvas = document.createElement('canvas');
-        terrainCanvas.width = 3000;
-        terrainCanvas.height = 3000;
-        let terrainCtx = terrainCanvas.getContext('2d');
-        let lastGeoEpoch = -1;
-
-        function renderTerrain(geoEpoch) {
-            if (geoEpoch === lastGeoEpoch) return;
-            lastGeoEpoch = geoEpoch;
-            const cellSize = 50;
-            for (let y = 0; y < 3000; y += cellSize) {
-                for (let x = 0; x < 3000; x += cellSize) {
-                    let elev = getElevation(x, y, geoEpoch);
-                    if (elev < 0) { // Sea
-                        let depth = Math.min(1.0, -elev * 1.5);
-                        terrainCtx.fillStyle = `rgba(0, 50, ${100 + depth*155}, 1)`;
-                    } else { // Land
-                        let height = Math.min(1.0, elev * 1.5);
-                        terrainCtx.fillStyle = `rgba(${50 + height*50}, ${100 + height*100}, 50, 1)`;
-                    }
-                    terrainCtx.fillRect(x, y, cellSize, cellSize);
-                }
-            }
-        }
-
-      const canvas = document.getElementById('arena');
-    const ctx = canvas.getContext('2d');
-    
-    const gCanvas = document.getElementById('graph');
-    const gCtx = gCanvas.getContext('2d');
-    
-    // Fill with empty bucket objects so mapping p.total doesn't return NaN
-    let popHistory = new Array(1200).fill(null).map(() => ({ total: 0, r: 0, y: 0, g: 0, c: 0, b: 0, m: 0 }));
-    
-    // Smooth rendering interpolation mapping
-    let creatures = [];
-    let items = [];
-    
-    socket.on('state', (data) => {
-        document.getElementById('alive').innerText = data.a;
-        document.getElementById('exts').innerText = data.e;
-        document.getElementById('age').innerText = data.age + "s";
-        document.getElementById('births').innerText = data.b;
-        document.getElementById('deaths').innerText = data.d;
-        document.getElementById('avg-size').innerText = (data.asz || 0).toFixed(2);
-        document.getElementById('avg-spd').innerText = (data.asp || 0).toFixed(2);
-        document.getElementById('avg-vis').innerText = Math.floor(data.aconn || 0);
-        if (data.geoName) document.getElementById('geo-era').innerText = 'Era: ' + data.geoName;
-        if (document.getElementById('aquatic')) document.getElementById('aquatic').innerText = (data.aaquatic || 0).toFixed(2);
-        
-        document.getElementById('food-cnt').innerText = data.fC;
-        document.getElementById('poison-cnt').innerText = data.pC;
-        document.getElementById('max-energy').innerText = (data.mE || 0).toFixed(0);
-        document.getElementById('max-age').innerText = data.mA || 0;
-        document.getElementById('max-lineage').innerText = data.mL || 0;
-        
-        if (data.startT) {
-            let d = new Date(data.startT);
-            document.getElementById('start-time').innerText = d.toLocaleString();
-        }
-        
-        if (data.era !== undefined) {
-            let eUI = document.getElementById('era-ui');
-            if (data.era === 0) { eUI.innerText = '🌍 EPOCH: Holocene (Normal Climate)'; eUI.style.color = '#aaa'; }
-            if (data.era === 1) { eUI.innerText = '🧊 EPOCH: ICE AGE (Extreme Freezing, 50% Food)'; eUI.style.color = '#00ffff'; }
-            if (data.era === 2) { eUI.innerText = '🔥 EPOCH: GREENHOUSE (Extreme Heatwaves)'; eUI.style.color = '#ff3300'; }
-        }
-        
-        if (data.season !== undefined) {
-            let sUI = document.getElementById('season-ui');
-            if (data.season === 0) { sUI.innerText = '🌸 SPRING (Abundant Food)'; sUI.style.color = '#ff99cc'; document.body.style.borderTop = '5px solid #ff99cc'; }
-            if (data.season === 1) { sUI.innerText = '☀️ SUMMER (Overheating)'; sUI.style.color = '#ffcc00'; document.body.style.borderTop = '5px solid #ffcc00'; }
-            if (data.season === 2) { sUI.innerText = '🍂 AUTUMN (Decay)'; sUI.style.color = '#ff9933'; document.body.style.borderTop = '5px solid #ff9933'; }
-            if (data.season === 3) { sUI.innerText = '❄️ WINTER (Famine & Viruses)'; sUI.style.color = '#99ccff'; document.body.style.borderTop = '5px solid #99ccff'; }
-        }
-        
-        // Update Graph with Color Buckets (Muller Plot)
-        let buckets = { r: 0, y: 0, g: 0, c: 0, b: 0, m: 0 };
-        creatures = data.c;
-        items = data.f;
-        
-        creatures.forEach(c => {
-            let h = c[4]; // Hue
-            if (h >= 330 || h < 30) buckets.r++;
-            else if (h >= 30 && h < 90) buckets.y++;
-            else if (h >= 90 && h < 150) buckets.g++;
-            else if (h >= 150 && h < 210) buckets.c++;
-            else if (h >= 210 && h < 270) buckets.b++;
-            else buckets.m++;
-        });
-        
-
-        // --- TROPHIC & MATRIX LOGIC ---
-        let trophicCounts = { prod: 0, herb: 0, carn: 0, scav: 0, aqua: 0 };
-        let familyMap = {};
-
-        creatures.forEach(c => {
-            let x = c[0], y = c[1], angle = c[2], size = c[3], hue = c[4], infected = c[5], trophic = c[6], vision = c[7] || 50, famId = c[8];
-            
-            // Trophic
-            if (trophic === 1) trophicCounts.prod++;
-            else if (trophic === 4) trophicCounts.carn++;
-            else if (trophic === 3) trophicCounts.scav++;
-            else if (trophic === 5) trophicCounts.aqua++;
-            else trophicCounts.herb++;
-
-            // Matrix
-            if (!familyMap[famId]) familyMap[famId] = { id: famId, pop: 0, sizeSum: 0, maxAge: 0, hue: hue };
-            familyMap[famId].pop++;
-            familyMap[famId].sizeSum += size;
-            // Note: server doesn't send age in compressed array. We use lineage or just size for now.
-        });
-
-        // Update Trophic Chart
-        if (window.trophicChart) {
-            window.trophicChart.data.datasets[0].data = [
-                trophicCounts.prod, trophicCounts.herb, trophicCounts.carn, trophicCounts.scav, trophicCounts.aqua
-            ];
-            window.trophicChart.update();
-        }
-
-        // Update Data Matrix
-        let famArr = Object.values(familyMap).sort((a,b) => b.pop - a.pop).slice(0, 8);
-        let matrixBody = document.getElementById('matrix-body');
-        if (matrixBody) {
-            matrixBody.innerHTML = famArr.map(f => `
-                <tr class="hover:bg-lavender/5 transition-colors border-b border-lavender/5">
-                    <td class="py-2 px-1 font-bold text-lavender/70">#${f.id}</td>
-                    <td class="py-2 px-1"><span class="inline-block w-4 h-4 rounded-full border border-white/20 shadow-lg" style="background: hsl(${f.hue}, 100%, 50%);"></span></td>
-                    <td class="py-2 px-1 font-bold text-white">${f.pop}</td>
-                    <td class="py-2 px-1">${(f.sizeSum / f.pop).toFixed(2)}</td>
-                    <td class="py-2 px-1 text-lavender/30">N/A</td>
-                </tr>
-            `).join('');
-        }
-        
-        // --- END TROPHIC & MATRIX LOGIC ---
-        popHistory.push({ total: data.a, ...buckets });
-        if(popHistory.length > 1200) popHistory.shift();
-        
-        gCtx.clearRect(0, 0, 900, 150);
-        
-        let maxPop = Math.max(...popHistory.map(p => p.total), 50);
-        let barWidth = 900 / 1200;
-        
-        // Draw Stacked Area Columns
-        for(let i=0; i<popHistory.length; i++) {
-            let p = popHistory[i];
-            let x = i * barWidth;
-            let currentY = 150; // Start drawing from the bottom
-            
-            let colorStacks = [
-                { count: p.r, fill: '#ff3333' }, // Red
-                { count: p.y, fill: '#ffff33' }, // Yellow
-                { count: p.g, fill: '#33ff33' }, // Green
-                { count: p.c, fill: '#33ffff' }, // Cyan
-                { count: p.b, fill: '#3333ff' }, // Blue
-                { count: p.m, fill: '#ff33ff' }  // Magenta
-            ];
-            
-            colorStacks.forEach(col => {
-                if (col.count > 0) {
-                    let h = (col.count / maxPop) * 130;
-                    gCtx.fillStyle = col.fill;
-                    gCtx.fillRect(x, currentY - h, Math.ceil(barWidth), h);
-                    currentY -= h; // Stack the next color on top
-                }
-            });
-        }
-        
-        gCtx.fillStyle = "rgba(255, 255, 255, 0.8)";
-        gCtx.font = "12px monospace";
-        gCtx.fillText("Species Evolution History (Live) - Peak: " + maxPop, 10, 20);
-        
-        // --- Evolutionary Observer Logic ---
-        if (typeof window.lastGen === 'undefined') {
-            window.lastGen = data.e;
-            window.lastDom = "";
-            window.lastLineage = 0;
-            window.lastConn = 4;
-            window.logEvent = function(msg, color="#fff") {
-                let box = document.getElementById('log-box');
-                if (!box) return;
-                let time = new Date().toLocaleTimeString();
-                let entry = document.createElement('div');
-                entry.innerHTML = `<span style="color:#555">[${time}]</span> <span style="color:${color}">${msg}</span>`;
-                box.appendChild(entry);
-                box.scrollTop = box.scrollHeight;
-                if(box.childNodes.length > 50) box.removeChild(box.firstChild);
-            };
-            window.logEvent("Observer Drone online. Monitoring primordial soup...", "#00ffcc");
-        }
-        
-        if (data.e > window.lastGen) {
-            window.logEvent(`MASS EXTINCTION EVENT #${data.e}. All life perished. Seeding new primitive ancestors.`, "#ff3333");
-            window.lastGen = data.e;
-            window.lastLineage = 0;
-            window.lastConn = 4;
-        }
-        
-        if (data.mL > window.lastLineage + 10) {
-            window.logEvent(`Life is persisting! A lineage has survived ${data.mL} generations deep.`, "#33ff33");
-            window.lastLineage = data.mL;
-        }
-        
-        if (data.aconn >= window.lastConn + 2) {
-            window.logEvent(`EVOLUTIONARY LEAP: Average brain complexity grew to ${Math.floor(data.aconn)} connections.`, "#ff00ff");
-            window.lastConn += 2;
-        }
-        
-        // --- EVOLUTIONARY MILESTONES ---
-        window.milestones = window.milestones || { plant: false, carnivore: false, scavenger: false, immune: false, fur: false };
-        
-        if (data.a > 50) { // Only announce if population is stable
-            if (data.achloro > 0.70 && !window.milestones.plant) {
-                window.logEvent(`🌿 MILESTONE: The ecosystem is now dominated by Autotrophic Plants!`, "#00ffcc");
-                window.milestones.plant = true;
-            } else if (data.achloro < 0.50) window.milestones.plant = false;
-            
-            if (data.acarn > 0.70 && !window.milestones.carnivore) {
-                window.logEvent(`🩸 MILESTONE: Apex Predators have taken over the food web!`, "#ff3333");
-                window.milestones.carnivore = true;
-            } else if (data.acarn < 0.50) window.milestones.carnivore = false;
-            
-            if (data.ascav > 0.70 && !window.milestones.scavenger) {
-                window.logEvent(`🪲 MILESTONE: A massive population of Decomposers has emerged!`, "#999999");
-                window.milestones.scavenger = true;
-            } else if (data.ascav < 0.50) window.milestones.scavenger = false;
-            
-            if (data.aimm > 0.75 && !window.milestones.immune) {
-                window.logEvent(`🦠 MILESTONE: The population has evolved extreme Viral Immunity!`, "#00ff00");
-                window.milestones.immune = true;
-            } else if (data.aimm < 0.55) window.milestones.immune = false;
-            
-            if (data.ains > 0.75 && !window.milestones.fur) {
-                window.logEvent(`❄️ MILESTONE: The population has evolved thick fur for Ice Age survival!`, "#ffffff");
-                window.milestones.fur = true;
-            } else if (data.ains < 0.55) window.milestones.fur = false;
-        }
-        
-        // Find current dominant color
-        let currentDom = "None";
-        let maxCount = 0;
-        for (let col in buckets) {
-            if (buckets[col] > maxCount) {
-                maxCount = buckets[col];
-                currentDom = col;
-            }
-        }
-        
-        if (maxCount > 15 && currentDom !== window.lastDom) {
-            let colorNames = { r: "Red", y: "Yellow", g: "Green", c: "Cyan", b: "Blue", m: "Magenta" };
-            let colorHex = { r: "#ff3333", y: "#ffff33", g: "#33ff33", c: "#33ffff", b: "#3333ff", m: "#ff33ff" };
-            if (window.lastDom !== "") {
-                window.logEvent(`SPECIES SHIFT: The ${colorNames[currentDom]} strain is aggressively taking over the ecosystem!`, colorHex[currentDom]);
-            }
-            window.lastDom = currentDom;
-        }
-        
-        // Draw frame directly
-        ctx.clearRect(0, 0, 3000, 3000);
-        if (data.geoEpoch !== undefined) renderTerrain(data.geoEpoch);
-        ctx.drawImage(terrainCanvas, 0, 0);
-        
-        // 1. Dynamic Soil Color
-        let fert = Math.min(10000, Math.max(0, data.fert || 500));
-        let soilG = Math.floor(34 + (fert / 10000) * 30); // Max 64 (rich green)
-        let soilR = Math.floor(34 - (fert / 10000) * 10);
-        let soilB = Math.floor(34 - (fert / 10000) * 15);
-        document.getElementById('arena').style.backgroundColor = `rgb(${soilR}, ${soilG}, ${soilB})`;
-        
-        // 2. Weather Overlays (Particles)
-        window.weatherParticles = window.weatherParticles || [];
-        let targetCount = 0; let pColor = 'white'; let pSize = 2; let pDrift = 1;
-        if (data.season === 3) { targetCount = 800; pColor = 'rgba(255,255,255,0.8)'; pSize = 3; pDrift = 0; } // Winter Snow
-        else if (data.season === 2) { targetCount = 200; pColor = 'rgba(217, 123, 41, 0.8)'; pSize = 4; pDrift = 2; } // Autumn Leaves
-        
-        while (window.weatherParticles.length < targetCount) {
-            window.weatherParticles.push({ x: Math.random() * 3000, y: Math.random() * 3000, vx: (Math.random() - 0.5) * pDrift, vy: Math.random() * 3 + 1, wobbly: Math.random() * 0.1 });
-        }
-        if (window.weatherParticles.length > targetCount) window.weatherParticles.splice(0, window.weatherParticles.length - targetCount);
-        
-        ctx.fillStyle = pColor;
-        window.weatherParticles.forEach(p => {
-            p.x += p.vx + Math.sin(Date.now() * 0.001 * p.wobbly) * 2;
-            p.y += p.vy;
-            if (p.y > 3000) { p.y = -10; p.x = Math.random() * 3000; }
-            if (p.x > 3000) p.x = 0; else if (p.x < 0) p.x = 3000;
-            ctx.beginPath(); ctx.arc(p.x, p.y, pSize, 0, Math.PI*2); ctx.fill();
-        });
-        
-        if (data.season === 1 && data.era === 2) { // Greenhouse Summer Heatwave
-            ctx.fillStyle = 'rgba(255, 60, 0, 0.05)';
-            ctx.fillRect(0, 0, 3000, 3000);
-        }
-        
-        if (data.rad) { // Radiation Active
-            ctx.fillStyle = 'rgba(0, 255, 0, 0.08)'; // Toxic Green Wash
-            ctx.fillRect(0, 0, 3000, 3000);
-            
-            // Draw a massive glowing green border
-            ctx.strokeStyle = '#00ff00';
-            ctx.lineWidth = 20;
-            ctx.strokeRect(0, 0, 3000, 3000);
-        }
-        
-        if (window.meteorFlash > 0) {
-            ctx.fillStyle = `rgba(255, 140, 0, ${window.meteorFlash})`;
-            ctx.fillRect(0, 0, 3000, 3000);
-            window.meteorFlash -= 0.05;
-        }
-        
-        // Items & Corpses
-        items.forEach(i => {
-           if (i[2] === 1) { // Food
-               ctx.beginPath();
-               ctx.arc(i[0], i[1], 8, 0, Math.PI*2);
-               ctx.fillStyle = '#00ffcc';
-               ctx.fill();
-           } else { // Corpse / Poison
-               // Draw tiny crossed bones
-               ctx.strokeStyle = '#ff0033';
-               ctx.lineWidth = 3;
-               ctx.beginPath();
-               ctx.moveTo(i[0] - 6, i[1] - 6);
-               ctx.lineTo(i[0] + 6, i[1] + 6);
-               ctx.moveTo(i[0] + 6, i[1] - 6);
-               ctx.lineTo(i[0] - 6, i[1] + 6);
-               ctx.stroke();
-           }
-        });
-        
-        // Draw Interaction Lines (Mating & Combat Thunderbolts)
-        ctx.lineWidth = 2;
-        for (let i = 0; i < creatures.length; i++) {
-            for (let j = i + 1; j < creatures.length; j++) {
-                let c1 = creatures[i], c2 = creatures[j];
-                let dx = c1[0] - c2[0], dy = c1[1] - c2[1];
-                let distSq = dx*dx + dy*dy;
-                
-                if (distSq < 1500) { // Touching physically
-                    let h1 = c1[4], h2 = c2[4];
-                    let hueDiff = Math.abs(h1 - h2);
-                    if (hueDiff > 180) hueDiff = 360 - hueDiff;
-                    
-                    if (hueDiff < 20) {
-                        // Kin / Mating
-                        ctx.beginPath();
-                        ctx.moveTo(c1[0], c1[1]);
-                        ctx.lineTo(c2[0], c2[1]);
-                        ctx.strokeStyle = 'rgba(255, 105, 180, 0.7)'; // Pink
-                        ctx.stroke();
-                    } else if (c1[6] === 4 || c2[6] === 4) {
-                        // Combat / Predation (Carnivore involved)
-                        ctx.beginPath();
-                        ctx.moveTo(c1[0], c1[1]);
-                        ctx.lineTo(c1[0] - dx*0.5 + 8, c1[1] - dy*0.5 + 8); // Jagged thunderbolt center
-                        ctx.lineTo(c2[0], c2[1]);
-                        ctx.strokeStyle = 'rgba(255, 30, 30, 0.9)'; // Red lightning
-                        ctx.stroke();
-                    }
-                }
-            }
-        }
-
-        // Creatures
-        creatures.forEach((c, index) => {
-            let x = c[0], y = c[1], angle = c[2], size = c[3], hue = c[4], infected = c[5], trophic = c[6], vision = c[7] || 50;
-            
-            // 3. Draw Vision Radar
-            ctx.beginPath();
-            ctx.arc(x, y, vision, 0, Math.PI*2);
-            ctx.fillStyle = `hsla(${hue}, 100%, 50%, 0.03)`;
-            ctx.fill();
-            ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.1)`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            
-            // Highlight selected family lineage
-            if (window.selectedFamilyId !== -1 && c[8] === window.selectedFamilyId) {
-                ctx.beginPath();
-                ctx.arc(x, y, size * 15, 0, Math.PI*2);
-                ctx.strokeStyle = `hsl(${hue}, 100%, 80%)`;
-                ctx.lineWidth = 4;
-                ctx.stroke();
-                
-                // Draw connecting lines to nearby family members
-                for (let j = index + 1; j < creatures.length; j++) {
-                    let kin = creatures[j];
-                    if (kin[8] === window.selectedFamilyId) {
-                        let dist = Math.hypot(x - kin[0], y - kin[1]);
-                        if (dist < 400) {
-                            ctx.beginPath();
-                            ctx.moveTo(x, y);
-                            ctx.lineTo(kin[0], kin[1]);
-                            ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.4)`;
-                            ctx.lineWidth = 2;
-                            ctx.stroke();
-                        }
-                    }
-                }
-            }
-            
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.rotate(angle);
-            ctx.scale(size, size);
-            
-            ctx.beginPath();
-            if (trophic === 1) { 
-                  ctx.arc(0, 0, 12, 0, Math.PI * 2);
-              } else if (trophic === 2 || trophic === 5 || trophic === 0) { 
-                  ctx.moveTo(15, 0);
-                  ctx.lineTo(-10, 10);
-                  ctx.lineTo(-10, -10);
-              } else if (trophic === 3) { 
-                  ctx.rect(-10, -10, 20, 20);
-              } else {
-                  ctx.moveTo(15, 0); ctx.lineTo(-10, 10); ctx.lineTo(-10, -10);
-              }
-            ctx.closePath();
-            
-            ctx.fillStyle = infected ? '#00ff00' : `hsl(${hue}, 100%, 50%)`;
-            if (infected) {
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#00ff00';
-            } else {
-                ctx.shadowBlur = 0;
-            }
-            ctx.fill();
-            ctx.shadowBlur = 0; // Reset for other draws
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#fff';
-            ctx.stroke();
-            
-            if (index === data.alpha) { // Alpha halo
-                ctx.beginPath();
-                ctx.arc(0, 0, 30, 0, Math.PI*2);
-                ctx.strokeStyle = 'gold';
-                ctx.lineWidth = 4;
-                ctx.stroke();
-            }
-            
-            ctx.restore();
-        });
-    });
-
-    socket.on('ai_analysis', (htmlData) => {
-        let readout = document.getElementById('ai-readout');
-        htmlData = htmlData.replace(/`html/g, '').replace(/`/g, '');
-        if(readout) readout.innerHTML = htmlData;
-    });
-
-    socket.on('radiation_warning', (isActive) => {
-        if (isActive) window.logEvent('☣️ INCOMING: Extreme cosmic radiation burst detected! Genetic mutation rate +500%!', '#00ff00');
-        else window.logEvent('Shields stabilized. Cosmic radiation levels returned to normal.', '#00ff00');
-        let btn = document.getElementById('rad-btn');
-        if (isActive) {
-            btn.style.background = 'white';
-            btn.style.color = 'red';
-            btn.innerText = '☢️ RADIATION BURST ACTIVE ☢️';
-        } else {
-            btn.style.background = '#ff0033';
-            btn.style.color = 'white';
-            btn.innerText = '⚠️ TRIGGER RADIATION BURST (10s) ⚠️';
-        }
-    });
-
-    document.getElementById('rad-btn').addEventListener('click', () => {
-        socket.emit('trigger_radiation');
-    });
-    
-    document.getElementById('meteor-btn').addEventListener('click', () => {
-        socket.emit('trigger_meteor');
-    });
-
-    // --- V4 UI LOGIC ---
-    document.getElementById('btn-update').addEventListener('click', () => {
-        socket.emit('update_config', {
-            ARENA_SIZE: document.getElementById('inp-arena').value,
-            MAX_CREATURES: document.getElementById('inp-creatures').value,
-            NUM_ITEMS: document.getElementById('inp-items').value,
-            TICK_RATE_MS: document.getElementById('inp-tick').value,
-            
-            INIT_FERTILIZER: document.getElementById('inp-fert').value,
-            START_ALIVE: document.getElementById('inp-start-alive').value,
-            START_ITEMS: document.getElementById('inp-start-items').value,
-            START_ENERGY: document.getElementById('inp-start-energy').value,
-            BASE_FOOD_SPAWN: document.getElementById('inp-food-spawn').value,
-            METABOLISM_MULT: document.getElementById('inp-metabolism').value,
-                        MUTATION_MULT: document.getElementById('inp-mutation').value,
-            MITOSIS_BARRIER_MULT: document.getElementById('inp-mitosis').value,
-            MATING_COST_MULT: document.getElementById('inp-mating').value,
-            FOOD_ENERGY_YIELD: document.getElementById('inp-food-yield').value,
-            POISON_ENERGY_YIELD: document.getElementById('inp-poison-yield').value,
-            CORPSE_ENERGY_YIELD: document.getElementById('inp-corpse-yield').value,
-            ENABLE_TERRAIN: document.getElementById('chk-terrain').checked,
-            ENABLE_SEASONS: document.getElementById('chk-seasons').checked,
-            ENABLE_ERAS: document.getElementById('chk-eras').checked,
-            ENABLE_VIRUS: document.getElementById('chk-virus').checked,
-            ENABLE_PARASITISM: document.getElementById('chk-parasitism').checked,
-            ENABLE_PREDATION: document.getElementById('chk-predation').checked,
-            ENABLE_PHOTOSYNTHESIS: document.getElementById('chk-photosynthesis').checked,
-                        ENABLE_SCAVENGING: document.getElementById('chk-scavenging').checked,
-            BASE_METABOLISM_RATE: document.getElementById('inp-metab-rate').value,
-            MOVEMENT_COST_RATE: document.getElementById('inp-move-rate').value,
-            VISION_COST_RATE: document.getElementById('inp-vis-rate').value,
-            AGE_TAX_RATE: document.getElementById('inp-age-rate').value,
-            BRAIN_TAX_RATE: document.getElementById('inp-brain-rate').value,
-            ATTACK_COST: document.getElementById('inp-atk-cost').value,
-            SCUFFLE_COST: document.getElementById('inp-scuffle').value,
-            SYMBIOSIS_TAX: document.getElementById('inp-symbiosis').value,
-            PARASITE_EGG_COST: document.getElementById('inp-parasite-cost').value,
-            MIN_SPEED_CAP: document.getElementById('inp-min-spd').value,
-            MAX_SPEED_CAP: document.getElementById('inp-max-spd').value,
-            MIN_VISION_CAP: document.getElementById('inp-min-vis').value,
-            MAX_VISION_CAP: document.getElementById('inp-max-vis').value,
-            MAX_BRAIN_NODES: document.getElementById('inp-max-nodes').value,
-            DROWNING_PENALTY: document.getElementById('inp-drown').value,
-            OVERPOPULATION_CAP: document.getElementById('inp-overpop').value,
-            CHLOROPLAST_YIELD: document.getElementById('inp-chloroplast').value
-
-
-
-        });
-        window.logEvent('Sent new configuration to server.', '#ff00ff');
-    });
-    document.getElementById('btn-stop').addEventListener('click', () => socket.emit('stop_sim'));
-    document.getElementById('btn-start').addEventListener('click', () => socket.emit('start_sim'));
-    document.getElementById('btn-restart').addEventListener('click', () => socket.emit('restart_sim'));
-
-        socket.on('sim_status', (status) => {
-        let el = document.getElementById('sim-status');
-        let txt = document.getElementById('sim-status-text');
-        let dot = el.querySelector('.bg-green-500');
-        let ping = el.querySelector('.animate-ping');
-        if(txt) txt.innerText = status;
-        else el.innerText = status;
-        
-        if (status === 'Running') {
-            el.className = "flex items-center gap-2 px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30 uppercase tracking-wide shadow-[0_0_10px_rgba(34,197,94,0.3)]";
-            if(dot) dot.className = "relative inline-flex rounded-full h-2 w-2 bg-green-500";
-            if(ping) ping.style.display = "block";
-        } else if (status === 'Stopped') {
-            el.className = "flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-full border border-red-500/30 uppercase tracking-wide shadow-[0_0_10px_rgba(239,68,68,0.3)]";
-            if(dot) dot.className = "relative inline-flex rounded-full h-2 w-2 bg-red-500";
-            if(ping) ping.style.display = "none";
-        } else {
-            el.className = "flex items-center gap-2 px-3 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded-full border border-yellow-500/30 uppercase tracking-wide shadow-[0_0_10px_rgba(234,179,8,0.3)]";
-            if(dot) dot.className = "relative inline-flex rounded-full h-2 w-2 bg-yellow-500";
-            if(ping) ping.style.display = "none";
-        }
-        window.logEvent('Simulation status changed: ' + status, '#ff00ff');
-    });
-
-
-    // Divine Intervention & Lineage Tracing
-    window.selectedFamilyId = -1;
-
-    // OMNIPOTENCE LOGIC
-    let activeBrush = 'none';
-    document.querySelectorAll('input[name="brush"]').forEach(radio => {
-        radio.addEventListener('change', (e) => { activeBrush = e.target.value; });
-    });
-
-    let isMouseDown = false;
-    canvas.addEventListener('mousedown', () => isMouseDown = true);
-    canvas.addEventListener('mouseup', () => isMouseDown = false);
-    canvas.addEventListener('mousemove', (e) => {
-        if (!isMouseDown || activeBrush === 'none') return;
-        let rect = canvas.getBoundingClientRect();
-        let simX = ((e.clientX - rect.left) / rect.width) * 3000;
-        let simY = ((e.clientY - rect.top) / rect.height) * 3000;
-        socket.emit('paint_brush', { type: activeBrush, x: simX, y: simY, radius: 100 });
-    });
-
-    // Replace old click logic
-    canvas.addEventListener('click', (e) => {
-        if (activeBrush !== 'none') return;
-        let rect = canvas.getBoundingClientRect();
-        let simX = ((e.clientX - rect.left) / rect.width) * 3000;
-        let simY = ((e.clientY - rect.top) / rect.height) * 3000;
-        
-        let found = false;
-        for (let i = 0; i < creatures.length; i++) {
-            let c = creatures[i];
-            let dist = Math.hypot(c[0] - simX, c[1] - simY);
-            if (dist < c[3] * 15) { 
-                window.selectedFamilyId = c[8];
-                let realId = c[9];
-                socket.emit('get_brain', realId);
-                window.logEvent(`🧬 LINEAGE TRACER: Tracking Family Dynasty #${c[8]}! Fetching Brain Data...`, `hsl(${c[4]}, 100%, 50%)`);
-                found = true;
-                break;
-            }
-        }
-        if (!found) window.selectedFamilyId = -1;
-    });
-
-    // Save / Load
-    document.getElementById('btn-save').addEventListener('click', () => { socket.emit('request_save'); });
-    socket.on('save_data', (data) => {
-        let blob = new Blob([JSON.stringify(data)], {type: "application/json"});
-        let url = URL.createObjectURL(blob);
-        let a = document.createElement('a');
-        a.href = url;
-        a.download = `petrichip_snapshot_${Date.now()}.json`;
-        a.click();
-    });
-
-    document.getElementById('file-load').addEventListener('change', (e) => {
-        let file = e.target.files[0];
-        if(!file) return;
-        let reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                let data = JSON.parse(e.target.result);
-                socket.emit('load_save', data);
-            } catch(err) { alert("Invalid save file"); }
-        };
-        reader.readAsText(file);
-    });
-
-    // Presets
-    document.getElementById('btn-preset-water').addEventListener('click', () => {
-        document.getElementById('chk-terrain').checked = false;
-        document.getElementById('inp-drown').value = 0;
-        document.getElementById('btn-update').click();
-        document.getElementById('btn-restart').click();
-        window.logEvent('🌊 Water World scenario loaded.', '#0055ff');
-    });
-    
-    document.getElementById('btn-preset-dark').addEventListener('click', () => {
-        document.getElementById('inp-max-vis').value = 40;
-        document.getElementById('inp-move-rate').value = 0.001; // Cheap movement
-        document.getElementById('inp-food-spawn').value = 0.05; // Starvation
-        document.getElementById('btn-update').click();
-        document.getElementById('btn-restart').click();
-        window.logEvent('🦇 Dark Forest scenario loaded.', '#777');
-    });
-
-    document.getElementById('btn-preset-eden').addEventListener('click', () => {
-        document.getElementById('inp-food-spawn').value = 1.0;
-        document.getElementById('chk-virus').checked = false;
-        document.getElementById('chk-predation').checked = false;
-        document.getElementById('inp-mutation').value = 0.1;
-        document.getElementById('btn-update').click();
-        document.getElementById('btn-restart').click();
-        window.logEvent('🍎 Garden of Eden scenario loaded.', '#00aa00');
-    });
-
-    // Brain visualizer
-    socket.on('brain_data', (bdata) => {
-        let text = `🧠 Telemetry Acquired (ID: ${bdata.id}) | Energy: ${bdata.energy.toFixed(1)} | Age: ${bdata.age}\n`;
-        text += `Routing Neural Architecture to Visualizer...`;
-        window.logEvent(text, '#ffbbfe');
-        renderBrain(bdata);
-    });
-    // INITIALIZE TROPHIC CHART
-    let ctxTrophic = document.getElementById('trophic-chart');
-    if (ctxTrophic) {
-        window.trophicChart = new Chart(ctxTrophic.getContext('2d'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Producers', 'Herbivores', 'Carnivores', 'Scavengers', 'Aquatic'],
-                datasets: [{
-                    data: [0, 0, 0, 0, 0],
-                    backgroundColor: ['#00ffcc', '#ffffff', '#ff3333', '#999999', '#0055ff'],
-                    borderWidth: 0,
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '70%',
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
-
-    // RENDER NEURAL NETWORK
-    const bCanvas = document.getElementById('brain-network');
-    const bCtx = bCanvas ? bCanvas.getContext('2d') : null;
-
-    function renderBrain(bdata) {
-        if (!bCtx) return;
-        document.getElementById('brain-overlay').style.display = 'none';
-        bCtx.clearRect(0, 0, 800, 300);
-        
-        let brain = bdata.brain;
-        let conns = brain.conns;
-        
-        // Define node positions
-        // Layer 1: Sensors (0-7), Mem In (8-15) -> X: 100
-        // Layer 2: Hidden (28+) -> X: 400
-        // Layer 3: Motors (16-17), Intent (18), Aggro (19), Mem Out (20-27) -> X: 700
-
-        let nodePos = {};
-        let layerCounts = { 1: 0, 2: 0, 3: 0 };
-        
-        // Calculate max nodes per layer to center them vertically
-        for (let i = 0; i <= brain.maxNode; i++) {
-            if (i < 16) layerCounts[1]++;
-            else if (i >= 16 && i < 28) layerCounts[3]++;
-            else layerCounts[2]++;
-        }
-
-        let currCounts = { 1: 0, 2: 0, 3: 0 };
-        
-        for (let i = 0; i <= brain.maxNode; i++) {
-            let layer, x;
-            if (i < 16) { layer = 1; x = 100; }
-            else if (i >= 16 && i < 28) { layer = 3; x = 700; }
-            else { layer = 2; x = 400; }
-
-            let yOffset = (300 - (layerCounts[layer] * 15)) / 2;
-            let y = yOffset + (currCounts[layer] * 15);
-            nodePos[i] = { x: x, y: y, layer: layer, id: i };
-            currCounts[layer]++;
-        }
-
-        // Draw connections
-        bCtx.lineWidth = 1;
-        conns.forEach(c => {
-            let p1 = nodePos[c.in];
-            let p2 = nodePos[c.out];
-            if (p1 && p2) {
-                bCtx.beginPath();
-                bCtx.moveTo(p1.x, p1.y);
-                // Bezier curve for cool effect
-                bCtx.bezierCurveTo(p1.x + 100, p1.y, p2.x - 100, p2.y, p2.x, p2.y);
-                if (c.w > 0) {
-                    bCtx.strokeStyle = `rgba(0, 255, 204, ${Math.min(1.0, Math.abs(c.w) * 0.2)})`; // Excitory
-                } else {
-                    bCtx.strokeStyle = `rgba(255, 51, 51, ${Math.min(1.0, Math.abs(c.w) * 0.2)})`; // Inhibitory
-                }
-                bCtx.stroke();
-            }
-        });
-
-        // Draw nodes
-        for (let i = 0; i <= brain.maxNode; i++) {
-            let p = nodePos[i];
-            if (p) {
-                bCtx.beginPath();
-                bCtx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-                if (p.layer === 1) bCtx.fillStyle = '#fdf800'; // Sensor
-                else if (p.layer === 3) bCtx.fillStyle = '#ffbbfe'; // Motor
-                else bCtx.fillStyle = '#d5d4ff'; // Hidden
-                bCtx.fill();
-                
-                // Labels for key nodes
-                bCtx.fillStyle = 'rgba(255,255,255,0.3)';
-                bCtx.font = '8px monospace';
-                if (p.id === 0) bCtx.fillText('VISION', p.x - 35, p.y + 3);
-                if (p.id === 16) bCtx.fillText('MOVE F', p.x + 10, p.y + 3);
-                if (p.id === 18) bCtx.fillText('MATE', p.x + 10, p.y + 3);
-                if (p.id === 19) bCtx.fillText('BITE', p.x + 10, p.y + 3);
-            }
-        }
-    }
-
-
-
-
-    socket.on('meteor_warning', () => {
-        window.logEvent('☄️ K-T EXTINCTION EVENT: A massive asteroid has struck! 90% of all life and food vaporized!', '#ff8c00');
-        window.meteorFlash = 1.0;
-    });
-
-    // Historical Charting Logic
-    let histChart = null;
-    async function loadHistoricalData() {
-        try {
-            let res = await fetch('/api/history');
-            if(!res.ok) return;
-            let text = await res.text();
-            let lines = text.trim().split('\n');
-            
-            let labels = [], popData = [], sizeData = [], speedData = [], connData = [];
-            
-            for(let i=1; i<lines.length; i++) {
-                let cols = lines[i].split(',');
-                if(cols.length < 11) continue;
-                let date = new Date(cols[0]);
-                labels.push(date.getHours() + ":" + date.getMinutes().toString().padStart(2, '0'));
-                popData.push(parseFloat(cols[2]));
-                sizeData.push(parseFloat(cols[8]));
-                speedData.push(parseFloat(cols[9]));
-                connData.push(parseFloat(cols[10]));
-            }
-            
-            if (labels.length === 0) {
-                // No valid data yet, show placeholder
-                labels.push("Awaiting first 10-min log...");
-                popData.push(0); sizeData.push(0); speedData.push(0); connData.push(0);
-            }
-            
-            let ctxChart = document.getElementById('metricsChart').getContext('2d');
-            if(histChart) histChart.destroy();
-            
-            histChart = new Chart(ctxChart, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'Population', data: popData, borderColor: '#fdf800', yAxisID: 'yPop', tension: 0.3, pointRadius: 3, borderWidth: 2 },
-                        { label: 'Avg Size', data: sizeData, borderColor: '#33ff33', yAxisID: 'yStats', tension: 0.3, pointRadius: 3, borderWidth: 2 },
-                        { label: 'Avg Speed', data: speedData, borderColor: '#ff3333', yAxisID: 'yStats', tension: 0.3, pointRadius: 3, borderWidth: 2 },
-                        { label: 'Avg Connects', data: connData, borderColor: '#ff00ff', yAxisID: 'yStats', tension: 0.3, pointRadius: 3, borderWidth: 2 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { grid: { color: '#333' } },
-                        yPop: { type: 'linear', position: 'left', grid: { color: '#333' }, title: {display: true, text: 'Population'} },
-                        yStats: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, title: {display: true, text: 'Phenotype / Neural'} }
-                    },
-                    plugins: { legend: { labels: { color: '#fff' } } }
-                }
-            });
-        } catch(e) { console.error('Chart load error:', e); }
-    }
-    
-    // Refresh historical chart every 5 minutes
-    loadHistoricalData();
-    setInterval(loadHistoricalData, 5 * 60 * 1000);
-
-  </script>
+  {script_content}
 </body>
 </html>
