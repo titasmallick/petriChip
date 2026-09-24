@@ -792,11 +792,11 @@ function broadcastState() {
             if (c.age > maxAge) maxAge = c.age;
             if (c.lineage > maxLineage) maxLineage = c.lineage;
             if (c.energy > maxEnergy) { maxEnergy = c.energy; alphaIndex = i; }
-            let trophic = 3;
+            let trophic = 2;
             if (c.gene_chloroplast > 0.5) trophic = 1;
             else if (c.gene_carnivore > 0.5) trophic = 4;
-            else if (c.gene_scavenger > 0.5) trophic = 2;
-            payloadCreatures.push([Math.round(c.x), Math.round(c.y), Number(c.angle.toFixed(2)), Number(c.gene_size.toFixed(2)), Math.round(c.hue), c.infected ? 1 : 0, c.gene_aquatic > 0.5 ? 5 : trophic, Math.round(c.gene_vision), c.familyId, c.id]);
+            else if (c.gene_scavenger > 0.5) trophic = 3;
+            payloadCreatures.push([Math.round(c.x), Math.round(c.y), Number(c.angle.toFixed(2)), Number(c.gene_size.toFixed(2)), Math.round(c.hue), c.infected ? 1 : 0, c.gene_aquatic > 0.5 ? 5 : trophic, Math.round(c.gene_vision), c.familyId, c.id, Math.round(c.age)]);
         }
     }
 
@@ -934,12 +934,31 @@ io.on('connection', (socket) => {
     socket.on('load_save', (data) => {
         if (!data || !data.creatures) return;
         creatures = data.creatures;
-        items = data.items;
+        items = data.items || [];
         globalFertilizer = data.globalFertilizer || 10000;
         geologicEpoch = data.geologicEpoch || 0;
         season = data.season || 0;
         globalEra = data.globalEra || 0;
-        aliveCount = creatures.filter(c => c.alive).length;
+        
+        if (data.config) {
+            if (data.config.ARENA_SIZE) ARENA_SIZE = data.config.ARENA_SIZE;
+            if (data.config.MAX_CREATURES) MAX_CREATURES = data.config.MAX_CREATURES;
+            if (data.config.NUM_ITEMS) NUM_ITEMS = data.config.NUM_ITEMS;
+        }
+        
+        // Ensure arrays match current MAX_CREATURES / NUM_ITEMS bounds
+        if (creatures.length < MAX_CREATURES) {
+            for(let i = creatures.length; i < MAX_CREATURES; i++) {
+                creatures.push({ id: i, alive: false, energy: 0, x: 0, y: 0, age: 0, lineage: 0, mem: new Array(8).fill(0), brain: {maxNode: 27, conns:[]} });
+            }
+        }
+        if (items.length < NUM_ITEMS) {
+            for(let i = items.length; i < NUM_ITEMS; i++) {
+                items.push({ x: 0, y: 0, type: 1, active: false });
+            }
+        }
+
+        aliveCount = creatures.filter(c => c && c.alive).length;
         io.emit('sim_status', 'Loaded Save');
     });
 
@@ -1026,16 +1045,21 @@ io.on('connection', (socket) => {
         if (newConfig.OVERPOPULATION_CAP !== undefined) OVERPOPULATION_CAP = Number(newConfig.OVERPOPULATION_CAP);
         if (newConfig.CHLOROPLAST_YIELD !== undefined) CHLOROPLAST_YIELD = Number(newConfig.CHLOROPLAST_YIELD);
         
-        // Pad arrays if size increased
+        // Pad or truncate arrays if size changed
         if (MAX_CREATURES > oldMaxC) {
             for(let i=oldMaxC; i<MAX_CREATURES; i++) {
                 creatures.push({ id: i, alive: false, energy: 0, x: 0, y: 0, age: 0, lineage: 0, mem: new Array(8).fill(0), brain: {maxNode: 27, conns:[]} });
             }
+        } else if (MAX_CREATURES < oldMaxC) {
+            creatures.length = MAX_CREATURES;
         }
+        
         if (NUM_ITEMS > oldMaxI) {
             for(let i=oldMaxI; i<NUM_ITEMS; i++) {
                 items.push({ x: 0, y: 0, type: 1, active: false });
             }
+        } else if (NUM_ITEMS < oldMaxI) {
+            items.length = NUM_ITEMS;
         }
         
         io.emit('config_updated', newConfig);

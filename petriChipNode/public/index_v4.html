@@ -449,7 +449,7 @@
         let familyMap = {};
 
         creatures.forEach(c => {
-            let x = c[0], y = c[1], angle = c[2], size = c[3], hue = c[4], infected = c[5], trophic = c[6], vision = c[7] || 50, famId = c[8];
+            let x = c[0], y = c[1], angle = c[2], size = c[3], hue = c[4], infected = c[5], trophic = c[6], vision = c[7] || 50, famId = c[8], age = c[10] || 0;
             
             // Trophic
             if (trophic === 1) trophicCounts.prod++;
@@ -462,7 +462,7 @@
             if (!familyMap[famId]) familyMap[famId] = { id: famId, pop: 0, sizeSum: 0, maxAge: 0, hue: hue };
             familyMap[famId].pop++;
             familyMap[famId].sizeSum += size;
-            // Note: server doesn't send age in compressed array. We use lineage or just size for now.
+            if (age > familyMap[famId].maxAge) familyMap[famId].maxAge = age;
         });
 
         // Update Trophic Chart
@@ -483,7 +483,7 @@
                     <td class="py-2 px-1"><span class="inline-block w-4 h-4 rounded-full border border-white/20 shadow-lg" style="background: hsl(${f.hue}, 100%, 50%);"></span></td>
                     <td class="py-2 px-1 font-bold text-white">${f.pop}</td>
                     <td class="py-2 px-1">${(f.sizeSum / f.pop).toFixed(2)}</td>
-                    <td class="py-2 px-1 text-lavender/30">N/A</td>
+                    <td class="py-2 px-1 text-lavender/30">${f.maxAge}s</td>
                 </tr>
             `).join('');
         }
