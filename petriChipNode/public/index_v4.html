@@ -94,11 +94,19 @@
         margin-bottom: 0.5rem;
     }
 
-    /* ZEN FULLSCREEN OVERRIDES */
+    
+    /* ============================================================
+       CINEMATIC 'SCREENSAVER' ZEN MODE 
+       Transforms the dashboard into a premium, holographic HUD
+       ============================================================ */
+    
     :fullscreen body {
-        padding: 2rem !important;
-        background-color: #000;
+        padding: 3rem 4rem !important;
+        background-color: #040608;
+        box-shadow: inset 0 0 200px rgba(0,0,0,0.95); /* Deep cinematic vignette */
     }
+    
+    /* 1. THE ARENA (The Art Piece) */
     :fullscreen canvas#arena {
         position: fixed !important;
         top: 0 !important;
@@ -111,33 +119,72 @@
         z-index: -1 !important;
         border: none !important;
         border-radius: 0 !important;
-        opacity: 0.5; /* Dim the arena slightly so the graphs pop out */
+        opacity: 1.0 !important;
+        filter: saturate(1.8) contrast(1.2) brightness(1.1) drop-shadow(0 0 10px rgba(115, 244, 223, 0.15)) !important;
+        pointer-events: none;
     }
-    :fullscreen #app-wrapper {
-        max-width: 100% !important;
-    }
-    :fullscreen .panel, :fullscreen .panel-muted {
-        background-color: rgba(11, 17, 20, 0.65) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border-color: rgba(255,255,255,0.08) !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-    }
+    
+    /* Hide the wrapper container so it doesn't take up space */
     :fullscreen #arena-container {
+        position: absolute !important;
         height: 0 !important;
-        min-height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        width: 0 !important;
+        overflow: visible !important;
     }
-    /* Lock the little arena legend */
+    
+    /* Relocate the trophic legend to the bottom left */
     :fullscreen #arena-container > div.absolute {
         top: auto !important;
         bottom: 2rem !important;
         left: 2rem !important;
         position: fixed !important;
+        background: rgba(4, 6, 8, 0.6) !important;
+        backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255,255,255,0.05) !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+        border-radius: 12px !important;
+        padding: 1.25rem !important;
     }
-
-    /* Hide text-heavy panels to make it a clean 'Sims' overlay */
+    
+    /* 2. THE TOP METRICS STRIP (Holographic Numbers) */
+    :fullscreen #app-wrapper {
+        max-width: 100% !important;
+    }
+    :fullscreen .panel-muted {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        align-items: center;
+        justify-content: center;
+        text-shadow: 0 4px 12px rgba(0,0,0,0.9);
+    }
+    :fullscreen .panel-muted span.text-2xl {
+        font-size: 3.5rem !important;
+        line-height: 1 !important;
+        font-weight: 200 !important;
+        text-shadow: 0 0 25px currentColor; /* Neon glow matching the text color */
+        margin-top: 0.5rem;
+    }
+    :fullscreen .panel-muted .text-\[10px\] {
+        font-size: 12px !important;
+        letter-spacing: 0.25em !important;
+        font-weight: 600;
+        opacity: 0.8;
+    }
+    
+    /* 3. PREMIUM GLASSMORPHIC PANELS */
+    :fullscreen .panel {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.0) 100%) !important;
+        backdrop-filter: blur(24px) saturate(150%) !important;
+        -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+        border: 1px solid rgba(255,255,255,0.05) !important;
+        border-top: 1px solid rgba(255,255,255,0.15) !important;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+        border-radius: 16px !important;
+    }
+    
+    /* 4. HIDE CLUTTER (Clean 'Sims' look) */
     :fullscreen .panel:has(#log-box),
     :fullscreen .panel:has(#ai-readout),
     :fullscreen .panel:has(table),
@@ -149,10 +196,24 @@
         display: none !important;
     }
     
-    /* Make the metrics strip more transparent so it looks like a HUD */
-    :fullscreen .panel-muted {
-        background-color: rgba(11, 17, 20, 0.25) !important;
+    /* 5. REPOSITION REMAINING GRAPHS TO CORNERS */
+    :fullscreen .grid.grid-cols-1.md\:grid-cols-2 {
+        display: block !important;
+        position: fixed !important;
+        bottom: 3rem !important;
+        right: 3rem !important;
+        width: 450px !important;
+        z-index: 10;
     }
+    :fullscreen .panel:has(#graph) {
+        position: fixed !important;
+        bottom: 3rem !important;
+        left: 3rem !important;
+        width: 600px !important;
+        margin: 0 !important;
+        z-index: 10;
+    }
+
 </style>
 </head>
 <body class="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col items-center overflow-x-hidden">
