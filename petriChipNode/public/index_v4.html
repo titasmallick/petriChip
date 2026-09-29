@@ -93,11 +93,54 @@
     #ai-readout p, #ai-readout ul, #ai-readout ol {
         margin-bottom: 0.5rem;
     }
+
+    /* ZEN FULLSCREEN OVERRIDES */
+    :fullscreen body {
+        padding: 2rem !important;
+        background-color: #000;
+    }
+    :fullscreen canvas#arena {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: none !important;
+        max-height: none !important;
+        object-fit: cover !important;
+        z-index: -1 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        opacity: 0.5; /* Dim the arena slightly so the graphs pop out */
+    }
+    :fullscreen #app-wrapper {
+        max-width: 100% !important;
+    }
+    :fullscreen .panel, :fullscreen .panel-muted {
+        background-color: rgba(11, 17, 20, 0.65) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border-color: rgba(255,255,255,0.08) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    }
+    :fullscreen #arena-container {
+        height: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    /* Lock the little arena legend */
+    :fullscreen #arena-container > div.absolute {
+        top: auto !important;
+        bottom: 2rem !important;
+        left: 2rem !important;
+        position: fixed !important;
+    }
 </style>
 </head>
 <body class="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col items-center overflow-x-hidden">
 
-  <div class="w-full max-w-[1440px] flex flex-col gap-6">
+  <div id="app-wrapper" class="w-full max-w-[1440px] flex flex-col gap-6">
     
     <!-- HEADER -->
     <header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-borderSubtle pb-4">
