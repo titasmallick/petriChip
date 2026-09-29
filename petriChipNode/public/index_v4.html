@@ -75,7 +75,25 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.20); }
-  </style>
+  
+    /* Force Gemini output to match dark theme */
+    #ai-readout, #ai-readout * {
+        background-color: transparent !important;
+        color: #999999 !important;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    #ai-readout h1, #ai-readout h2, #ai-readout h3, #ai-readout h4, #ai-readout strong, #ai-readout b {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        margin-top: 0.5rem;
+        margin-bottom: 0.25rem;
+    }
+    #ai-readout p, #ai-readout ul, #ai-readout ol {
+        margin-bottom: 0.5rem;
+    }
+</style>
 </head>
 <body class="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col items-center overflow-x-hidden">
 
@@ -132,7 +150,7 @@
         
         <!-- CANVAS -->
         <div class="relative w-full">
-          <div class="absolute top-4 left-4 panel-muted p-3 text-[10px] mono text-textMuted flex flex-col gap-2 z-10 pointer-events-none">
+          <div class="absolute top-4 left-4 bg-[#0b1114]/95 backdrop-blur-md border border-[rgba(255,255,255,0.1)] p-3 rounded text-[10px] mono text-textMuted flex flex-col gap-2 z-10 pointer-events-none shadow-xl">
             <div class="flex items-center gap-2"><span class="w-2 h-2 bg-cyanAcc rounded-full"></span> Producers</div>
             <div class="flex items-center gap-2"><span class="w-2 h-2 bg-textMain rounded-none" style="clip-path: polygon(50% 0%, 0% 100%, 100% 100%);"></span> Herbivores</div>
             <div class="flex items-center gap-2"><span class="w-2 h-2 bg-fuchsiaAcc rounded-none" style="clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);"></span> Carnivores</div>
@@ -155,7 +173,15 @@
           </div>
         </div>
 
-        <!-- MULLER PLOT -->
+        
+          <!-- AI EVOLUTIONARY BIOLOGIST (GEMINI) -->
+          <div class="panel p-5 mt-6 mb-6">
+            <h3 class="text-xs font-medium text-textMain mb-4">Evolutionary Biologist Analysis (Gemini)</h3>
+            <div id="ai-readout" class="text-[12px] mono text-textMuted leading-relaxed min-h-[100px] overflow-y-auto max-h-[300px]">
+              Waiting for initial analysis (updates every 30 minutes)...
+            </div>
+          </div>
+          <!-- MULLER PLOT -->
         <div class="panel p-5">
           <h3 class="text-xs font-medium text-textMain mb-4">Species Demographics</h3>
           <canvas id="graph" width="900" height="120" class="w-full h-auto border border-borderSubtle bg-appBg rounded"></canvas>
@@ -322,8 +348,7 @@
       <span id="deaths"></span>
       <span id="food-cnt"></span>
       <span id="poison-cnt"></span>
-      <span id="ai-readout"></span>
-      <span id="max-age"></span>
+            <span id="max-age"></span>
       <span id="max-lineage"></span>
       <span id="max-energy"></span>
       <span id="aquatic"></span>
