@@ -136,6 +136,23 @@
         left: 2rem !important;
         position: fixed !important;
     }
+
+    /* Hide text-heavy panels to make it a clean 'Sims' overlay */
+    :fullscreen .panel:has(#log-box),
+    :fullscreen .panel:has(#ai-readout),
+    :fullscreen .panel:has(table),
+    :fullscreen .panel:has(#network),
+    :fullscreen main > aside,
+    :fullscreen footer,
+    :fullscreen header > div:first-child
+    {
+        display: none !important;
+    }
+    
+    /* Make the metrics strip more transparent so it looks like a HUD */
+    :fullscreen .panel-muted {
+        background-color: rgba(11, 17, 20, 0.25) !important;
+    }
 </style>
 </head>
 <body class="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col items-center overflow-x-hidden">
