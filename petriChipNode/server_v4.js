@@ -81,6 +81,7 @@ let MIN_SPEED_CAP = 0.5;
 let MAX_VISION_CAP = 200.0;
 let MIN_VISION_CAP = 20.0;
 let MAX_BRAIN_NODES = 200;
+let LEARNING_RATE = 0.05; // Neuroplasticity learning rate
 let DROWNING_PENALTY = 0.1;
 let OVERPOPULATION_CAP = 160.0;
 let CHLOROPLAST_YIELD = 0.1; // Update UI 20 times per second
@@ -181,6 +182,8 @@ parasitePayload: null,
             viralLoad: 0.0,
             brain: buildBrain(), // NEAT Brain!
             mem: new Array(8).fill(0),
+            dopamine: 0.0,
+            lastActivations: null,
             intent: 0.0,
             aggression: 0.0
         };
@@ -208,31 +211,33 @@ function buildBrain() {
 }
 
 function processBrain(brain, inputs, mem) {
-    let nodes = new Array(brain.maxNode + 1).fill(0);
-    for(let i=0; i<8; i++) nodes[i] = inputs[i];
-    for(let i=0; i<8; i++) nodes[8+i] = mem[i];
+    let activations = new Array(brain.maxNode + 1).fill(0);
+    for(let i=0; i<8; i++) activations[i] = inputs[i];
+    for(let i=0; i<8; i++) activations[8+i] = mem[i];
     
-    let newNodes = [...nodes];
-    
-    // Evaluate connections
-    for(let c of brain.conns) {
-        newNodes[c.out] += nodes[c.in] * c.w;
+    // 2-Pass Evaluation: allows signals to traverse through hidden layers 
+    // in a single tick, curing the inert hidden node bloat issue.
+    for (let pass = 0; pass < 2; pass++) {
+        let newActivations = new Array(brain.maxNode + 1).fill(0);
+        for(let i=0; i<16; i++) newActivations[i] = activations[i];
+
+        for(let c of brain.conns) {
+            newActivations[c.out] += activations[c.in] * c.w;
+        }
+        
+        for(let i=16; i<=brain.maxNode; i++) {
+            activations[i] = Math.tanh(newActivations[i]);
+        }
     }
-    
-    // Activation (Tanh)
-    for(let i=16; i<=brain.maxNode; i++) {
-        newNodes[i] = Math.tanh(newNodes[i]);
-    }
-    
     
     return {
-        motors: [newNodes[16], newNodes[17]],
-        intent: newNodes[18],
-        aggression: newNodes[19],
-        mimicry: newNodes[26] || 0.0,
-        newMem: newNodes.slice(20, 28)
+        motors: [activations[16], activations[17]],
+        intent: activations[18],
+        aggression: activations[19],
+        mimicry: activations[26] || 0.0,
+        newMem: activations.slice(20, 28),
+        rawActivations: activations
     };
-
 }
 
 function mutateBrain(brain, rad) {
@@ -514,6 +519,25 @@ function tickPhysics() {
         if (season === 1) tempPenalty = c.gene_insulation * 0.05 * heatMultiplier; // Summer overheating
         if (season === 3) tempPenalty = (1.0 - c.gene_insulation) * 0.1 * freezeMultiplier; // Winter freezing
         
+        // === NEUROPLASTICITY (Lamarckian Deep Learning) ===
+        if (c.dopamine !== 0 && c.lastActivations) {
+            for (let conn of c.brain.conns) {
+                // Hebbian weight update modulated by dopamine (Reward)
+                // If reward is positive, strengthen active connections.
+                // If reward is negative, weaken active connections.
+                let delta = LEARNING_RATE * c.dopamine * c.lastActivations[conn.in] * c.lastActivations[conn.out];
+                conn.w += delta;
+                
+                // Prevent exploding gradients
+                if (conn.w > 4.0) conn.w = 4.0;
+                if (conn.w < -4.0) conn.w = -4.0;
+            }
+        }
+        
+        // Dopamine decays naturally after a spike
+        c.dopamine *= 0.5;
+        if (Math.abs(c.dopamine) < 0.01) c.dopamine = 0;
+
         // Viral Replication & Immune Drain
         let viralTax = 0;
         if (c.infected) {
@@ -543,10 +567,13 @@ function tickPhysics() {
                     if (items[f].type === 1) {
                         let energyGained = FOOD_ENERGY_YIELD * (1.0 - (ENABLE_PREDATION ? c.gene_carnivore : 0.0));
                         c.energy += energyGained;
+                        c.dopamine += 1.0; // Positive Reinforcement
                         globalFertilizer += (60.0 - energyGained); // Return undigested mass to soil
                     } else {
                         let energyGained = POISON_ENERGY_YIELD + ((POISON_ENERGY_YIELD * -1 + CORPSE_ENERGY_YIELD) * (ENABLE_SCAVENGING ? c.gene_scavenger : 0.0));
                         c.energy += energyGained;
+                        if (items[f].type === -1) c.dopamine -= 1.0; // Negative Reinforcement from poison
+                        if (items[f].type === 2) c.dopamine += 0.5; // Scavenging reward
                         globalFertilizer += (60.0 - energyGained); // Conserve corpse mass and poisoned energy loss
                     }
                 }
@@ -949,7 +976,9 @@ io.on('connection', (socket) => {
         // Ensure arrays match current MAX_CREATURES / NUM_ITEMS bounds
         if (creatures.length < MAX_CREATURES) {
             for(let i = creatures.length; i < MAX_CREATURES; i++) {
-                creatures.push({ id: i, alive: false, energy: 0, x: 0, y: 0, age: 0, lineage: 0, mem: new Array(8).fill(0), brain: {maxNode: 27, conns:[]} });
+                creatures.push({ id: i, alive: false, energy: 0, x: 0, y: 0, age: 0, lineage: 0, mem: new Array(8).fill(0),
+            dopamine: 0.0,
+            lastActivations: null, brain: {maxNode: 27, conns:[]}, dopamine: 0.0, lastActivations: null });
             }
         }
         if (items.length < NUM_ITEMS) {
@@ -1048,7 +1077,9 @@ io.on('connection', (socket) => {
         // Pad or truncate arrays if size changed
         if (MAX_CREATURES > oldMaxC) {
             for(let i=oldMaxC; i<MAX_CREATURES; i++) {
-                creatures.push({ id: i, alive: false, energy: 0, x: 0, y: 0, age: 0, lineage: 0, mem: new Array(8).fill(0), brain: {maxNode: 27, conns:[]} });
+                creatures.push({ id: i, alive: false, energy: 0, x: 0, y: 0, age: 0, lineage: 0, mem: new Array(8).fill(0),
+            dopamine: 0.0,
+            lastActivations: null, brain: {maxNode: 27, conns:[]}, dopamine: 0.0, lastActivations: null });
             }
         } else if (MAX_CREATURES < oldMaxC) {
             creatures.length = MAX_CREATURES;
@@ -1105,6 +1136,11 @@ io.on('connection', (socket) => {
         for (let i = 0; i < items.length; i++) {
             if (items[i].type === 1 && Math.random() < 0.9) { items[i].active = false; globalFertilizer += 60.0; } // Vaporize food (Returns mass as ash)
         }
+    });
+
+    // --- ADDITIVE: Relay PyTorch RL Agent Logs ---
+    socket.on('ai_god_log', (msg) => {
+        io.emit('ai_god_log', msg);
     });
 });
 

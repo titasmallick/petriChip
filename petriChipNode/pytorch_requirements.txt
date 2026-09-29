@@ -1,0 +1,5 @@
+torch
+numpy
+python-socketio
+requests
+websocket-client

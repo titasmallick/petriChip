@@ -327,6 +327,7 @@
       <span id="max-lineage"></span>
       <span id="max-energy"></span>
       <span id="aquatic"></span>
+      <input type="file" id="file-load" style="display:none;">
   </div>
 
   <script>
@@ -1007,11 +1008,22 @@
 
     // Brain visualizer
     socket.on('brain_data', (bdata) => {
-        let text = `🧠 Telemetry Acquired (ID: ${bdata.id}) | Energy: ${bdata.energy.toFixed(1)} | Age: ${bdata.age}\n`;
+        let text = `dY  Telemetry Acquired (ID: ${bdata.id}) | Energy: ${bdata.energy.toFixed(1)} | Age: ${bdata.age}
+`;
         text += `Routing Neural Architecture to Visualizer...`;
-        window.logEvent(text, '#ffbbfe');
+        
+        // Prevent flooding the log box with continuous polling
+        if (!window.trackedRealId || window.trackedRealId !== bdata.id) {
+            window.logEvent(text, '#ffbbfe');
+            window.trackedRealId = bdata.id;
+        }
         renderBrain(bdata);
     });
+
+    socket.on('ai_god_log', (msg) => {
+        window.logEvent(msg, '#ffffff');
+    });
+
     // INITIALIZE TROPHIC CHART
     let ctxTrophic = document.getElementById('trophic-chart');
     if (ctxTrophic) {

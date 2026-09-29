@@ -1,5 +1,7 @@
 # Silicon Petri Dish (petriChip)
 
+📚 **Must Read:** [Comprehensive Report (Second Edition)](docs/reports/petriChip_Comprehensive_Report_Second_Edition.pdf) - Detailed deep-dive into the biology, architecture, and mathematics of the ecosystem.
+
 ![Featured Server V2](docs/images/Main%20Readme%20Image%20showing%20desktop%20output%20of%20server%20v2.png)
 
 An autonomous, real-time evolutionary ecosystem and artificial life simulation framework. This project explores biologically-inspired mathematical ecosystems across different computational environments, ranging from edge microcontrollers to scalable Node.js servers. The simulation features emergent behaviors driven by neural networks, strict resource limitations, and physical interactions.
@@ -39,11 +41,22 @@ The most sophisticated version, introducing strict conservation of mass, thermod
 *   **Thermal Adaptation and Epidemiology:** Survival in climatic extremes requires the evolution of insulation (`gene_insulation`). Furthermore, winter seasons trigger viral outbreaks, necessitating the evolution of immunity (`gene_immunity`) to resist infection and metabolic drain.
 *   **Intent and Kin Recognition:** Organisms use a dedicated neural output to signal aggressive or reproductive intent, introducing Hamilton's Rule (kin selection) into mating and combat decisions.
 
+### 4. pytorch_observer.py & V4 Engine: Reinforcement Learning "AI God"
+
+The latest evolution (running on `server_v4.js`) integrates a local PyTorch Deep Q-Network that acts as an autonomous overseer, shifting the environment from passive physics to an adversarial/curated ecosystem.
+
+*   **Continuous Socket Telemetry:** The Python agent connects to the Node.js server via WebSockets, sampling live metrics (population, lineage depth, brain complexity, mass) at a high frequency.
+*   **Deep Q-Network & Experience Replay:** The RL agent trains its neural network on the fly. It receives a massive penalty for causing extinction, and positive rewards for maximizing the deepest evolutionary lineage.
+*   **Divine Intervention (Actions):** Based on its learning, the AI autonomously triggers interventions such as Food Drops (Manna), targeted Mutation Fields, Radiation Bursts, Smiting (creating population bottlenecks), or Meteor Strikes. It explains its reasoning directly in the UI's Observer Log.
+*   **Live Neural Architecture Tracing:** The frontend dashboard (`index_v4.html`) features a real-time polling mechanism. Clicking a creature live-streams its brain's node activations and connections directly to the visualizer canvas.
+*   **Unified Launcher:** The entire suite (Node server, PyTorch AI, and Browser UI) is orchestrated via a single `run_ecosystem.bat` script for seamless deployment.
+
 ## Fundamental Biological Mechanics
 
 Across all implementations, survival and replication are intrinsic metrics. There is no artificial fitness function.
 
 *   **Sensory and Niche Selection:** Organisms perceive the distance, angle, and genetic similarity of the nearest living organism, as well as their own internal energy state. This allows for dynamic behavioral switching between foraging, evasion, and reproduction.
+*   **Neuroplasticity & Lamarckian Evolution:** Moving beyond purely blind Darwinian mutation, the V4 engine features real-time Hebbian learning. Organisms possess a chemical reward system (`Dopamine`). Consuming food or successfully hunting spikes dopamine, while eating poison or taking damage causes negative dopamine. This modulates a micro-backpropagation function that actively strengthens or weakens the neural weights that triggered the last movement. Because these acquired synaptic weights are copied during mitosis/crossover, organisms exhibit true *Lamarckian inheritance*—passing down learned behaviors to their offspring.
 *   **Evolvable Morphology (r/K Selection):** Body plan genes (`gene_speed`, `gene_vision`, `gene_size`) dictate life-history strategies. High mass (K-selection) grants predation power and energy storage but incurs severe basal metabolic costs and high reproductive thresholds. Low mass (r-selection) enables rapid, cheap reproduction.
 *   **Metabolic Constraints and Senescence:** Energy is depleted according to Kleiber's Law allometric scaling, kinetic drag, neural processing costs, and thermal penalties. Extrinsic stochastic mortality and age-related metabolic decay ensure continuous selective pressure.
 *   **Reproductive Dynamics:** Sexual reproduction (crossover) requires mutual intent, threshold energy reserves, and morphological compatibility, enabling rapid discovery of beneficial traits. Asexual reproduction (mitosis) is biologically permitted but computationally penalized with exorbitant energy costs to enforce the advantage of mating.
