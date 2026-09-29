@@ -154,7 +154,6 @@ def execute_action(action, state_data):
     
     # SAFETY LOCK: Do not allow Smite or Meteor if population is already critically low
     if pop < 150 and action in [3, 5]:
-        import time
         print(f"[{time.strftime('%X')}] 🛡️ AI attempted to Smite/Meteor, but was vetoed by Safety Lock (Pop: {pop} < 150)")
         return
 
