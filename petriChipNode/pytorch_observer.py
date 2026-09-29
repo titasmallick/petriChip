@@ -1,4 +1,7 @@
 import socketio
+import threading
+
+training_lock = threading.Lock()
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -111,21 +114,22 @@ def on_state(data):
         
         # Train Network (Experience Replay)
         if len(memory) > 32:
-            batch = random.sample(memory, 32)
-            states = torch.cat([b[0] for b in batch])
-            actions = torch.LongTensor([b[1] for b in batch]).to(device)
-            rewards = torch.FloatTensor([b[2] for b in batch]).to(device)
-            next_states = torch.cat([b[3] for b in batch])
-
-            # Q-Learning update
-            current_q = model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-            next_q = model(next_states).max(1)[0].detach()
-            target_q = rewards + (gamma * next_q)
-
-            loss = loss_fn(current_q, target_q)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            with training_lock:
+                batch = random.sample(memory, 32)
+                states = torch.cat([b[0] for b in batch])
+                actions = torch.LongTensor([b[1] for b in batch]).to(device)
+                rewards = torch.FloatTensor([b[2] for b in batch]).to(device)
+                next_states = torch.cat([b[3] for b in batch])
+    
+                # Q-Learning update
+                current_q = model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+                next_q = model(next_states).max(1)[0].detach()
+                target_q = rewards + (gamma * next_q)
+    
+                loss = loss_fn(current_q, target_q)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
     # 2. Choose Next Action
     if random.random() <= epsilon:
