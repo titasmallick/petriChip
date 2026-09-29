@@ -38,7 +38,7 @@ loss_fn = nn.MSELoss()
 # Memory and Hyperparameters
 memory = deque(maxlen=2000)
 gamma = 0.95
-epsilon = 1.0       # Exploration rate
+epsilon = 0.1       # Exploration rate lowered
 epsilon_min = 0.05
 epsilon_decay = 0.995
 
@@ -150,6 +150,14 @@ def on_state(data):
 
 def execute_action(action, state_data):
     arena_size = state_data.get('arenaSize', 3000)
+    pop = state_data.get('a', 0)
+    
+    # SAFETY LOCK: Do not allow Smite or Meteor if population is already critically low
+    if pop < 150 and action in [3, 5]:
+        import time
+        print(f"[{time.strftime('%X')}] 🛡️ AI attempted to Smite/Meteor, but was vetoed by Safety Lock (Pop: {pop} < 150)")
+        return
+
     
     if action == 0:
         pass # Observe silently

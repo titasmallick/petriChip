@@ -337,6 +337,7 @@
       <div class="flex gap-4">
         <button id="btn-save" class="text-textMuted hover:text-textMain transition-colors flex items-center gap-1"><span class="text-sm">💾</span> <span class="hidden sm:inline">Save</span></button>
         <button id="btn-load-ui" class="text-textMuted hover:text-textMain transition-colors flex items-center gap-1" onclick="document.getElementById('file-load').click()"><span class="text-sm">📂</span> <span class="hidden sm:inline">Load</span></button>
+        <button id="btn-fullscreen" class="text-textMuted hover:text-textMain transition-colors flex items-center gap-1"><span class="text-sm">⛶</span> <span class="hidden sm:inline">Fullscreen</span></button>
       </div>
     </footer>
   </div>
@@ -980,6 +981,15 @@
     });
 
     // Save / Load
+    // Fullscreen Toggle
+    document.getElementById('btn-fullscreen').addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => console.log(err));
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+        }
+    });
+
     document.getElementById('btn-save').addEventListener('click', () => { socket.emit('request_save'); });
     socket.on('save_data', (data) => {
         let blob = new Blob([JSON.stringify(data)], {type: "application/json"});
