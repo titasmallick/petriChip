@@ -214,6 +214,11 @@
         z-index: 10;
     }
 
+    :fullscreen #detailed-telemetry {
+        position: fixed !important;
+        top: 2rem !important;
+        right: 2rem !important;
+    }
 </style>
 </head>
 <body class="min-h-screen p-4 md:p-6 lg:p-8 flex flex-col items-center overflow-x-hidden">
@@ -463,19 +468,26 @@
     </footer>
   </div>
 
-  <div class="hidden">
-      <!-- Hidden elements from old UI to prevent JS errors during socket updates -->
-      <span id="age"></span>
-      <span id="births"></span>
-      <span id="deaths"></span>
-      <span id="food-cnt"></span>
-      <span id="poison-cnt"></span>
-            <span id="max-age"></span>
-      <span id="max-lineage"></span>
-      <span id="max-energy"></span>
-      <span id="aquatic"></span>
-      <input type="file" id="file-load" style="display:none;">
-  </div>
+      <!-- ADVANCED TELEMETRY -->
+    <div id="detailed-telemetry" class="font-mono text-[10px] text-textMuted leading-relaxed tracking-wider absolute top-4 right-4 bg-[#040608]/70 backdrop-blur-md border border-[#ffffff1a] p-4 rounded-xl shadow-2xl pointer-events-none z-50">
+        <div class="text-cyanAcc mb-2 font-bold tracking-widest text-[9px]">SYSTEM_TELEMETRY</div>
+        <div class="flex gap-6">
+            <div class="flex flex-col gap-1">
+                <div>Age: <span id="age" class="text-textMain"></span></div>
+                <div>Births: <span id="births" class="text-textMain"></span></div>
+                <div>Deaths: <span id="deaths" class="text-textMain"></span></div>
+                <div class="mt-1">Food: <span id="food-cnt" class="text-successAcc"></span></div>
+                <div>Poison: <span id="poison-cnt" class="text-amberAcc"></span></div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <div>Max Energy: <span id="max-energy" class="text-textMain"></span></div>
+                <div>Oldest: <span id="max-age" class="text-textMain"></span>t</div>
+                <div>Max Lineage: <span id="max-lineage" class="text-textMain"></span></div>
+                <div class="mt-1">Avg Aquatic: <span id="aquatic" class="text-cyanAcc"></span></div>
+            </div>
+        </div>
+        <input type="file" id="file-load" style="display:none; pointer-events:auto;">
+    </div>
 
   <script>
       window.onerror = function(msg, url, lineNo, columnNo, error) {
