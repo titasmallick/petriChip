@@ -96,17 +96,28 @@
 
     
     /* ============================================================
-       CINEMATIC 'SCREENSAVER' ZEN MODE 
-       Transforms the dashboard into a premium, holographic HUD
+       MODERN GLASSMORPHISM HUD (Sci-Fi Cyberpunk)
        ============================================================ */
-    
-    :fullscreen body {
-        padding: 3rem 4rem !important;
-        background-color: #040608;
-        box-shadow: inset 0 0 200px rgba(0,0,0,0.95); /* Deep cinematic vignette */
+    :fullscreen {
+        --hud-bg: rgba(13, 22, 28, 0.65);
+        --hud-border: rgba(255, 255, 255, 0.08);
+        --hud-glow: 0 0 20px rgba(34, 211, 238, 0.05);
+        --cyan: #22d3ee;
+        --teal: #14b8a6;
+        --mint: #34d399;
+        --purple: #c084fc;
+        --amber: #f59e0b;
+        --navy: #080e14;
     }
-    
-    /* 1. THE ARENA (The Art Piece) */
+
+    :fullscreen body {
+        padding: 0 !important;
+        background-color: var(--navy);
+        box-shadow: inset 0 0 150px rgba(0,0,0,0.8);
+        font-family: 'Inter', ui-sans-serif, system-ui, sans-serif !important;
+    }
+
+    /* THE ARENA */
     :fullscreen canvas#arena {
         position: fixed !important;
         top: 0 !important;
@@ -118,124 +129,179 @@
         object-fit: cover !important;
         z-index: -1 !important;
         border: none !important;
-        border-radius: 0 !important;
         opacity: 1.0 !important;
-        filter: saturate(1.8) contrast(1.2) brightness(1.1) drop-shadow(0 0 10px rgba(115, 244, 223, 0.15)) !important;
+        filter: saturate(1.4) contrast(1.1) brightness(0.9) !important;
         pointer-events: none;
     }
     
-    /* Hide the wrapper container so it doesn't take up space */
     :fullscreen #arena-container {
-        position: absolute !important;
-        height: 0 !important;
-        width: 0 !important;
-        overflow: visible !important;
-    }
-    
-    /* Relocate the trophic legend to the bottom left */
-    :fullscreen #arena-container > div.absolute {
-        top: auto !important;
-        bottom: 2rem !important;
-        left: 2rem !important;
-        position: fixed !important;
-        background: rgba(4, 6, 8, 0.6) !important;
-        backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255,255,255,0.05) !important;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
-        border-radius: 12px !important;
-        padding: 1.25rem !important;
-    }
-    
-    /* 2. THE TOP METRICS STRIP (Holographic Numbers) */
-    :fullscreen #app-wrapper {
-        max-width: 100% !important;
-    }
-    :fullscreen .panel-muted {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        backdrop-filter: none !important;
-        align-items: center;
-        justify-content: center;
-        text-shadow: 0 4px 12px rgba(0,0,0,0.9);
-    }
-    :fullscreen .panel-muted span.text-2xl {
-        font-size: 3.5rem !important;
-        line-height: 1 !important;
-        font-weight: 200 !important;
-        text-shadow: 0 0 25px currentColor; /* Neon glow matching the text color */
-        margin-top: 0.5rem;
-    }
-    :fullscreen .panel-muted .text-\[10px\] {
-        font-size: 12px !important;
-        letter-spacing: 0.25em !important;
-        font-weight: 600;
-        opacity: 0.8;
-    }
-    
-    /* 3. PREMIUM GLASSMORPHIC PANELS */
-    :fullscreen .panel {
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.0) 100%) !important;
-        backdrop-filter: blur(24px) saturate(150%) !important;
-        -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
-        border: 1px solid rgba(255,255,255,0.05) !important;
-        border-top: 1px solid rgba(255,255,255,0.15) !important;
-        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.1) !important;
-        border-radius: 16px !important;
-    }
-    
-    
-    :fullscreen main > aside > *:not(#detailed-telemetry) {
-        display: none !important;
-    }
-    :fullscreen #detailed-telemetry {
-        position: fixed !important;
-        top: 3rem !important;
-        right: 3rem !important;
-        width: auto !important;
-        background: rgba(4, 6, 8, 0.6) !important;
-        backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255,255,255,0.05) !important;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
-        border-radius: 12px !important;
-        padding: 1.5rem !important;
-        z-index: 50 !important;
+        position: absolute !important; height: 0 !important; width: 0 !important; overflow: visible !important;
     }
 
-    /* 4. HIDE CLUTTER (Clean 'Sims' look) */
+    /* 1. HEADER BAR (Top-Left) */
+    :fullscreen header {
+        border: none !important;
+        padding: 0 !important;
+    }
+    :fullscreen header > div:first-child { display: none !important; }
+    :fullscreen header > div:last-child {
+        position: fixed !important;
+        top: 1.5rem !important;
+        left: 1.5rem !important;
+        background: var(--hud-bg) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid var(--hud-border) !important;
+        box-shadow: var(--hud-glow) !important;
+        padding: 0.75rem 1.25rem !important;
+        border-radius: 8px !important;
+        z-index: 50;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+    :fullscreen header > div:last-child span {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+        font-size: 11px !important;
+        color: var(--teal) !important;
+    }
+    :fullscreen header > div:last-child #uptime { color: var(--cyan) !important; font-size: 12px !important; font-weight: bold !important; }
+
+    /* 2. PRIMARY KPI BAR (Top-Center) */
+    :fullscreen #app-wrapper { max-width: 100% !important; margin: 0 !important; }
+    :fullscreen section.grid.grid-cols-2 {
+        position: fixed !important;
+        top: 1.5rem !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        display: flex !important;
+        gap: 1.5rem !important;
+        z-index: 50;
+        background: var(--hud-bg) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid var(--hud-border) !important;
+        box-shadow: var(--hud-glow) !important;
+        padding: 0.5rem 2rem !important;
+        border-radius: 12px !important;
+    }
+    :fullscreen .panel-muted {
+        background: transparent !important; border: none !important; box-shadow: none !important; backdrop-filter: none !important;
+        align-items: center; justify-content: center; padding: 0.5rem !important; min-width: 100px;
+    }
+    :fullscreen .panel-muted span.text-2xl {
+        font-size: 1.5rem !important;
+        font-variant-numeric: tabular-nums !important;
+        color: #fff !important;
+        text-shadow: 0 0 10px rgba(255,255,255,0.3) !important;
+        font-weight: 600 !important;
+    }
+    :fullscreen .panel-muted .text-\[10px\] {
+        font-size: 10px !important; color: var(--teal) !important; font-family: ui-monospace, monospace !important;
+    }
+
+    /* 3. SYSTEM TELEMETRY CARD (Top-Right) */
+    :fullscreen #detailed-telemetry {
+        position: fixed !important;
+        top: 1.5rem !important;
+        right: 1.5rem !important;
+        background: var(--hud-bg) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid var(--hud-border) !important;
+        box-shadow: var(--hud-glow) !important;
+        border-radius: 12px !important;
+        padding: 1.25rem !important;
+        z-index: 50 !important;
+        width: auto !important;
+    }
+    :fullscreen #detailed-telemetry .text-cyanAcc { color: var(--cyan) !important; }
+    :fullscreen #detailed-telemetry .text-successAcc { color: var(--mint) !important; }
+    :fullscreen #detailed-telemetry .text-amberAcc { color: var(--amber) !important; }
+    :fullscreen #detailed-telemetry .text-textMain { color: #f8fafc !important; font-variant-numeric: tabular-nums !important; }
+    :fullscreen #detailed-telemetry .text-\[9px\] { color: var(--teal) !important; font-family: ui-monospace, monospace !important; }
+
+    /* 4. ENTITY LEGEND (Mid-Left Floating Pill) */
+    :fullscreen #arena-container > div.absolute {
+        position: fixed !important;
+        top: 50% !important;
+        left: 1.5rem !important;
+        transform: translateY(-50%) !important;
+        background: var(--hud-bg) !important;
+        backdrop-filter: blur(16px) !important;
+        border: 1px solid var(--hud-border) !important;
+        border-radius: 2rem !important;
+        padding: 1.5rem 1rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1.5rem !important;
+        z-index: 50;
+        box-shadow: var(--hud-glow) !important;
+    }
+    :fullscreen #arena-container > div.absolute > div {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        font-size: 10px !important;
+        color: var(--teal) !important;
+        text-transform: uppercase !important;
+        font-family: ui-monospace, monospace !important;
+        text-align: center;
+    }
+    /* Shape indicators */
+    :fullscreen #arena-container > div.absolute span.bg-cyanAcc { background: var(--mint) !important; border-radius: 50% !important; width: 12px !important; height: 12px !important; }
+    :fullscreen #arena-container > div.absolute span.bg-textMain { background: var(--cyan) !important; width: 12px !important; height: 12px !important; clip-path: polygon(50% 0%, 0% 100%, 100% 100%) !important; }
+    :fullscreen #arena-container > div.absolute span.bg-fuchsiaAcc { background: var(--purple) !important; width: 14px !important; height: 14px !important; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%) !important; }
+    :fullscreen #arena-container > div.absolute span.bg-amberAcc { background: var(--amber) !important; border-radius: 2px !important; width: 12px !important; height: 12px !important; }
+
+    /* 5. CHARTS & ANALYTICS PANELS (Bottom Dock) */
+    :fullscreen .panel:has(#graph) {
+        position: fixed !important;
+        bottom: 1.5rem !important;
+        left: 1.5rem !important;
+        width: 35vw !important;
+        height: 25vh !important;
+        background: var(--hud-bg) !important;
+        backdrop-filter: blur(16px) !important;
+        border: 1px solid var(--hud-border) !important;
+        box-shadow: var(--hud-glow) !important;
+        border-radius: 12px !important;
+        z-index: 50;
+        padding: 1rem !important;
+        margin: 0 !important;
+    }
+    :fullscreen .grid.grid-cols-1.md\:grid-cols-2 {
+        position: fixed !important;
+        bottom: 1.5rem !important;
+        right: 1.5rem !important;
+        width: 35vw !important;
+        height: 25vh !important;
+        display: flex !important;
+        z-index: 50;
+    }
+    :fullscreen .grid.grid-cols-1.md\:grid-cols-2 > .panel:has(#metricsChart) {
+        width: 100% !important;
+        height: 100% !important;
+        background: var(--hud-bg) !important;
+        backdrop-filter: blur(16px) !important;
+        border: 1px solid var(--hud-border) !important;
+        box-shadow: var(--hud-glow) !important;
+        border-radius: 12px !important;
+        padding: 1rem !important;
+        margin: 0 !important;
+    }
+    :fullscreen .grid.grid-cols-1.md\:grid-cols-2 > .panel:not(:has(#metricsChart)) {
+        display: none !important;
+    }
+
+    /* HIDE CLUTTER */
     :fullscreen .panel:has(#log-box),
     :fullscreen .panel:has(#ai-readout),
     :fullscreen .panel:has(table),
     :fullscreen .panel:has(#network),
-    
-    :fullscreen footer,
-    :fullscreen header > div:first-child
-    {
+    :fullscreen main > aside > *:not(#detailed-telemetry),
+    :fullscreen footer {
         display: none !important;
-    }
-    
-    /* 5. REPOSITION REMAINING GRAPHS TO CORNERS */
-    :fullscreen .grid.grid-cols-1.md\:grid-cols-2 {
-        display: block !important;
-        position: fixed !important;
-        bottom: 3rem !important;
-        right: 3rem !important;
-        width: 450px !important;
-        z-index: 10;
-    }
-    :fullscreen .panel:has(#graph) {
-        position: fixed !important;
-        bottom: 3rem !important;
-        left: 3rem !important;
-        width: 600px !important;
-        margin: 0 !important;
-        z-index: 10;
-    }
-
-    :fullscreen #detailed-telemetry {
-        position: fixed !important;
-        top: 2rem !important;
-        right: 2rem !important;
     }
 </style>
 </head>
