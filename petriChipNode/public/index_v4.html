@@ -271,6 +271,17 @@
         z-index: 50;
         padding: 1rem !important;
         margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    :fullscreen .panel:has(#graph) h3 {
+        margin-bottom: 0.5rem !important;
+    }
+    :fullscreen canvas#graph {
+        width: 100% !important;
+        height: 100% !important;
+        flex-grow: 1 !important;
+        object-fit: fill !important;
     }
     :fullscreen .grid.grid-cols-1.md\:grid-cols-2 {
         position: fixed !important;
@@ -291,6 +302,17 @@
         border-radius: 12px !important;
         padding: 1rem !important;
         margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 0 !important;
+    }
+    :fullscreen .grid.grid-cols-1.md\:grid-cols-2 > .panel:has(#metricsChart) h3 {
+        margin-bottom: 0.5rem !important;
+    }
+    :fullscreen .grid.grid-cols-1.md\:grid-cols-2 > .panel:has(#metricsChart) > div.relative {
+        flex-grow: 1 !important;
+        min-height: 0 !important;
+        height: 100% !important;
     }
     :fullscreen .grid.grid-cols-1.md\:grid-cols-2 > .panel:not(:has(#metricsChart)) {
         display: none !important;
