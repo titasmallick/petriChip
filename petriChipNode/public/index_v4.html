@@ -318,9 +318,71 @@
         display: none !important;
     }
 
+    /* 6. RPG-STYLE COMBAT LOG (Top-Left) */
+    @keyframes rpgFadeIn {
+        from { opacity: 0; transform: translateX(-15px); filter: blur(4px); }
+        to { opacity: 1; transform: translateX(0); filter: blur(0); }
+    }
+    :fullscreen .panel:has(#log-box) {
+        display: flex !important;
+        position: fixed !important;
+        top: 1.5rem !important;
+        left: 1.5rem !important;
+        width: 380px !important;
+        height: 35vh !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        padding: 0 !important;
+        z-index: 50;
+        pointer-events: none; /* Let clicks pass through to arena */
+    }
+    :fullscreen .panel:has(#log-box) h3 {
+        display: none !important;
+    }
+    :fullscreen #log-box {
+        height: 100% !important;
+        flex-grow: 1 !important;
+        overflow-y: hidden !important; /* Hide scrollbar */
+        padding: 0 !important;
+        /* Sexy fade at top and bottom */
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+        mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+        /* Move content to bottom naturally */
+
+    }
+    :fullscreen #log-box > div {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace !important;
+        font-size: 11px !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+        text-shadow: 0 0 12px rgba(34, 211, 238, 0.8) !important;
+        line-height: 1.6 !important;
+        margin-bottom: 8px !important;
+        animation: rpgFadeIn 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+        border-left: 2px solid rgba(34, 211, 238, 0.5);
+        padding-left: 10px;
+        background: linear-gradient(90deg, rgba(34, 211, 238, 0.1) 0%, transparent 100%);
+    }
+    /* Style the timestamp inside the log */
+    :fullscreen #log-box > div span[style*="color:#555"] {
+        color: var(--teal) !important;
+        opacity: 0.7;
+        text-shadow: none !important;
+        font-weight: bold;
+        margin-right: 4px;
+    }
+    /* Make AI God actions stand out even more */
+    :fullscreen #log-box > div span[style*="color:#f7c873"],
+    :fullscreen #log-box > div span[style*="color:#e9a7ff"],
+    :fullscreen #log-box > div span[style*="color:#73f4df"] {
+        text-shadow: 0 0 15px currentColor !important;
+        font-weight: bold;
+    }
+
     /* HIDE CLUTTER */
-    :fullscreen .panel:has(#log-box),
-    :fullscreen .panel:has(#ai-readout),
+        :fullscreen .panel:has(#ai-readout),
     :fullscreen .panel:has(table),
     :fullscreen .panel:has(#network),
     :fullscreen main > aside > *:not(#detailed-telemetry),
