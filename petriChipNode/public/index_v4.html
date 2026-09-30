@@ -99,9 +99,9 @@
        MODERN GLASSMORPHISM HUD (Sci-Fi Cyberpunk)
        ============================================================ */
     :fullscreen {
-        --hud-bg: rgba(13, 22, 28, 0.65);
-        --hud-border: rgba(255, 255, 255, 0.08);
-        --hud-glow: 0 0 20px rgba(34, 211, 238, 0.05);
+        --hud-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(13, 22, 28, 0.3) 100%);
+        --hud-border: rgba(255, 255, 255, 0.15);
+        --hud-glow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 -1px 1px rgba(255, 255, 255, 0.05);
         --cyan: #22d3ee;
         --teal: #14b8a6;
         --mint: #34d399;
@@ -151,8 +151,8 @@
         left: 50% !important;
         transform: translateX(-50%) !important;
         background: var(--hud-bg) !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
+        backdrop-filter: blur(32px) saturate(150%) !important;
+        -webkit-backdrop-filter: blur(32px) saturate(150%) !important;
         border: 1px solid var(--hud-border) !important;
         box-shadow: var(--hud-glow) !important;
         padding: 0.75rem 1.25rem !important;
@@ -181,8 +181,8 @@
         gap: 1.5rem !important;
         z-index: 50;
         background: var(--hud-bg) !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
+        backdrop-filter: blur(32px) saturate(150%) !important;
+        -webkit-backdrop-filter: blur(32px) saturate(150%) !important;
         border: 1px solid var(--hud-border) !important;
         box-shadow: var(--hud-glow) !important;
         padding: 0.5rem 2rem !important;
@@ -209,8 +209,8 @@
         top: 1.5rem !important;
         right: 1.5rem !important;
         background: var(--hud-bg) !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
+        backdrop-filter: blur(32px) saturate(150%) !important;
+        -webkit-backdrop-filter: blur(32px) saturate(150%) !important;
         border: 1px solid var(--hud-border) !important;
         box-shadow: var(--hud-glow) !important;
         border-radius: 12px !important;
@@ -231,7 +231,7 @@
         left: 1.5rem !important;
         transform: translateY(-50%) !important;
         background: var(--hud-bg) !important;
-        backdrop-filter: blur(16px) !important;
+        backdrop-filter: blur(32px) saturate(150%) !important;
         border: 1px solid var(--hud-border) !important;
         border-radius: 2rem !important;
         padding: 1.5rem 1rem !important;
@@ -264,7 +264,7 @@
         width: 35vw !important;
         height: 25vh !important;
         background: var(--hud-bg) !important;
-        backdrop-filter: blur(16px) !important;
+        backdrop-filter: blur(32px) saturate(150%) !important;
         border: 1px solid var(--hud-border) !important;
         box-shadow: var(--hud-glow) !important;
         border-radius: 12px !important;
@@ -296,7 +296,7 @@
         width: 100% !important;
         height: 100% !important;
         background: var(--hud-bg) !important;
-        backdrop-filter: blur(16px) !important;
+        backdrop-filter: blur(32px) saturate(150%) !important;
         border: 1px solid var(--hud-border) !important;
         box-shadow: var(--hud-glow) !important;
         border-radius: 12px !important;
