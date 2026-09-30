@@ -146,8 +146,10 @@
     :fullscreen header > div:first-child { display: none !important; }
     :fullscreen header > div:last-child {
         position: fixed !important;
-        top: 1.5rem !important;
-        left: 1.5rem !important;
+        top: auto !important;
+        bottom: 1.5rem !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
         background: var(--hud-bg) !important;
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
@@ -158,7 +160,7 @@
         z-index: 50;
         display: flex !important;
         flex-direction: column !important;
-        align-items: flex-start !important;
+        align-items: center !important;
         gap: 0.5rem !important;
     }
     :fullscreen header > div:last-child span {
