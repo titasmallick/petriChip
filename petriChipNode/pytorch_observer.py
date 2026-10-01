@@ -16,8 +16,13 @@ from collections import deque
 class EnvironmentGodNet(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(EnvironmentGodNet, self).__init__()
+        # Upgraded to a deeper network with 128 neurons to actually process ecosystem complexity
         self.network = nn.Sequential(
             nn.Linear(input_size, hidden_size),
+            nn.LayerNorm(hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.LayerNorm(hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
@@ -34,12 +39,18 @@ STATE_SIZE = 9  # pop, avg_size, avg_speed, avg_conn, max_lineage, max_age, food
 ACTION_SIZE = 6 # 0: Nothing, 1: Food Drop, 2: Radiation, 3: Smite, 4: Mutate, 5: Meteor
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = EnvironmentGodNet(STATE_SIZE, 64, ACTION_SIZE).to(device)
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-loss_fn = nn.MSELoss()
+# DOUBLE DQN ARCHITECTURE
+model = EnvironmentGodNet(STATE_SIZE, 128, ACTION_SIZE).to(device)
+target_model = EnvironmentGodNet(STATE_SIZE, 128, ACTION_SIZE).to(device)
+target_model.load_state_dict(model.state_dict())
+target_model.eval()
+
+optimizer = optim.Adam(model.parameters(), lr=0.0005) # Lower LR for stability
+loss_fn = nn.SmoothL1Loss() # Huber loss prevents exploding gradients
 
 # Memory and Hyperparameters
-memory = deque(maxlen=2000)
+memory = deque(maxlen=10000)
+TAU = 0.005 # Polyak averaging rate
 gamma = 0.95
 epsilon = 0.1       # Exploration rate lowered
 epsilon_min = 0.05
@@ -122,23 +133,33 @@ def on_state(data):
         memory.append((previous_state_tensor, previous_action, reward, current_state))
         
         # Train Network (Experience Replay)
-        if len(memory) > 32:
+        if len(memory) > 64:
             with training_lock:
-                batch = random.sample(memory, 32)
+                batch = random.sample(memory, 64)
                 states = torch.cat([b[0] for b in batch])
                 actions = torch.LongTensor([b[1] for b in batch]).to(device)
                 rewards = torch.FloatTensor([b[2] for b in batch]).to(device)
                 next_states = torch.cat([b[3] for b in batch])
     
-                # Q-Learning update
+                # Double DQN Update (Prevents overestimating destructive actions)
                 current_q = model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-                next_q = model(next_states).max(1)[0].detach()
-                target_q = rewards + (gamma * next_q)
+                
+                with torch.no_grad():
+                    # Main model picks the action, target model evaluates it
+                    next_actions = model(next_states).argmax(1, keepdim=True)
+                    next_q = target_model(next_states).gather(1, next_actions).squeeze(1)
+                    target_q = rewards + (gamma * next_q)
     
                 loss = loss_fn(current_q, target_q)
                 optimizer.zero_grad()
                 loss.backward()
+                # Gradient clipping to prevent learning spikes
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 optimizer.step()
+                
+                # Polyak Soft Update for Target Network
+                for target_param, model_param in zip(target_model.parameters(), model.parameters()):
+                    target_param.data.copy_(TAU * model_param.data + (1.0 - TAU) * target_param.data)
 
     # 2. Choose Next Action
     if random.random() <= epsilon:
