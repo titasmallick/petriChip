@@ -86,7 +86,7 @@ def disconnect():
 @sio.on('state')
 def on_state(data):
     global previous_state_tensor, previous_action, epsilon
-    global last_max_lineage, last_population, last_extinctions
+    global last_max_lineage, last_population, last_extinctions, last_avg_conn
 
     # Only process states every 1 in 10 broadcasts to prevent flooding
     if random.random() > 0.1: return 
@@ -95,19 +95,28 @@ def on_state(data):
     current_lineage = data.get('mL', 0)
     current_pop = data.get('a', 0)
     current_extinctions = data.get('e', 0)
+    current_conn = data.get('aconn', 0.0)
 
     # 1. Calculate Reward
     reward = 0
     if previous_state_tensor is not None:
+        # Reward for brain complexity (SMART and THRIVING)
+        if current_conn > last_avg_conn:
+            reward += (current_conn - last_avg_conn) * 15.0
+            
         # Reward for evolutionary progress (lineage depth)
         if current_lineage > last_max_lineage:
             reward += (current_lineage - last_max_lineage) * 2.0
         
         # Reward for keeping ecosystem alive
         if current_pop > 50:
-            reward += 0.1
+            reward += 0.5
         elif current_pop == 0 or current_extinctions > last_extinctions:
             reward -= 50.0 # Extinction penalty
+            
+        # Severe Penalty for using Meteor/Smite unnecessarily
+        if previous_action in [3, 5]:
+            reward -= 10.0 # Discourage boom-bust weapons
 
         # Store in Replay Memory
         memory.append((previous_state_tensor, previous_action, reward, current_state))
@@ -148,6 +157,7 @@ def on_state(data):
     last_max_lineage = current_lineage
     last_population = current_pop
     last_extinctions = current_extinctions
+    last_avg_conn = current_conn
 
     if epsilon > epsilon_min:
         epsilon *= epsilon_decay
@@ -156,10 +166,15 @@ def execute_action(action, state_data):
     arena_size = state_data.get('arenaSize', 3000)
     pop = state_data.get('a', 0)
     
-    # SAFETY LOCK: Do not allow Smite or Meteor if population is already critically low
-    if pop < 150 and action in [3, 5]:
-        print(f"[{time.strftime('%X')}] 🛡️ AI attempted to Smite/Meteor, but was vetoed by Safety Lock (Pop: {pop} < 150)")
-        return
+    import random
+    # SAFETY LOCK: Severely restrict destructive actions to encourage thriving
+    if action in [3, 5]:
+        if pop < 300:
+            print(f"[{time.strftime('%X')}] 🛡️ VETO: Prevented AI extinction event. Letting population thrive. (Pop: {pop} < 300)")
+            return
+        elif random.random() < 0.8:
+            print(f"[{time.strftime('%X')}] 🛡️ VETO: Meteor/Smite blocked by ecosystem safety limit.")
+            return
 
     
     if action == 0:
