@@ -170,45 +170,59 @@ def execute_action(action, state_data):
     # SAFETY LOCK: Severely restrict destructive actions to encourage thriving
     if action in [3, 5]:
         if pop < 300:
-            print(f"[{time.strftime('%X')}] 🛡️ VETO: Prevented AI extinction event. Letting population thrive. (Pop: {pop} < 300)")
+            reason = f"Destructive intervention aborted. Planetary population ({pop}) is below critical threshold. Permitting current neural dynasties to mature."
+            print(f"[{time.strftime('%X')}] 🛡️ {reason}")
+            sio.emit('ai_god_log', f"<span style='color:#777'>[OBSERVER] VETO</span> - {reason}")
             return
         elif random.random() < 0.8:
-            print(f"[{time.strftime('%X')}] 🛡️ VETO: Meteor/Smite blocked by ecosystem safety limit.")
+            reason = "Destructive action blocked by overriding safety protocols. The ecosystem displays sufficient neuro-complexity to self-regulate."
+            print(f"[{time.strftime('%X')}] 🛡️ {reason}")
+            sio.emit('ai_god_log', f"<span style='color:#777'>[OBSERVER] VETO</span> - {reason}")
             return
 
     
     if action == 0:
+        if random.random() < 0.15: # 15% chance to drop a profound observation
+            obs = random.choice([
+                "Analyzing Lamarckian neuro-plasticity drift. The network topology is self-optimizing.",
+                "Trophic equilibrium achieved. Carbon-cycle metabolism is running at optimal efficiency.",
+                "Observing lateral gene transfer in the lower trophic layers. Remarkable structural adaptations.",
+                "The neural architecture of the apex lineage is displaying signs of rudimentary spatial awareness.",
+                "Ecosystem stability holds. Interference is mathematically unnecessary at this epoch."
+            ])
+            print(f"[{time.strftime('%X')}] 👁️ {obs}")
+            sio.emit('ai_god_log', f"<span style='color:#34d399'>[OBSERVER] TELEMETRY ANALYSIS</span> - {obs}")
         pass # Observe silently
     elif action == 1:
         # Food Drop in the center
-        reason = "Population is hungry or energy is low. Distributing manna (food)."
+        reason = "Metabolic collapse detected. Injecting synthetic lipid-hydrocarbon chains to stabilize the primary trophic layer and prevent systemic energy starvation."
         print(f"[{time.strftime('%X')}] ⚡ AI Intervention: {reason}")
-        sio.emit('ai_god_log', f"<span style='color:#73f4df'>[AI GOD] ACTION: Food Drop</span> - {reason}")
+        sio.emit('ai_god_log', f"<span style='color:#73f4df'>[OBSERVER] ACTION: RESOURCE INJECTION</span> - {reason}")
         sio.emit('paint_brush', {'type': 'food', 'x': arena_size/2, 'y': arena_size/2, 'radius': 500})
     elif action == 2:
-        reason = "Evolution has stagnated. Triggering global radiation burst to force genetic mutations."
+        reason = "Genomic convergence detected. Initiating globally-saturating ionizing radiation pulse to destabilize DNA topologies and force rapid neuro-plastic divergence."
         print(f"[{time.strftime('%X')}] ⚡ AI Intervention: {reason}")
-        sio.emit('ai_god_log', f"<span style='color:#f7c873'>[AI GOD] ACTION: Radiation Burst</span> - {reason}")
+        sio.emit('ai_god_log', f"<span style='color:#f7c873'>[OBSERVER] ACTION: RADIATION BURST</span> - {reason}")
         sio.emit('trigger_radiation')
     elif action == 3:
         # Smite a random quadrant to create a population bottleneck
-        reason = "Creating a population bottleneck (Smite) to weed out weak lineages and enforce survival of the fittest."
+        reason = "Trophic stagnation identified. Executing localized kinetic culling to artificially induce a genetic bottleneck, pruning weak synaptic networks."
         print(f"[{time.strftime('%X')}] ⚡ AI Intervention: {reason}")
-        sio.emit('ai_god_log', f"<span style='color:#e9a7ff'>[AI GOD] ACTION: Smite</span> - {reason}")
+        sio.emit('ai_god_log', f"<span style='color:#e9a7ff'>[OBSERVER] ACTION: TARGETED CULLING</span> - {reason}")
         rx = random.uniform(0, arena_size)
         ry = random.uniform(0, arena_size)
         sio.emit('paint_brush', {'type': 'smite', 'x': rx, 'y': ry, 'radius': 600})
     elif action == 4:
-        reason = "Targeted mutation field deployed to encourage local speciation."
+        reason = "Isolating geographical quadrant. Deploying localized mutagenic catalyst to accelerate synaptic bridging and force deep speciation."
         print(f"[{time.strftime('%X')}] ⚡ AI Intervention: {reason}")
-        sio.emit('ai_god_log', f"<span style='color:#c7ff56'>[AI GOD] ACTION: Mutate Area</span> - {reason}")
+        sio.emit('ai_god_log', f"<span style='color:#c7ff56'>[OBSERVER] ACTION: MUTAGENIC FIELD</span> - {reason}")
         rx = random.uniform(0, arena_size)
         ry = random.uniform(0, arena_size)
         sio.emit('paint_brush', {'type': 'mutate', 'x': rx, 'y': ry, 'radius': 600})
     elif action == 5:
-        reason = "Ecosystem has hit a dead-end. Triggering Meteor Strike for a mass reset."
+        reason = "Synaptic entropy has reached maximum density. Initiating planetary-scale kinetic sterilization to shatter the evolutionary dead-end."
         print(f"[{time.strftime('%X')}] ⚡ AI Intervention: {reason}")
-        sio.emit('ai_god_log', f"<span style='color:#e9a7ff; font-weight:bold;'>[AI GOD] ACTION: METEOR STRIKE</span> - {reason}")
+        sio.emit('ai_god_log', f"<span style='color:#e9a7ff; font-weight:bold;'>[OBSERVER] ACTION: PLANETARY STERILIZATION</span> - {reason}")
         sio.emit('trigger_meteor')
 
 if __name__ == '__main__':
